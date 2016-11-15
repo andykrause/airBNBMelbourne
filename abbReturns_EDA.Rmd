@@ -1,0 +1,162 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+## Exploratory Spatial Analysis
+
+As an initial look into the spatial properties of long and short term rental data we create a set of maps looking at prices by suburbs.  
+
+We begin by creating median rate and rent values for each suburb, broken into apartments and houses. 
+
+```{r med.price, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+ ## Create indicators of apartment or homes
+
+  id.st <- which(abb.dataf$type == 'Apartment')
+  id.lt <- which(rent.dataf$type == 'Apartment')
+
+ ## Create dataframes of median values
+  
+  # Short term apartments
+  st.subsA <- tapply2DF(abb.dataf$nightly.rate[id.st], 
+                        abb.dataf$suburb[id.st], 
+                        median, newName='med.price', idName='suburb')
+
+  # Long term apartments
+  
+  lt.subsA <- tapply2DF(rent.dataf$event.price[id.lt], 
+                        rent.dataf$suburb[id.lt], 
+                        median, newName='med.price', idName='suburb')
+  
+  # Short term houses
+  st.subsH <- tapply2DF(abb.dataf$nightly.rate[-id.st], 
+                        abb.dataf$suburb[-id.st], 
+                        median, newName='med.price', idName='suburb')
+  
+  # Long term houses
+  lt.subsH <- tapply2DF(rent.dataf$event.price[-id.lt], 
+                        rent.dataf$suburb[-id.lt], 
+                        median, newName='med.price', idName='suburb')
+
+```
+
+We then convert these median values to a relative value and add them to the plotable map object.  We do this so that the maps may be compared between the long/short and apt/house breakdowns.  Relative values are made be comparing the suburb specific median to the median value in the popular St. Kilda suburbs.  As a result the values on the map that follow represent the ratio of the median price (rate or rent) in that suburb to the corresponding price in St. Kilda.
+
+```{r med.price2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+  ## Create relative prices
+
+  st.subsA$rel.price <- (st.subsA$med.price /
+                           st.subsA$med.price[st.subsA$suburb == 'St Kilda'])
+  st.subsH$rel.price <- (st.subsH$med.price /
+                           st.subsH$med.price[st.subsH$suburb == 'St Kilda'])
+  lt.subsA$rel.price <- (lt.subsA$med.price /
+                           lt.subsA$med.price[lt.subsA$suburb == 'St Kilda'])
+  lt.subsH$rel.price <- (lt.subsH$med.price /
+                           lt.subsH$med.price[lt.subsH$suburb == 'St Kilda'])
+
+```
+
+```{r med.price3, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+ ## Create plotable map object
+
+ ## Add relative price information
+  
+  subs$lapr <- lt.subsA$rel.price[match(subs$id, lt.subsA$suburb)]
+  subs$lhpr <- lt.subsH$rel.price[match(subs$id, lt.subsH$suburb)]
+  subs$sapr <- st.subsA$rel.price[match(subs$id, st.subsA$suburb)]
+  subs$shpr <- st.subsH$rel.price[match(subs$id, st.subsH$suburb)]
+
+```
+
+In the maps that follow, green areas represent suburbs with higher relative prices and orange with lower.  From these maps we see a number of trends:
+
+1. Long term house rents are highest in the south and east
+2. Long term apartment rents are highest in the south and central 
+3. Short term house rates are a bit sporadic, but do seem generally higher in the south along the beach.  Or at least, the high values in the non-coastal south east are not present in this market.
+4. Short term apartment rental rates somewhat mirror the long term apartment rental rates.
+
+A bit of caution:  Since we are not controlling for differences in compositions (sturctural differences) these maps could also be showing different products in different locations and their relationship to price.  This is simply an exploration of the data. We will address these issues later. 
+
+
+```{r med.price4, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+ ## Build map objects
+
+  # Long term apartments
+  lapr <- ggplot(subs, 
+                 aes(x=long, y=lat, group=group, fill=lapr)) +
+                 geom_polygon(color='gray30') +
+                 scale_fill_gradient2(midpoint=1, 
+                                      low='orange', 
+                                      mid='white',
+                                      high='green') +
+                 ggtitle('Long Term Apts') +
+                 #theme(legend.position='none') +
+                 xlab('') +
+                 ylab('')
+
+  # Long term houses
+  lhpr <- ggplot(subs, 
+                 aes(x=long, y=lat, group=group, fill=lhpr)) +
+                 geom_polygon(color='gray30') +
+                 scale_fill_gradient2(midpoint=1, 
+                                      low='orange', 
+                                      mid='white',
+                                      high='green') +
+                 ggtitle('Long Term Houses') +
+                 #theme(legend.position='none') +
+                 xlab('') +
+                 ylab('')
+
+  # Short term apartments
+  sapr <- ggplot(subs, 
+                 aes(x=long, y=lat, group=group, fill=sapr)) +
+                 geom_polygon(color='gray30') +
+                 scale_fill_gradient2(midpoint=1, 
+                                      low='orange', 
+                                      mid='white',
+                                      high='green') +
+                 ggtitle('Short Term Apts') +
+                 #theme(legend.position='none') +
+                 xlab('') +
+                 ylab('')
+
+  # Short term houses
+  shpr <- ggplot(subs, 
+                 aes(x=long, y=lat, group=group, fill=shpr)) +
+                 geom_polygon(color='gray30') +
+                 scale_fill_gradient2(midpoint=1, 
+                                      low='orange', 
+                                      mid='white',
+                                      high='green') +
+                 ggtitle('Short Term Houses') +
+                 #theme(legend.position='none') +
+                 xlab('') +
+                 ylab('')
+
+ ## Make plots
+  
+  #ggMultiPlots(lhpr, lapr, shpr, sapr, cols=2)
+
+```
+
+```{r lhpr, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5}
+ lhpr
+```
+
+```{r lapr, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5}
+ lapr
+```
+
+```{r shpr, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5}
+ shpr
+```
+
+```{r sapr, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5}
+ sapr
+```
+

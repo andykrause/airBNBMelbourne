@@ -45,3 +45,11 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.html
+*.pdf
+*.nb.html
+
+abbdataprep_script.nb.html
+abbReturns_script.nb.html
+
+/**/
