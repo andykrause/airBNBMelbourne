@@ -34,7 +34,6 @@ We begin by loading the necessary libraries, set the path to the data and loadin
 
  ## Load sources
 
-  source("c:/code/datamgmttools/dataMungetools.R")
   source("c:/code/research/airbnbMelbourne/dataPrep_Functions.R")
 
 ```
