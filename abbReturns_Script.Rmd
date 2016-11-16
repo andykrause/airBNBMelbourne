@@ -256,7 +256,7 @@ Periods are inserted between relevant words for the rental data.
                         'street.latitude', 'street.longitude', 'event.date',
                         'event.price', 'property.type', 'area.size', 'bedrooms',
                         'baths', 'parking', 'has.study', 'has.courtyard',
-                        'has.balcony', 'has.aircond', 'has.garage')
+                        'has.balcony', 'has.aircond', 'has.garage', 'dom')
 
   names(listing.data) <- c('id.key', 'event.id', 'activity.id', 'address.id', 
                            'of.record',
