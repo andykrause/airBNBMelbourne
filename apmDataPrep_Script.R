@@ -9,7 +9,22 @@
   
  ## Load Data  
   
-  raw.path <- 'c:/dropbox/research/airBNB/data/raw/'
+  # Get computer names
+  comp.name <- Sys.info()['nodename']
+  
+  # Assign path based on computer name
+  if(comp.name == '7020D-121777-W' | 
+     comp.name == 'DESKTOP-1D7JO4J'){
+    
+    data.path <- 'c:/dropbox/research/airBNB/data/'
+    
+  } else {
+    
+    data.path <- 'gideon path'
+    
+  }
+  
+  raw.path <- paste0(data.path, '/raw/')
   rent16 <- read.csv(paste0(raw.path, 'rentData.csv'), header=T)
 
  ## Remove observations without sufficient keys

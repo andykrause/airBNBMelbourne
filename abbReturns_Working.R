@@ -25,7 +25,20 @@
 
  ## Set path location
 
-  data.path <- 'c:/dropbox/research/airBNB/data/'
+  # Get computer names
+  comp.name <- Sys.info()['nodename']
+
+  # Assign path based on computer name
+  if(comp.name == '7020D-121777-W' | 
+      comp.name == 'DESKTOP-1D7JO4J'){
+  
+    data.path <- 'c:/dropbox/research/airBNB/data/'
+  
+  } else {
+  
+    data.path <- 'gideon path'
+  
+  }
 
  ## Load working workspace   
   
