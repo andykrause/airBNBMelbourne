@@ -51,6 +51,8 @@
   source("c:/code/research/AirBNBMelbourne/analysis_Functions.R")
   source("c:/code/research/AirBNBMelbourne/dataPrep_Functions.R")
 
+  ltr.dataf <- rent.dataf
+  
 ### Working analysis ---------------------------------------------------------------------  
 
   exch.rate <- 1.32
@@ -90,13 +92,13 @@
   # Remove those with no revenue
   abb.dataf <- abb.dataf[!is.na(abb.dataf$revenue), ]
   
- ## Calculate rental revenues  
+ ## Calculate ltral revenues  
   
   # Calculate the actual revenue
-  rent.dataf$revenue <- rent.dataf$event.price * (52 - rent.dataf$dom/7)
+  ltr.dataf$revenue <- ltr.dataf$event.price * (52 - ltr.dataf$dom/7)
   
   # Remove those with very low revenues (due to very long DOMs)
-  rent.dataf <- rent.dataf[rent.dataf$revenue > 5000, ]
+  ltr.dataf <- ltr.dataf[ltr.dataf$revenue > 5000, ]
   
  ## Save for future costs
   
@@ -107,16 +109,16 @@
   # Re-order factors
   abb.dataf$bedbath <- factor(abb.dataf$bedbath, 
                               levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
-  rent.dataf$bedbath <- factor(rent.dataf$bedbath, 
+  ltr.dataf$bedbath <- factor(ltr.dataf$bedbath, 
                                levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
 
   # Add product as a variable
   abb.dataf$product <- paste0(substr(abb.dataf$type, 1, 1), abb.dataf$bedbath)
-  rent.dataf$product <- paste0(substr(rent.dataf$type, 1, 1), rent.dataf$bedbath)
+  ltr.dataf$product <- paste0(substr(ltr.dataf$type, 1, 1), ltr.dataf$bedbath)
 
   # Convert suburbs from factor to character
   abb.dataf$suburb <- as.character(abb.dataf$suburb)
-  rent.dataf$suburb <- as.character(rent.dataf$suburb)
+  ltr.dataf$suburb <- as.character(ltr.dataf$suburb)
 
  ## Global model
 
@@ -124,68 +126,21 @@
   # suburb fixed effects.  
  
   # Set model specifications
-  rent.mod.spec <- formula(log(event.price) ~ as.factor(bedbath) + as.factor(suburb))
+  ltr.mod.spec <- formula(log(event.price) ~ as.factor(bedbath) + as.factor(suburb))
   abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(bedbath) + as.factor(suburb))
  
- 
   
-  
-  
-  glob <- compReturns(rent.df=rent.dataf, 
-                         abb.df=abb.dataf, 
-                         rent.mod.spec=rent.mod.spec, 
-                         abb.mod.spec=abb.mod.spec,
-                         exch.rate=exch.rate,
-                         clip.field='suburb')
-   
-  
-  id.a <- which(abb.data)
-  
-  id.cc <- which(abb.dataf$sub.mrkt=='city-core')
-  id.ca <- which(rent.dataf$sub.mrkt=='city-core')
-  
-  cc <- compReturns(rent.df=rent.dataf[id.ca,], 
-                      abb.df=abb.dataf[id.cc, ], 
-                      rent.mod.spec=rent.mod.spec, 
-                      abb.mod.spec=abb.mod.spec,
-                      exch.rate=exch.rate,
-                      clip.field='suburb') 
-   
-   
-  id.rc <- which(abb.dataf$sub.mrkt=='beach')
-  id.ra <- which(rent.dataf$sub.mrkt=='beach')
-  bc <- compReturns(rent.df=rent.dataf[id.rc,], 
-                    abb.df=abb.dataf[id.rc, ], 
-                    rent.mod.spec=rent.mod.spec, 
-                    abb.mod.spec=abb.mod.spec,
-                    exch.rate=exch.rate,
-                    clip.fields=c('suburb', 'bedbath'))
-  
-  
-  
+  glob.comp <- revCompWrapper(ltr.df=ltr.dataf,
+                              abb.df=abb.dataf,
+                              ltr.mod.spec=ltr.mod.spec,
+                              abb.mod.spec=abb.mod.spec,
+                              exch.rate=exch.rate,
+                              clip.field='suburb')   
    
    
    
    
    
-   
-   
- ## Add revenue data back to all informatoin
-  
-  abb.df <- rbind.fill(lapply(abb.qtls, function(x) x$abb.df))
-  abb.df$id <- paste0('abb.', abb.df$property.id)
-  abb.df <- merge(abb.df, all.revs[,c('id', 'rent.rev', 'abb.rev', 
-                                      'act.rev', 'act.rr', 'abb.prem',
-                                      'abb.prem.act', 'abb.better',
-                                      'abb.better.act')])
-  
-  rent.df <- rbind.fill(lapply(rent.qtls, function(x) x$rent.df))
-  rent.df$id <- paste0('rent.', rent.df$id.key)
-  rent.df <- merge(rent.df, all.revs[,c('id', 'rent.rev', 'abb.rev', 
-                                      'act.rev', 'act.rr', 'abb.prem',
-                                      'abb.prem.act', 'abb.better',
-                                      'abb.better.act')])
-  
  ## 
   
   abb.imp <- tapply2DF(abb.df$abb.better, abb.df$sub.mrkt, mean)
