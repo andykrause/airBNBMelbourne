@@ -1,7 +1,8 @@
 
+### Basic engine for calculating the revenues for abb and ltr ----------------------------
 
 revenueEngine <- function(abb.df,
-                          rent.df,
+                          ltr.df,
                           rate.field='med.rate',
                           rent.field='event.price',
                           occ.field='occ.rate',
@@ -15,33 +16,22 @@ revenueEngine <- function(abb.df,
 
  ## Calculate long term rental revenues  
     
-  rent.rev <- rent.df[, rent.field] * (52 - (abb.df[ ,dom.field] /7))
+  ltr.rev <- ltr.df[, rent.field] * (52 - (ltr.df[ ,dom.field] / 7))
   
  ## Save for future costs
   
  ## Return values  
   
   return(list(abb=abb.rev,
-              rent=rent.rev))
+              ltr=ltr.rev))
   
 }
 
+### Cross impute rates and rents ---------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-crossImputeModel <- function(rent.df,
+imputeRatesRents <- function(ltr.df,
                              abb.df,
-                             rent.mod.spec,
+                             ltr.mod.spec,
                              abb.mod.spec,
                              exch.rate,
                              clip.fields=NULL)
@@ -49,9 +39,9 @@ crossImputeModel <- function(rent.df,
   
  ## Arguments
   
-  # rent.df:  data.frame of long term rental observations
+  # ltr.df:  data.frame of long term rental observations
   # abb.df:  data.frame of airbnb properties
-  # rent.mod.spec:  specification for rent price model
+  # ltr.mod.spec:  specification for rent price model
   # abb.mod.spec:  specification for airbnb properties
   # clip.field: field to ensure factors match between rent and abb
   
@@ -62,15 +52,15 @@ crossImputeModel <- function(rent.df,
     for(i.cf in 1:length(clip.fields)){
     
       # Find the fields that are used to clip
-      r.cf <- which(names(rent.df) == clip.fields[i.cf])
+      l.cf <- which(names(ltr.df) == clip.fields[i.cf])
       a.cf <- which(names(abb.df) == clip.fields[i.cf])
     
       # Get IDs for those to be removed
-      id.r <- rent.df[ ,r.cf] %in% names(table(as.character(abb.df[ ,a.cf])))
-      id.a <- abb.df[ ,a.cf] %in% names(table(as.character(rent.df[ ,r.cf])))
+      id.l <- ltr.df[ ,l.cf] %in% names(table(as.character(abb.df[ ,a.cf])))
+      id.a <- abb.df[ ,a.cf] %in% names(table(as.character(ltr.df[ ,l.cf])))
     
       # Filter out obs missing matched factors  
-      rent.df <- rent.df[id.r, ]
+      ltr.df <- ltr.df[id.l, ]
       abb.df <- abb.df[id.a, ]
     
     }
@@ -79,35 +69,89 @@ crossImputeModel <- function(rent.df,
   
  ## Build regression models for rental values
   
-  r.mod <- lm(rent.mod.spec, data=rent.df)
+  ltr.mod <- lm(ltr.mod.spec, data=ltr.df)
 
  ## Add the fitted values to the long term data
   
-  rent.df$imp.rent <- exp(r.mod$fitted)
+  ltr.df$imp.rent <- exp(ltr.mod$fitted)
 
  ## Add the predicted values to the short term data
   
-  abb.df$imp.rent <- exp(predict(r.mod, abb.df))
+  abb.df$imp.rent <- exp(predict(ltr.mod, abb.df))
 
  ## Build regression models
   
-  a.mod <- lm(abb.mod.spec, data=abb.df)
+  abb.mod <- lm(abb.mod.spec, data=abb.df)
 
  ## Add the fitted values to the long term data
   
-  abb.df$imp.rate <- exp(a.mod$fitted)
+  abb.df$imp.rate <- exp(abb.mod$fitted)
 
  ## Add the predicted values to the short term data
   
-  rent.df$imp.rate <- exp(predict(a.mod, rent.df)) * exch.rate
+  ltr.df$imp.rate <- exp(predict(abb.mod, ltr.df)) * exch.rate
 
  ## Return Values  
   
   return(list(abb=abb.df,
-              rent=rent.df,
-              abb.mod=a.mod,
-              rent.mod=r.mod))
+              ltr=ltr.df,
+              abb.mod=abb.mod,
+              ltr.mod=ltr.mod))
 }
+
+### Assign quartile values based on a give vector, weighted if necessary -----------------
+
+makeWtdQtl <- function(data.vec, 
+                       wgts=rep(1,length(data.vec)))
+{
+  
+ ## Load required library  
+  
+  require(Hmisc)
+  
+ ## Set the adjustment jitter to prevent identical breaks  
+  
+  adj.jit <- abs(mean(data.vec) / 10000)
+  
+ ## Calculate the weighted quantiles 0  to 1000  
+  
+  wtd.qtl <- Hmisc::wtd.quantile(data.vec + runif(length(data.vec), -adj.jit, adj.jit), 
+                                 weights=wgts, 
+                                 probs=seq(0, 1, .01))
+  
+ ##  Convert to a vector of quantile indicators 
+  
+  qtl.vec <- as.numeric(as.factor(cut(data.vec, 
+                                      breaks=(wtd.qtl + seq(0, 1, .01) * adj.jit))))
+  
+ ## Return value
+  
+  return(qtl.vec)
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### Calculate the Airbnb quantiles -------------------------------------------------------
 
