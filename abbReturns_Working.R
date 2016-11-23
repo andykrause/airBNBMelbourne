@@ -137,7 +137,12 @@
                               exch.rate=exch.rate,
                               clip.field='suburb')   
    
-   
+
+  glob.table <- createCompTable(glob.comp$abb, glob.comp$ltr, 'sub.mrkt')
+     
+  
+  
+  
    
    
    

@@ -307,6 +307,38 @@ revCompWrapper <- function(ltr.df,
   
 }
 
+### Create comparison table --------------------------------------------------------------
+
+createCompTable <- function(abb.df, 
+                            ltr.df,
+                            split.field=NULL){
+  
+  if(is.null(split.field)){
+    
+  } else {
+    
+    # Calculate cross-tab values
+    abb.imp <- tapply2DF(abb.df$abb.imp, abb.df[ ,split.field], mean)
+    abb.act <- tapply2DF(abb.df$abb.act, abb.df[ ,split.field], mean)
+    ltr.imp <- tapply2DF(ltr.df$abb.imp, ltr.df[, split.field], mean)
+    ltr.act <- tapply2DF(ltr.df$abb.act, ltr.df[, split.field], mean)
+    
+    # Add names
+    abb.imp$est <- ltr.imp$est <- 'imputed'
+    abb.imp$data <- abb.act$data <- 'abb'
+    ltr.act$est <- abb.act$est <- 'actual'
+    ltr.act$data <- ltr.imp$data <- 'ltr'
+    
+    # Combine into table
+    rate.table <- rbind(abb.imp, abb.act, ltr.imp, ltr.act)
+    
+  }
+  
+  ## Return Values
+  
+  return(rate.table)
+  
+}
 
 
 
