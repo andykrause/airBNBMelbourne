@@ -51,7 +51,6 @@
   source("c:/code/research/AirBNBMelbourne/analysis_Functions.R")
   source("c:/code/research/AirBNBMelbourne/dataPrep_Functions.R")
 
-
 ### Working analysis ---------------------------------------------------------------------  
 
   exch.rate <- 1.32
@@ -129,6 +128,9 @@
   abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(bedbath) + as.factor(suburb))
  
  
+  
+  
+  
   glob <- compReturns(rent.df=rent.dataf, 
                          abb.df=abb.dataf, 
                          rent.mod.spec=rent.mod.spec, 

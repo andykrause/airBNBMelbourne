@@ -1,4 +1,44 @@
 
+
+revenueEngine <- function(abb.df,
+                          rent.df,
+                          rate.field='med.rate',
+                          rent.field='event.price',
+                          occ.field='occ.rate',
+                          dom.field='dom',
+                          cost.list=NULL)
+{
+  
+ ## Calculate Airbnb Revenues  
+  
+  abb.rev <- abb.df[ ,rate.field] * 365 * abb.df[ ,occ.field]
+
+ ## Calculate long term rental revenues  
+    
+  rent.rev <- rent.df[, rent.field] * (52 - (abb.df[ ,dom.field] /7))
+  
+ ## Save for future costs
+  
+ ## Return values  
+  
+  return(list(abb=abb.rev,
+              rent=rent.rev))
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 crossImputeModel <- function(rent.df,
                              abb.df,
                              rent.mod.spec,
