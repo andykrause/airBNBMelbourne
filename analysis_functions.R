@@ -433,7 +433,8 @@ makeHeatMap <- function(hm.data,
                         x.field,
                         y.field,
                         alpha.field,
-                        bins=c(10, 10)){
+                        bins=c(10, 10),
+                        add.points=FALSE){
   
   
   hm.data$x.var <- hm.data[ ,x.field]
@@ -441,12 +442,18 @@ makeHeatMap <- function(hm.data,
   hm.data$fill.var <- hm.data[ ,alpha.field]  
   
   hm.plot <- ggplot(data=hm.data,
-                    aes(x=x.var, y=y.var)) +
+                    aes(x=x.var, y=y.var))
+  if(add.points){
+    hm.plot <- hm.plot + geom_point(size=.1, color='gray50') 
+  }
+  
+  hm.plot <- hm.plot + 
     stat_bin2d(data=hm.data,
                aes(alpha=..count.., fill=as.factor(fill.var)),
                binwidth=bins) +
-    scale_fill_manual(values=c('red', 'forestgreen'))
-  
+   scale_fill_manual(values=c('red', 'forestgreen'))
+ 
+   
   return(hm.plot)
   
 }
@@ -539,7 +546,8 @@ fullMarketAnalysis <- function(ltr.df,
                               x.field='occ.rate',
                               y.field='med.rate',
                               alpha.field='abb.act',
-                              bins=c(.05, 30))
+                              bins=c(.05, 30),
+                              add.points=TRUE)
   
  ## Calculate the overall market score
   
