@@ -332,6 +332,16 @@ createCompTable <- function(abb.df,
     # Combine into table
     rate.table <- rbind(abb.imp, abb.act, ltr.imp, ltr.act)
     
+    # Reorder factors
+    if(split.field == 'sub.mrkt'){
+    
+      rate.table$ID <- factor(rate.table$ID, 
+                              levels=c('city-core', 'city', 'beach',
+                                       'suburban', 'rural'))
+        
+    }
+    
+    
   }
   
   ## Return Values
@@ -340,40 +350,216 @@ createCompTable <- function(abb.df,
   
 }
 
+### Creating preference plots ------------------------------------------------------------  
+
+makePrefPlot <- function(pref.data,
+                         x.field,
+                         y.field,
+                         group.field,
+                         metric='mean',
+                         cumulative=FALSE,
+                         smooth=FALSE,
+                         smooth.span=.15){
+  
+  
+  ## Fixing some variables
+  
+  if(x.field == 'occ.rate'){
+    
+    pref.data[, x.field] <- round(100 * pref.data[, x.field], 0)
+    
+  }
+  
+  
+ ## Extract function of analysis
+  
+  metric.fnct <- get(metric)
+  
+ ## Set up capture list
+  
+  pref.list <- list()
+  
+ ## Loop through and create the preference plots  
+  
+  for(i.pl in 1:100){
+    
+    # Extract the ith data
+    if(cumulative){
+      pref.df <- pref.data[pref.data[,x.field] >= i.pl, ]
+    } else {
+      pref.df <- pref.data[pref.data[,x.field] == i.pl, ]
+    }
+    
+    # Create the table
+    pref.table <- tapply2DF(pref.df[ ,y.field], 
+                            pref.df[ ,group.field],
+                            metric.fnct)
+    
+    # Add the x variable
+    pref.table$x.var <- i.pl
+    
+    # Add to the capture list
+    pref.list[[i.pl]] <- pref.table
+    
+  }
+  
+ ## Convert to a data.frame  
+  
+  pref.full <- rbind.fill(pref.list)
+  
+ ## Creat the base plot  
+  
+  pref.plot <- ggplot(pref.full,
+                      aes(x=x.var, y=Var, group=ID, color=ID))
+  
+ ## Add lines  
+  
+  if(smooth){
+    pref.plot <- pref.plot + stat_smooth(se=FALSE, size=2, 
+                                         span=smooth.span)
+  } else {
+    pref.plot <- pref.plot + geom_line()
+  }
+  
+ ## Return Values
+  
+  return(pref.plot)
+  
+}
+
+### Create heatmaps of profitability -----------------------------------------------------
+
+makeHeatMap <- function(hm.data,
+                        x.field,
+                        y.field,
+                        alpha.field,
+                        bins=c(10, 10)){
+  
+  
+  hm.data$x.var <- hm.data[ ,x.field]
+  hm.data$y.var <- hm.data[ ,y.field]
+  hm.data$fill.var <- hm.data[ ,alpha.field]  
+  
+  hm.plot <- ggplot(data=hm.data,
+                    aes(x=x.var, y=y.var)) +
+    stat_bin2d(data=hm.data,
+               aes(alpha=..count.., fill=as.factor(fill.var)),
+               binwidth=bins) +
+    scale_fill_manual(values=c('red', 'forestgreen'))
+  
+  return(hm.plot)
+  
+}
+
+### Calculate the full market score ------------------------------------------------------
+
+calcMarketScore <- function(mrkt.data,
+                            calc.field){
+  
+  bin.count <- table(paste0(round(mrkt.data$rate.qtl, -1), ".", 
+                            round(mrkt.data$occ.qtl, -1)),
+                     mrkt.data[,calc.field])
+  
+  bin.dif <-(bin.count[ ,2] - bin.count[ ,1])
+  mrkt.value <- length(which(bin.dif > 0)) / length(bin.dif)
+  
+  return(mrkt.value)
+}
+
+### Full market analysis wrapper ---------------------------------------------------------
+
+fullMarketAnalysis <- function(ltr.df,
+                               abb.df,
+                               ltr.mod.spec,
+                               abb.mod.spec,
+                               exch.rate,
+                               clip.field
+)
+{  
+  
+ ## Make comparison between two markets  
+  
+  mrkt.comp <- revCompWrapper(ltr.df=ltr.df,
+                              abb.df=abb.df,
+                              ltr.mod.spec=ltr.mod.spec,
+                              abb.mod.spec=abb.mod.spec,
+                              exch.rate=exch.rate,
+                              clip.field='suburb')   
+  
+  
+ ## Make a simple table of comparison
+  
+  mrkt.table <- createCompTable(mrkt.comp$abb, mrkt.comp$ltr, 'sub.mrkt')
+  
+ ## make basic 2x2 comparison
+  
+  twotwo.bar.plot <- ggplot(mrkt.table, aes(x=ID, weights=Var, fill=ID)) + 
+    geom_bar() +
+    facet_grid(data ~ est)
+  
+ ## Preferred option by occupancy rate
+  
+  rawocc.pplot <- makePrefPlot(mrkt.comp$abb,
+                               x.field='occ.rate',
+                               y.field='abb.act',
+                               group.field='sub.mrkt',
+                               smooth=TRUE,
+                               smooth.span=.35)
+  
+ ## Add the quantile location
+  
+  mrkt.comp$abb$occ.qtl <- makeWtdQtl(mrkt.comp$abb$occ.rate, 
+                                      return.type='rank') 
+  
+ ## Make quartile location plot
+  
+  qtlocc.pplot <- makePrefPlot(mrkt.comp$abb,
+                               x.field='occ.qtl',
+                               y.field='abb.act',
+                               group.field='sub.mrkt',
+                               smooth=TRUE,
+                               smooth.span=.35)
+  
+ ## Add the rate quartle location   
+  
+  mrkt.comp$abb$rate.qtl <- makeWtdQtl(mrkt.comp$abb$med.rate, 
+                                       return.type='rank') 
+  
+ ## Make quartile heat map  
+  
+  qtl.heatmap <- makeHeatMap(mrkt.comp$abb,
+                             x.field='occ.qtl',
+                             y.field='rate.qtl',
+                             alpha.field='abb.act',
+                             bins=c(5,5))
+  
+ ## Make the rate heatmap  
+  
+  rate.heatmap <- makeHeatMap(mrkt.comp$abb,
+                              x.field='occ.rate',
+                              y.field='med.rate',
+                              alpha.field='abb.act',
+                              bins=c(.05, 30))
+  
+ ## Calculate the overall market score
+  
+  market.score <- calcMarketScore(mrkt.comp$abb,
+                                  calc.field='abb.act')
+  
+ ## Return values
+  
+  return(list(ltr=mrkt.comp$ltr,
+              abb=mrkt.comp$abb,
+              mrkt.table=mrkt.table,
+              plot.2.2=twotwo.bar.plot,
+              rawocc.plot=rawocc.pplot,
+              qtlocc.plot=qtlocc.pplot,
+              qtl.hm=qtl.heatmap,
+              rate.hm=rate.heatmap,
+              mrkt.score=market.score))
+}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ### Calculate the revenues for each product mix ------------------------------------------
-# 
-# imputeRevenues <- function(abb.qtls,
-#                            rent.qtls,
-#                            mrkt.occ=FALSE,
-#                            mrkt=NULL){
-#   
-#  ## Strip out property data  
-#   
-#   abb.df <- abb.qtls$abb.df
-#   rent.df <- rent.qtls$rent.df
-#   
-#  ## Strip out quantile data  
-#   
-#   occ.qtl <- abb.qtls$occ.qtl
-#   dom.qtl <- rent.qtls$dom.qtl
-#   
-#  ## If using market based occupancy rates  
-#   
 #   if(mrkt.occ){
 #     
 #     market <- abb.df[,mrkt]
@@ -389,174 +575,3 @@ createCompTable <- function(abb.df,
 #                                                    market.df$market)]
 #   }
 #   
-#  ## Estimate airbnb properties (rents and rates)  
-#   
-#   abb.df$rent.rev <- abb.df$imp.rent * (52 - (dom.qtl[51]/7))
-#   
-#   if(mrkt.occ){
-#     abb.df$abb.rev <- abb.df$imp.rate * 365 * abb.df$market.occ
-#   } else {
-#     abb.df$abb.rev <- abb.df$imp.rate * 365 * occ.qtl[51]
-#   }  
-#   
-#  ## Estimate long term properties (rent and rates)  
-#   
-#   rent.df$rent.rev <- rent.df$imp.rent * (52 - (dom.qtl[51]/7))
-#   
-#   if(mrkt.occ){
-#     rent.df$abb.rev <- rent.df$imp.rate * 365 * rent.df$market.occ
-#   } else {
-#     rent.df$abb.rev <- rent.df$imp.rate * 365 * occ.qtl[51]
-#   }
-#   
-#  ## Save for future cost estimates
-# 
-#  ## Return Values
-#   
-#   return(list(abb=abb.df,
-#               rent=rent.df))
-# }
-# 
-# ### Full return comparison function ------------------------------------------------------
-# 
-# compReturns <- function(rent.df=rent.dataf, 
-#                         abb.df=abb.dataf, 
-#                         rent.mod.spec=rent.mod.spec, 
-#                         abb.mod.spec=abb.mod.spec,
-#                         exch.rate=exch.rate,
-#                         comp.field='sub.mrkt',
-#                         clip.fields='suburb'){  
-#   
-#  ## Arguments
-#   
-#   # rent.df: data.frame of rental obs
-#   # abb.df: data.frame of airbnb obs
-#   # rent.mod.spec: rental data model specification
-#   # abb.mod.spec: airbnb model specification
-#   # exch.rate: A$ in US$
-#   # clip.fields: fields that are factors in the model specifications
-#   
-#  ## Impute rates and rents 
-#   
-#   imp.data <- crossImputeModel(rent.df=rent.df, 
-#                                abb.df=abb.df, 
-#                                rent.mod.spec=rent.mod.spec, 
-#                                abb.mod.spec=abb.mod.spec,
-#                                exch.rate=exch.rate,
-#                                clip.fields=clip.fields)
-#   
-#  ## Calculate market occ and rate quantiles
-#   
-#   # Calculate Rate/Rent/OccRate/DOM Quantiles
-#   abb.qtls <- calcABBQtls(imp.data$abb)
-#   rent.qtls <- calcRentQtls(imp.data$rent)  
-#   
-#  ## Calculate the revenues
-#   
-#   rev.data <- imputeRevenues(abb.qtls=abb.qtls, 
-#                              rent.qtls=rent.qtls)
-#   
-#  ## Compare ABB to Rent
-#   
-#   # Abb
-#   abb.df <-rev.data$abb
-#   abb.df$abb.prem <- abb.df$abb.rev - abb.df$rent.rev
-#   abb.df$abb.prem.act <- abb.df$revenue - abb.df$rent.rev
-#   abb.df$abb <- ifelse(abb.df$abb.prem > 0, 1, 0)
-#   abb.df$abb.act <- ifelse(abb.df$abb.prem.act > 0, 1, 0)
-#   
-#   # Rent
-#   rent.df <-rev.data$rent
-#   rent.df$abb.prem <- rent.df$abb.rev - rent.df$rent.rev
-#   rent.df$abb.prem.act <- rent.df$abb.rev - rent.df$revenue
-#   rent.df$abb <- ifelse(rent.df$abb.prem > 0, 1, 0)
-#   rent.df$abb.act <- ifelse(rent.df$abb.prem.act > 0, 1, 0)
-#   
-#   # Make table of comparisons
-#   abb.imp <- tapply2DF(abb.df$abb, abb.df[,comp.field], mean)
-#   abb.act <- tapply2DF(abb.df$abb.act, abb.df[,comp.field], mean)
-#   rent.imp <- tapply2DF(rent.df$abb, rent.df[,comp.field], mean)
-#   rent.act <- tapply2DF(rent.df$abb.act, rent.df[,comp.field], mean)
-#   abb.imp$est <- rent.imp$est <- 'imputed'
-#   abb.imp$data <- abb.act$data <- 'abb'
-#   rent.act$est <- abb.act$est <- 'actual'
-#   rent.act$data <- rent.imp$data <- 'rent'
-#   rate.table <- rbind(abb.imp, abb.act, rent.imp, rent.act)
-#   
-#  ## Plot comparisons
-#   
-#   # Across all data and est
-#   rate.plot <- ggplot(rate.table, aes(x=ID, weights=Var)) + geom_bar() +
-#     facet_grid(data ~ est)
-#   
-#   # Just actual AirBNB
-#   act.plot <- ggplot(rate.table[rate.table$data == 'abb' & rate.table$est == 'actual', ],
-#                      aes(x=ID, weights=Var)) + 
-#     geom_bar() 
-#   
-#   
-#   q.list <- list()
-#   abb.df$oc <- round(abb.df$occ.rate, 2)
-#   for(q in 1:100){
-#     
-#     aa <- abb.df[abb.df$oc == q/100, ]
-#     x.act <- tapply2DF(aa$abb.act, aa$sub.mrkt, mean)
-#     x.act$qtl <- q
-#     q.list[[q]] <- x.act
-#     
-#   }
-#   
-#   jj <- rbind.fill(q.list)
-#   occ.plot <- ggplot(jj, aes(x=qtl, y=Var, group=ID, color=ID)) + 
-#     geom_point() + 
-#     stat_smooth(se=F,span=.66, n=222)
-#   
-#   
-#   q.list <- list()
-#   #abb.df$oc <- round(abb.df$occ.rate, 2)
-#   for(q in 1:100){
-#     
-#     aa <- abb.df[abb.df$rate.qtl == q, ]
-#     x.act <- tapply2DF(aa$abb.act, aa$sub.mrkt, mean)
-#     x.act$qtl <- q
-#     q.list[[q]] <- x.act
-#     
-#   }
-#   
-#   jj <- rbind.fill(q.list)
-#   price.plot <- ggplot(jj, aes(x=qtl, y=Var, group=ID, color=ID)) + 
-#     geom_point() + 
-#     stat_smooth(se=F,span=.66, n=222)
-#   
-#   point.plot <- ggplot(data = abb.df,
-#                        aes(x = occ.qtl,
-#                            y = rate.qtl,
-#                            color=as.factor(abb.act))) +
-#     geom_point()
-#   
-#   heat.map <- ggplot(data = abb.df,
-#                      aes(x = occ.qtl,
-#                          y = rate.qtl)) + 
-#     stat_bin2d(data=abb.df, aes(alpha=..count.., fill=as.factor(abb.act)),
-#                binwidth=c(10, 10))
-#   
-#   a<- table(paste0(round(abb.df$rate.qtl, -1), 
-#                    ".", 
-#                    round(abb.df$occ.qtl, -1)),
-#             abb.df$abb.act)
-#   c<-(a[,2]-a[,1])
-#   ab <- length(which(c>0))/length(c)
-#   re <- length(which(c<0))/length(c)
-#   market.value <- ab/re
-#   
-#   return(list(market.value=market.value,
-#               abb=abb.df,
-#               rent=rent.df,
-#               rate.plot=rate.plot,
-#               occ.plot=occ.plot,
-#               point.plot=point.plot,
-#               price.plot=price.plot,
-#               heat.map=heat.map
-#   ))
-#   
-# }   
