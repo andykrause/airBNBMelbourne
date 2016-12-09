@@ -42,7 +42,7 @@
 
  ## Load working workspace   
   
-  load("C:/Dropbox/Research/airBNB/data/analyzed/abb_working.RData")
+  load(paste0(data.path, '/analyzed/abb_working.RData'))
   
  ## Load sources (custom function files)
 
