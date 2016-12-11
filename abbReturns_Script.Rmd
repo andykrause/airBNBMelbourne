@@ -174,17 +174,9 @@ And, finally, we load three GIS shapefiles.  The first two denote suburb and Sta
 
 ```
 
-
-
-
-
-
-
-
-
 &nbsp;
 
-## Data Cleaning and Preparation
+## Data Preparation
 
 &nbsp;
 
@@ -192,7 +184,7 @@ In this section we remove, convert and/or transform a number of data fields.  We
 
 &nbsp;
 
-### Trim Fields
+### Trim and Standardize Fields
 
 &nbsp;
 
@@ -200,17 +192,17 @@ We start by converting all field names to lower case to simplify future coding. 
 
 ```{r lower_names, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
- ## Short term data  
+ # Short term data  
   
   names(abb.data) <- tolower(names(abb.data))
   names(daily.data) <- tolower(names(daily.data))
   
- ## Long term data  
+ # Long term data  
   
   names(ltr.data) <- tolower(names(ltr.data))
   names(listing.data) <- tolower(names(listing.data))
   
- ## Geographic data  
+ # Geographic data  
   
   names(sa1s.shp@data) <- tolower(names(sa1s.shp@data))
   names(suburbs.shp@data) <- tolower(names(suburbs.shp@data))
@@ -222,9 +214,7 @@ The data contain many fields that are either not fully observed and/or are not r
 We start by trimming the property-level short term data.  No fields need to be removed from the daily data. 
   
 ```{r trim_st, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-  
- ## Property Data
-  
+
   abb.keep.flds <- c('property.id', 'host.id', 'listing.title', 'property.type',
                      'listing.type', 'created.date', 'latitude', 'longitude',
                      'last.scraped.date', 'average.daily.rate', 'overall.rating',
@@ -234,16 +224,14 @@ We start by trimming the property-level short term data.  No fields need to be r
                      'bedrooms', 'bathrooms', 'min.date', 'max.date', 'total.days',
                      'blocked.days', 'available.days', 'created.year') 
   
-  abb.data <- abb.data[ , abb.keep.flds]
+  abb.data <- abb.data[, abb.keep.flds]
 
 ```
 
 We then limit the fields of the long-term property-specific data
 
 ```{r trim_lt, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-  
- ## Long term property Data
-  
+
   ltr.keep.flds <- c('id.key', 'geographicalid', 'eventid', 'addressid', 'activityid',
                       'flatnumber', 'streetnumber', 'streetname', 'streettype', 
                       'suburb', 'postcode', 'property_latitude',
@@ -253,23 +241,14 @@ We then limit the fields of the long-term property-specific data
                       'hasstudy', 'hascourtyard', 'hasbalcony', 'hasairconditioning',
                       'hasgarage', 'dom') 
   
-<<<<<<< HEAD
-  ltr.data <- ltr.data[ ,ltr.keep.flds]
-=======
-  ltr.data <- ltr.data[ , ltr.keep.flds]
->>>>>>> origin/master
+
+  ltr.data <- ltr.data[,ltr.keep.flds]
   
 ```
 
-&nbsp;
+Next we standardize the field names.  Here we follow the short-term data convention of placing a period between words in the name.  We also shorten a number of the fields to make future coding easier.  
 
-### Standardize Field Names
-
-&nbsp;
-
-Next we standardize the field names.  Here we follow the short-term data convention of placing a period between words in the name.  We also shorten a number of the fields to make future coding easier.  No changes are made to the monthly or daily data.
-
-For the short term data, it already uses the *word-.-word* convention.  Here our renaming is done to shorten certain field names. 
+For the short term data, it already uses the *word-.-word* convention.  Here our renaming is done to shorten certain field names. No changes are made to the names of the Airbnb daily data. 
 
 ```{r rename_st, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
@@ -303,6 +282,11 @@ Periods are inserted between relevant words for the ltral data.
                            'event.type')
 
 ```
+
+
+
+
+
 
 &nbsp;
 
