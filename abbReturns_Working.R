@@ -42,7 +42,7 @@
 
  ## Load working workspace   
   
-  load("C:/Dropbox/Research/airBNB/data/analyzed/abb_working.RData")
+  load(paste0(data.path, '/analyzed/abb_working.RData'))
   
  ## Load sources (custom function files)
 
@@ -53,7 +53,11 @@
 
 ### Working analysis ---------------------------------------------------------------------  
 
+<<<<<<< HEAD
 ### Comparison
+=======
+
+>>>>>>> origin/master
 
  ## Global model
 
@@ -64,6 +68,8 @@
   ltr.mod.spec <- formula(log(event.price) ~ as.factor(bedbath) + as.factor(suburb))
   abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(bedbath) + as.factor(suburb))
  
+  
+  
   glob <- fullMarketAnalysis(ltr.df=ltr.dataf,
                              abb.df=abb.dataf,
                              ltr.mod.spec=ltr.mod.spec,
@@ -71,15 +77,30 @@
                              exch.rate=exch.rate,
                              clip.field='suburb')
   
-  aa <- which(ltr.dataf$sub.mrkt=='city-core')
-  bb <- which(abb.dataf$sub.mrkt=='city-core')
-
-  beach <- fullMarketAnalysis(ltr.df=ltr.dataf[aa,],
-                             abb.df=abb.dataf[bb, ],
-                             ltr.mod.spec=ltr.mod.spec,
-                             abb.mod.spec=abb.mod.spec,
-                             exch.rate=exch.rate,
-                             clip.field='suburb')
+  ltr.type <- split(ltr.dataf, ltr.dataf$type)
+  abb.type <- split(abb.dataf, abb.dataf$type)
+  
+  apt <- fullMarketAnalysis(ltr.df=ltr.type[[1]],
+                            abb.df=abb.type[[1]],
+                                 ltr.mod.spec=ltr.mod.spec,
+                                 abb.mod.spec=abb.mod.spec,
+                                 exch.rate=exch.rate,
+                                 clip.field='suburb')
+  
+  
+  house <- fullMarketAnalysis(ltr.df=ltr.type[[2]],
+                              abb.df=abb.type[[2]],
+                              ltr.mod.spec=ltr.mod.spec,
+                              abb.mod.spec=abb.mod.spec,
+                              exch.rate=exch.rate,
+                              clip.field='suburb')
+  
+  ggplot(glob$abb, aes(x=longitude, y=latitude)) + 
+    geom_point(size=.1) + 
+    stat_bin2d(data=apt$abb, aes(alpha=..count.., fill=as.factor(abb.act)), 
+               binwidth=c(.005,.005)) + 
+    coord_cartesian(xlim=c(144.95,145.05), ylim=c(-37.75,-37.95))
   
   
   
+  ggplot(glob$abb, aes(x=longitude, y=latitude)) + geom_point(size=.1) + stat_bin2d(data=apt$abb, aes(alpha=..count.., fill=as.factor(abb.act)), binwidth=c(.005,.005)) + coord_cartesian(xlim=c(144.95,145.05), ylim=c(-37.75,-37.95))
