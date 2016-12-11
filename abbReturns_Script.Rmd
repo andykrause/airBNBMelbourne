@@ -3,8 +3,8 @@ title: "Should I AirBNB My Property?"
 author: "Andy Krause and Gideon Aschwanden"
 date: "1 November 2016"
 output:
-  pdf_document: default
   html_notebook: default
+  pdf_document: default
 ---
 
 &nbsp;
@@ -82,7 +82,7 @@ Next, we source the necessary custom code files for the analysis.
   
 ```
 
-Finally, we set the constants used in this study:
+We then set the constants used in this study:
 
 1. **Exchange rate**: The Airbnb rates are provided in US dollars.  We convert these to Australian dollars based on the average exchange rate over the Sep 1 2015 to Aug 30 2015 period, or about 1.32 Australian dollars to 1 US dollar.
 
@@ -92,11 +92,9 @@ Finally, we set the constants used in this study:
 
 ```
 
-
+Finally, we set the color to be used in the analysis.  We use AirBnb's official palette of 10 colors.
 
 ```{r set_colors, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
-
- ## Set basic color to use in palettes  
 
   abb.colors.names=c('rausch', 'hackberry', 'kazan', 'babu', 'lima', 'beach',
                      'ebisu', 'tirol', 'foggy', 'hof')
@@ -106,18 +104,8 @@ Finally, we set the constants used in this study:
                rgb(249,177,139, maxColorValue=255), rgb(191,166,100, maxColorValue=255),
                rgb(156,161,155, maxColorValue=255), rgb(86,94,97, maxColorValue=255))
 
-  sm.col <- abb.col[c(1, 3, 6, 5, 2)]
   
 ```
-
-Airbnb data in US dollars, so we must set an exchange rate.  Average of that period was 1.32 Australian dollars to US dollars. 
-
-```{r exch_rate, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
-
-  exch.rate <- 1.32
-
-```
-
 
 &nbsp;
 
@@ -125,7 +113,7 @@ Airbnb data in US dollars, so we must set an exchange rate.  Average of that per
 
 &nbsp;
 
-Both the AirBNB and the ltral data require some measure of data pre-processing and due to the run times of these function they are done outside of this document.  For the AirBNB data, the pre-processing is primarily concerned with imputing missing daily observations for a small number of properties in the dataset.  Full information on this process can be found in the **airbnbDataClean.Rmd** and **dataCleanFunctions.R** files.  Do note that most of the imputed data is ignored by our choice of study time period later on.  
+Both the AirBNB and the long term rental data require some measure of data pre-processing and due to the run times of these processes they are done outside of this document.  For the AirBNB data, the pre-processing is primarily concerned with imputing missing daily observations for a small number of properties in the dataset.  Full information on this process can be found in the **airbnbDataClean.Rmd** and **dataCleanFunctions.R** files.  Do note that most of the imputed data is ignored by our choice of study time period.
 
 The long term data received from the data provider is both wide and long and very inefficiently stored.  To aid in computation time, the pre-processing involves the trimming of fields, labeling of observation types and reconfiguration of data and can be found in the **fixAPMData.R** script. 
 
@@ -135,8 +123,7 @@ The long term data received from the data provider is both wide and long and ver
 
 &nbsp;
 
-Next we load in the raw data.  The short-term data is found in two separate files, one providing information on the property itself data and one providing a daily record of bookings.  
-
+Next we load in the raw data.  The Airbnb data is found in two separate files, one providing information on the property itself and one providing a daily record of bookings.  
 ```{r load_abb_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   # Property Information
@@ -149,43 +136,51 @@ Next we load in the raw data.  The short-term data is found in two separate file
 
 ```
 
-We then load the long term ltral data.  This includes property level data (including the final lease rate) and listing-level data containing information on all changes to listing prices and dates, etc. 
+We then load the long term rental data.  This includes property level data (including the final lease rate) and listing-level data containing information on all changes to listing prices and dates, etc. 
 
 ```{r load_ltr_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- ## Property level long term ltral information
+ # Property level long term ltral information
 
   ltr.data <- read.csv(paste0(data.path, '/prepared/ltpropdata.csv'), header=T)
 
- ## Long term ltral listing information
+ # Long term ltral listing information
 
   listing.data <- read.csv(paste0(data.path, '/prepared/ltlistdata.csv'), header=T)
 
 ```
 
-And, finally, we load two GIS shapefiles that denote suburb and Statistical Area 1 (sa1) boundaries in the Melbourne area. We also load a shapefile that contains the location of the beach areas along Port Phillip Bay.^[Only those east of the mouth of Yarra River.]
+And, finally, we load three GIS shapefiles.  The first two denote suburb and Statistical Area 1 (sa1) boundaries in the Melbourne area. We also load a shapefile that contains the location of the beach areas along Port Phillip Bay.^[Only those east of the mouth of Yarra River as those to the west are primarily industrial land.]
 
 ```{r load_sp_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- ## SA1 shapefile
-
-  sa1s.shp <- readShapePoly(paste0(data.path, 'geographic/sa1s.shp'),
-                            proj4string=CRS("+init=epsg:4283"),
-                            delete_null_obj=TRUE)
-
-  ## Suburb shapefile
+  # Suburb shapefile
 
   suburbs.shp <- readShapePoly(paste0(data.path, 'geographic/melbSuburbs.shp'),
                                proj4string=CRS("+init=epsg:4283"),
                                delete_null_obj=TRUE)
 
-  ## Beach file
+  # SA1 shapefile
+
+  sa1s.shp <- readShapePoly(paste0(data.path, 'geographic/sa1s.shp'),
+                            proj4string=CRS("+init=epsg:4283"),
+                            delete_null_obj=TRUE)
+
+  # Beach file
 
   beach.shp <- readShapePoly(paste0(data.path, 'geographic/portPhillipBeach.shp'),
                              proj4string=CRS("+init=epsg:4283"),
                              delete_null_obj=TRUE)
 
 ```
+
+
+
+
+
+
+
+
 
 &nbsp;
 
@@ -637,6 +632,10 @@ We assign these designations by: 1) Adding suburb designations to the properties
 ```
 
 ```{r abb.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+
+
+  sm.col <- abb.col[c(1, 3, 6, 5, 2)]
 
   # Make map
   abb.map <- ggplot() +
