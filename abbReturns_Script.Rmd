@@ -276,52 +276,46 @@ Periods are inserted between relevant words for the ltral data.
                         'has.balcony', 'has.aircond', 'has.garage', 'dom')
 
   names(listing.data) <- c('id.key', 'event.id', 'activity.id', 'address.id', 
-                           'of.record',
-                           'event.date', 'event.price', 'first.adv.date', 
+                           'of.record', 'event.date', 'event.price', 'first.adv.date', 
                            'first.adv.price', 'last.adv.date', 'last.adv.price',
                            'event.type')
 
 ```
 
+&nbsp;
 
-
-
-
+### Temporal Considerations
 
 &nbsp;
 
-### Field Conversions
-
-&nbsp;
-
-Below we convert and coalate a number of the temporal and spatial variables. 
+Below we rename, transform and filter our data to fit the time period appropriate to our research question.  
 
 &nbsp;
 
 #### Convert Time Variables
 
-We convert time variables across all dataset to an R date format.  For the AirBNB data this is a relatively straighforword process as the data are already standardized into a consistant date representation. We also create a year variable.
+We convert time variables across all dataset to an R date format.  For the AirBNB data this is a relatively straighforword process as the data are already standardized into a consistant date representation. We fix dates in both the property and the daily data. 
 
 ```{r fix_st_time, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- ## Property Data Fields
+  # Property Data Fields
 
   abb.data$created.date <- as.Date(abb.data$created.date)
   abb.data$last.scraped.date <- as.Date(abb.data$last.scraped.date)
   abb.data$min.date <- as.Date(abb.data$min.date)
   abb.data$max.date <- as.Date(abb.data$max.date)
   
-  ## Daily Data  
+  # Daily Data  
 
   daily.data$date <- as.Date(daily.data$date)
 
 ```
 
-The dates in the long term data are not standardized.  To fix this issue we create a small function that will remove the unnecessary digits and spaces and then convert to a standard date form.  We then apply this formula to the three date fields in the long term data.  We also create a year field for the event date. 
+The dates in the long term data are not standardized.  To fix this issue we create a small function that will remove the unnecessary digits and spaces and then convert to a standard date form.  We then apply this formula to the three date fields in the long term data (both listing and rental).  We also create a year field for the event date. 
 
 ```{r fix_lt_time, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- ## Build custom function  
+ # Build custom function  
 
   fixLTDates <- function(x){
     temp.date <- as.character(x)
@@ -330,20 +324,59 @@ The dates in the long term data are not standardized.  To fix this issue we crea
     return(as.Date(temp.date, "%d/%m/%y"))   
   }
 
- ## Convert event date  
+  # Convert event date  
 
-  # Date
   ltr.data$event.date <- fixLTDates(ltr.data$event.date)
 
-  # Year
+  # Extract Year of event date
   ltr.data$event.year <- as.numeric(substr(ltr.data$event.date, 1, 4))
 
- ## Converted list data date fields  
+  # Converted listing data date fields  
 
   listing.data$first.adv.date <- fixLTDates(listing.data$first.adv.date)
   listing.data$last.adv.date <- fixLTDates(listing.data$last.adv.date)
 
 ```
+
+#### Trim by Time
+
+Next we trim the observations by time.  Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term rental versus an AirBNB, short term rental approach to generating income.  To determine the likely long term rental rate for any given property, we will use the observed rental transactions from the market from September 1, 2014 to August 31, 2015.  Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.  Another reason for using these two period of data is that the AirBNB data has missing daily values prior to September 1, 2015.  While we have imputed these missing daily observations, we hold the actual observed values to be of greater accuracy and have designed the initial simulated example to take advantage of the full observed set. 
+
+```{r clip_time, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+ ## Limit short term data
+
+  abb.data <- abb.data[abb.data$min.date >= '2015-09-01', ]
+  daily.data <- daily.data[daily.data$date >= '2015-09-01', ]
+
+ ## Limit long term data  
+  
+  ltr.data <- ltr.data[ltr.data$event.date >= '2014-09-01' & 
+                            ltr.data$event.date <= '2015-08-31', ]
+  listing.data <- listing.data[listing.data$id.key %in% ltr.dataf$id.key, ]
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 &nbsp;
 
@@ -438,24 +471,7 @@ As long-term ltrals do not offer **Private Room** or **Shared Room** options and
 ```
 
 
-### Trim by Time
 
-Next we trim the observations by time.  Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term ltral versus an AirBNB, short term ltral approach to generating income.  To determine the likely long term ltral rate for any given property, we will use the observed ltral transactions from the market from September 1, 2014 to August 31, 2015.  Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factor).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.  Another reason for using these two period of data is that the AirBNB data has missing daily values prior to September 1, 2016.  While we have imputed these missing daily observations, we hold the actual observed values to be of greater accuracy and have designed the initial simulated example to take advantage of the full observed set. 
-
-```{r clip_time, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
-
- ## Limit short term data
-
-  abb.dataf <- abb.data[abb.data$min.date >= '2015-09-01', ]
-  daily.dataf <- daily.data[daily.data$date >= '2015-09-01', ]
-
- ## Limit long term data  
-  
-  ltr.dataf <- ltr.data[ltr.data$event.date >= '2014-09-01' & 
-                            ltr.data$event.date <= '2015-08-31', ]
-  listing.dataf <- listing.data[listing.data$id.key %in% ltr.dataf$id.key, ]
-
-```
 
 ### Locations and Submarkets
 
