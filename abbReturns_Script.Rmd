@@ -15,15 +15,9 @@ output:
 
 This document is the literate programming of our analysis for the 'Should I AirBNB My Property?' research project.  Below we document the complete data provenance, taking our data from the raw source data through to the final results. Data prepartion, modeling and visualization will be done in R (version 3.3.1). As a very brief overview, we will be comparing the financial returns of short-term (AirBNB-type) and long-term (traditional leases) leasing of residential properties in Melbourne, Australia.  We perform this comparison under a hypothetical condition where-in an investor purchases a property on Septemeber 1, 2015 and is looking to determine whether to lease out the property on a traditional long-term lease (12 months) or nightly as an AirBNB property.  We examine the returns for the following 12 months.  Sensitivity to time frames, start dates, locations, property types, etc. are considered in this analysis as well. 
 
-<<<<<<< HEAD
 Data on AirBNB (short-term) rentals have been purchased from www.airdna.co, a data provider specializing in AirBNB data collection and analysis. The data on long-term leases was provided by Australia Property Monitors (APM), a Fairfax Group company. 
 
 Throughout this document we will refer to the short-term data as **'short-term'** or **'AirBNB'** while the long-term data will be referred to as **'long-term'**, **'rental'** or **'lease'**.  Short-term nightly fees will be referenced as **'rates'** and long-term as **'rent'**.  We will use **'prices'** to collectively refer to **rates** and **rents**. Note that within the Melbourne long term rentals are quoted in weekly rents but are charged to tenants at a monthly rent equivalent to 1/12 of 52 weeks of rent. 
-=======
-Data on AirBNB (short-term) ltrals has been purchased from www.airdna.co, a data provider specializing in AirBNB data collection and analysis. The data on long-term leases was provided by Australia Property Monitors (APM), a Fairfax Group company. 
-
-Throughout this document we will refer to the short-term data as **'short-term'** or **'AirBNB'** while the long-term data will be referred to as **'long-term'**, **'ltral'** or **'lease'**.  Short-term nightly fees will be referenced as **'rates'** and long-term as **'ltr'**.  We will use **'prices'** to collectively refer to **rates** and **ltrs**. Note that within the Melbourne market ltrals are quoted in weekly ltrs (but are charged to tenants at a monthly ltr equivalent to the 1/12 of 52 weeks of ltr). 
->>>>>>> origin/master
 
 &nbsp;
 
@@ -80,8 +74,7 @@ We then set the paths to the data and the code, conditional on which of the auth
 Next, we source the necessary custom code files for the analysis.  
   
 ```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
-  
-<<<<<<< HEAD
+
   source(paste0(code.path, "dataviztools/ggplottools.R"))
   source(paste0(code.path, "datamgmttools/dataMungetools.R"))
   source(paste0(code.path, "research/AirBNBMelbourne/analysis_Functions.R"))
@@ -96,16 +89,6 @@ Finally, we set the constants used in this study:
 ```{r set_constants, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
   exch.rate <- 1.32  
-=======
-  source("c:/code/dataviztools/ggplottools.R")
-  source("c:/code/datamgmttools/dataMungetools.R")
-  source("c:/code/research/AirBNBMelbourne/analysis_Functions.R")
-  source("c:/code/research/AirBNBMelbourne/dataPrep_Functions.R")
-  
- ## Set a global parameter
-    
-  exch.rate <- 1.32
->>>>>>> origin/master
 
 ```
 
