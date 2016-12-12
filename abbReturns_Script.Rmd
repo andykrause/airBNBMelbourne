@@ -806,6 +806,16 @@ The chart below break down the relative frequency of short and long term rental 
 
 ```
 
+Finally, we convert the suburb names from factors to character, which will help with the imputation exercises later on. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Convert suburbs from factor to character
+  abb.data$suburb <- as.character(abb.data$suburb)
+  ltr.data$suburb <- as.character(ltr.data$suburb)
+  
+```
+
 &nbsp;
 
 ## Structural Characteristics
@@ -836,7 +846,7 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
 
 ```{r bed_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- ## Remove missing and data errors
+ # Remove missing and data errors
 
   # Long term data
   ltr.data <- ltr.data[!is.na(ltr.data$bedrooms), ]
@@ -850,7 +860,7 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
 
 ```{r bed_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
 
- ## Build long term bar plot
+ # Build long term bar plot
 
    ltrbed <- ggplot(ltr.data, aes(x=bedrooms)) + 
     geom_bar(fill=ltr.col, color=ltr.col) +
@@ -870,7 +880,7 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
     ylab('') +
     ggtitle('Bedrooms in Short Term Rentals')
  
- ## Make the comparison plot  
+ # Make the comparison plot  
   
   ggMultiPlots(abbbed, ltrbed, cols=1)
 
@@ -913,7 +923,7 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
 
 ```{r bath_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
 
- ## Build long term plot
+ # Build long term plot
 
   ltbath <- ggplot(ltr.data, aes(x=baths)) + 
     geom_bar(fill=ltr.col, color=ltr.col) +
@@ -923,7 +933,7 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
     ylab('') + 
     ggtitle('Bathrooms in Long Term Rentals')
 
- ## Build short term plot 
+ # Build short term plot 
 
   stbath <- ggplot(abb.data, aes(x=baths)) + 
     geom_bar(fill=str.col, color=str.col) +
@@ -933,7 +943,7 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
     ylab('') + 
     ggtitle('Bathrooms in Short Term ltrals')
  
- ## Make Plots  
+ # Make Plots  
   
   ggMultiPlots(stbath, ltbath, cols=1)
 
@@ -943,7 +953,7 @@ Here we see that nearly all properties have 3 or fewer bathrooms and we filter t
 
 ```{r bath_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- ## Filter by bath count
+ # Filter by bath count
 
   # Short term data
   abb.data <- abb.data[abb.data$baths < 4, ]
@@ -952,7 +962,7 @@ Here we see that nearly all properties have 3 or fewer bathrooms and we filter t
   # Long term data
   ltr.data <- ltr.data[ltr.data$baths < 4, ]
   
- ## Round baths up  
+ # Round baths up  
 
   abb.data$baths <- round(abb.data$baths + .01, 0)
 
@@ -964,7 +974,7 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
 
 ```{r filtBB, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- ## Create combination variable
+ # Create combination variable
 
   ltr.data$bedbath <- paste0(ltr.data$bedrooms, '..', ltr.data$baths)
   abb.data$bedbath <- paste0(abb.data$bedrooms, '..', abb.data$baths)
@@ -973,7 +983,7 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
 
 ```{r filtBB2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
 
- ## Make long term plot
+ # Make long term plot
 
   ltb <- ggplot(ltr.data, aes(x=bedbath)) + 
     geom_bar(fill=ltr.col, color=ltr.col) +
@@ -983,7 +993,7 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
     ggtitle('Long Term Rentals') + 
     facet_wrap(~type)
 
- ## Make short term plots
+ # Make short term plots
 
   stb <- ggplot(abb.data, aes(x=bedbath)) +
     geom_bar(fill=str.col, color=str.col) + 
@@ -993,7 +1003,7 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     facet_wrap(~type)
 
- ## Plot  
+ # Plot  
   
   ggMultiPlots(ltb, stb, cols=1)
 
@@ -1033,18 +1043,9 @@ Finally, we re-order the factor levels on the bed/bath combinations to make a 2-
 ```
 
 
+## Rates and Rental values
 
-
-
-
-
-
-
-
-
-### Rates and ltrs
-
-Finally, we turn to filtering by the prices -- the nightly rates and weekly ltral values.  We start by removing observations missing price data. 
+We now turn to filtering by the prices -- the nightly rates and weekly rental values.  We start by removing observations missing price data. 
 
 ```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
@@ -1053,19 +1054,33 @@ Finally, we turn to filtering by the prices -- the nightly rates and weekly ltra
   
 ```
 
+Next, we convert the Airbnb values to Australian dollars from US dollars using the exchange rate specified above (1.32).
+
+```{r exch_rate_adj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Property level data
+
+  abb.data$average.daily.rate <- abb.data$average.daily.rate * exch.rate
+  abb.data$nightly.rate <- abb.data$nightly.rate * exch.rate
+  abb.data$weekly.rate <- abb.data$weekly.rate * exch.rate
+  abb.data$monthly.rate <- abb.data$monthly * exch.rate
+  
+  # Daily data
+  
+  daily.data$price <- daily.data$price * exch.rate
+
+```
+
+
 ```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
-<<<<<<< HEAD
-  # Rent Plot
-  rent.plot <- ggplot(ltr.data, aes(x=event.price)) + 
-=======
   # ltr Plot
+  
   ltr.plot <- ggplot(ltr.data, aes(x=event.price)) + 
->>>>>>> origin/master
-    geom_density(fill=abb.col[3],alpha=.8) +
+    geom_density(fill=ltr.col, alpha=.8) +
     ylab('') +
-    xlab('Weekly ltr') + 
-    ggtitle('Long Term ltrals') + 
+    xlab('Weekly Rental') + 
+    ggtitle('Long Term Rentals') + 
     scale_x_continuous(limits=c(0, 1500)) +
     theme(axis.title.y=element_blank(),
           axis.text.y=element_blank(),
@@ -1073,10 +1088,10 @@ Finally, we turn to filtering by the prices -- the nightly rates and weekly ltra
 
   # Nightly Rate plot
   rate.plot <- ggplot(abb.data, aes(x=nightly.rate)) + 
-    geom_density(fill=abb.col[1], alpha=.8) + 
+    geom_density(fill=str.col, alpha=.8) + 
     ylab('') +
     xlab('Nightly Rate') +
-    ggtitle('Short Term ltrals') + 
+    ggtitle('Short Term Rentals') + 
     scale_x_continuous(limits=c(0, 600)) +
     theme(axis.title.y=element_blank(),
           axis.text.y=element_blank(),
@@ -1086,11 +1101,11 @@ Finally, we turn to filtering by the prices -- the nightly rates and weekly ltra
 
 ```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
-ggMultiPlots(ltr.plot, rate.plot, cols=2)
+  ggMultiPlots(ltr.plot, rate.plot, cols=2)
 
 ```
 
-From these density plots we see that most weekly ltrals are greater than $200 and less than $1000 per week while most nightly rates are greater than $50 and less than $400 per night. We filter the data accordingly. 
+From these density plots we see that most weekly Rentals are greater than $200 and less than $1000 per week while most nightly rates are greater than $50 and less than $500 per night. We filter the data accordingly. 
 
 ```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
@@ -1102,7 +1117,7 @@ From these density plots we see that most weekly ltrals are greater than $200 an
  ## Filter the short term data
 
   abb.data <- abb.data[abb.data$nightly.rate >= 50 &
-                         abb.data$nightly.rate <= 400, ]
+                         abb.data$nightly.rate <= 500, ]
 
 ```
 
@@ -1119,23 +1134,10 @@ The previous exercises filtered the property-level data.  We now filter the tran
  ## Long term list data
   
   listing.data <- listing.data[listing.data$activity.id %in% ltr.data$activity.id,]
-<<<<<<< HEAD
-=======
 
 ```
 
-Finally, we convert the prepared data back to the original object names.
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  abb.data <- abb.data
-  daily.data <- daily.data
-  ltr.data <- ltr.data
-  listing.data <- listing.data
-
-```
-
-# Prepare for Revenue Estimation
+## Revenue Estimation
 
 We now turn to calculating the revenues for each property under an Airbnb and a long term rental scenario.  Before we start, there are few additional data prepartion tasks to undertake. 
 
@@ -1160,15 +1162,14 @@ First we calculate the total number of bookings, the occupancy rate, blocked rat
 
 ```
 
-Next we extract all of the daily reservation data that fits our criteria -- reserved, not imputed and not over $600 per night. From this information we calculate the median nightly reservation price for each property and append it to the property level data. 
+Next we extract all of the daily reservation data that fits our criteria -- reserved, not imputed and not over $500 per night^[Note that there are some outlying daily observations that do not agree with the property level Airbnb summary data.  We do this step to remove those]. From this information we calculate the median nightly reservation price for each property and append it to the property level data. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-    
   # Get all of the reservations
   resv.daily <- daily.data[daily.data$status == 'R' &
                              daily.data$booked.date != 'imputed' &
-                              daily.data$price < 600, ]
+                              daily.data$price < 500, ]
   
   # Calculate the property specific median nightly rate
   med.daily <- tapply2DF(resv.daily$price, resv.daily$property.id, median)
@@ -1178,7 +1179,11 @@ Next we extract all of the daily reservation data that fits our criteria -- rese
   
 ```
 
-For the airbnb properties we then calculate the actual revenue over the Sep 1 2015 to Aug 31 2016 period. Those with no revenue are removed. 
+### Actual Revenues
+
+In this section we total up the actual revenues for each short and long term rental property.
+
+For the Airbnb properties we then calculate the actual revenue over the Sep 1 2015 to Aug 31 2016 period. Those with no revenue are removed. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
@@ -1194,106 +1199,26 @@ For the airbnb properties we then calculate the actual revenue over the Sep 1 20
 Next, we calculate the revenue for the long term rental data, saving only those with revenue of at least $5,000 (less than this represented properties with very long days on market.)
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
->>>>>>> origin/master
 
- ## Calculate ltral revenues  
-  
   # Calculate the actual revenue
   ltr.data$revenue <- ltr.data$event.price * (52 - ltr.data$dom / 7)
   
   # Remove those with very low revenues (due to very long DOMs)
   ltr.data <- ltr.data[ltr.data$revenue > 5000, ]
 
- ## Save for future costs
-
 ```
+
+#### Costs
+
+SAVE HERE FOR SUBTRACTION OF COSTS FROM REVENUE
 
 Finally, we create and fix three variables. One factor variable for bed/bath combination, a factor variable that splits bed/bath by house and apartment and then we convert suburb from a factor to a character. 
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Convert suburbs from factor to character
-  abb.data$suburb <- as.character(abb.data$suburb)
-  ltr.data$suburb <- as.character(ltr.data$suburb)
-  
-```
-
-## Calculate Observed Revenues
 
 
-```{r abb_revs, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- ## Calculate actual revenue for study period for AirBnb
-  
-  # Determine # of booking for each airbnb
-  abb.data$bookings <- (abb.data$total.days - 
-                          abb.data$blocked.days - 
-                           abb.data$available.days)
-  
-  # Determine property specific occupancy rate
-  abb.data$occ.rate <- (abb.data$bookings / 
-                           (abb.data$total.days - abb.data$blocked.days))
-  
-  # Set the blocked rate
-  abb.data$blocked.rate <- abb.data$blocked.days / abb.data$total.days
-  
-  # Set the extrapolation parameter for those on the site for less than whole period
-  abb.data$extr.par <- 366 / abb.data$total.days
-  
-  # Get all of the reservations
-  resv.daily <- daily.data[daily.data$status == 'R' &
-                             daily.data$booked.date != 'imputed' &
-                              daily.data$price < 600, ]
-  
-  # Calculate the property specific median nightly rate
-  med.daily <- tapply2DF(resv.daily$price, resv.daily$property.id, median)
-  
-  # Add median rate to the property  
-  abb.data$med.rate <- med.daily$Var[match(abb.data$property.id, med.daily$ID)] 
-  
-  # Calculate the total revenue  
-  abb.data$revenue <- (abb.data$med.rate * exch.rate * 
-                          abb.data$extr.par * abb.data$bookings)
-  
-  # Remove those with no revenue
-  abb.data <- abb.data[!is.na(abb.data$revenue), ]
-```
 
 
-```{r ltr_revs, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-  
- ## Calculate ltral revenues  
-  
-  # Calculate the actual revenue
-  ltr.data$revenue <- ltr.data$event.price * (52 - ltr.data$dom / 7)
-  
-  # Remove those with very low revenues (due to very long DOMs)
-  ltr.data <- ltr.data[ltr.data$revenue > 5000, ]
 
-```  
-
-Data transformation steps 
- 
-```{r data_trans3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-      
-  # Re-order factors
-  abb.data$bedbath <- factor(abb.data$bedbath, 
-                              levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
-  ltr.data$bedbath <- factor(ltr.data$bedbath, 
-                               levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
-
-  # Add product as a variable
-  abb.data$product <- paste0(substr(abb.data$type, 1, 1), abb.data$bedbath)
-  ltr.data$product <- paste0(substr(ltr.data$type, 1, 1), ltr.data$bedbath)
-
-  # Convert suburbs from factor to character
-  abb.data$suburb <- as.character(abb.data$suburb)
-  ltr.data$suburb <- as.character(ltr.data$suburb)
-  
-```
-
-
-## Save for future costs
 
 ### Save Workspace for using in 'Working' script
 
