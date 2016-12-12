@@ -344,16 +344,118 @@ Next we trim the observations by time.  Our hypothetical simulated decision is t
 
 ```{r clip_time, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
- ## Limit short term data
+ # Limit short term data
 
   abb.data <- abb.data[abb.data$min.date >= '2015-09-01', ]
   daily.data <- daily.data[daily.data$date >= '2015-09-01', ]
 
- ## Limit long term data  
+ # Limit long term data  
   
   ltr.data <- ltr.data[ltr.data$event.date >= '2014-09-01' & 
                             ltr.data$event.date <= '2015-08-31', ]
   listing.data <- listing.data[listing.data$id.key %in% ltr.dataf$id.key, ]
+
+```
+
+### Standardize Property Types
+
+&nbsp;
+
+AirBNB units are classified into 19 different property type.  The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that the Igloo, at the very least, is not a completely true representation of the property type]. For the sake of this analysis, we will collapse these twenty types into three types:
+  
+1. **House**:  Includes properties labeled 'House' or 'Townhouse'
+2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium'
+3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt. 
+
+Within the long-term rental data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories:
+  
+1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse'
+2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio'
+3. **Other**: Includes properties labeled as 'Semi' and 'Villa'
+
+Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the AirBNB data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure).  Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context. 
+
+We then create a new variable in each dataset and give each one of the three categories discussed above.
+
+```{r fix_type, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Short Term data  
+
+  abb.data$type <- 'Other'
+  abb.data$type[abb.data$property.type %in% c('Apartment', 'Condominium')] <- 'Apartment'
+  abb.data$type[abb.data$property.type %in% c('House', 'Townhouse')] <- 'House'
+
+ # Long Term data  
+
+  ltr.data$type <- 'Other'
+  ltr.data$type[ltr.data$property.type %in% c('Duplex', 'House',
+                                           'Terrace', 'Townhouse')] <- 'House'
+  ltr.data$type[ltr.data$property.type %in% c('Studio', 'Unit')] <- 'Apartment'
+
+```
+
+As the chart below show, the **Other** category only makes up a very small percentage of the properties in both the short and long term market, especially in the long-term market.  Additionally, a good portion of the **Others** in the Airbnb data are Bed & Breakfast units, a use which doesn't fit with our research question.  As a result, we remove the 'Others' from both the Airbnb and the long term rental data. 
+
+```{r type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
+
+  # Create Airbnb plot
+
+  abb.types <- ggplot(abb.data, aes(x=type)) + 
+    geom_bar(color=abb.col[1], fill=abb.col[1]) +
+    xlab('\nProperty Type\n') + 
+    ggtitle('\nShort Term Rentals\n')  +
+    ylab('# of Properties\n')
+
+  # Create long term rental plot
+
+  ltr.types <- ggplot(ltr.data, aes(x=type)) + 
+    geom_bar(color=abb.col[3], fill=abb.col[3]) +
+    xlab('\nProperty Type\n') + 
+    ggtitle('\nLong Term Rentals\n')  +
+    ylab('# of Properties\n')
+
+  # Output plots
+  
+  ggMultiPlots(abb.types, ltr.types, cols=2)
+  
+```
+
+```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
+
+  abb.data <- subset(abb.data, type != 'Other')
+  ltr.data <- subset(ltr.data, type != 'Other')
+
+```
+
+Next, for the short term rentals properties can be listed as one of three types relating to the extent of the property which is able to be booked:
+
+1. **Entire Home/Apt**: The entire home or apartment is available
+2. **Private Room**: One room within a house or apartment is available
+3. **Shared Room**: A bed within a room shared by another occupant(s) is available
+
+As long-term rentals do not offer **Private Room** or **Shared Room** options^[Our dataset does not include rooming houses, purpose built student accomodations and other types of rental which may offer private or shared room options] and our purpose here is a comparison of long and short term returnw, we remove all short term properties that do not lease the entire home/apt. Unfortunately, this filter does remove about 40% of the short term data, however, given the research question it is unavoidable. 
+
+```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
+
+  # Fix data types and names
+  
+  abb.data$listing.type <- as.character(abb.data$listing.type)
+  abb.data$listing.type[abb.data$listing.type == 'Entire home/apt'] <- 'Entire home'
+
+  # Make Plot
+  
+  ggplot(abb.data, aes(x=listing.type)) + 
+    geom_bar(color=abb.col[1], fill=abb.col[1]) +
+    xlab('\nListing Type\n') + 
+    ggtitle('\nShort Term Rentals by Listing Type\n')  +
+    ylab('# of Properties\n')
+  
+```
+
+```{r keep_entire_home, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  abb.room <- abb.data[abb.data$listing.type != 'Entire home', ]
+  abb.data <- abb.data[abb.data$listing.type == 'Entire home', ]
 
 ```
 
@@ -395,80 +497,6 @@ Next we fix a few of the boolean variables in the long term data that are stored
 ```
 
 &nbsp;
-
-### Standardize Property Types
-
-&nbsp;
-
-AirBNB units are classified into 19 diffeltr property type.  The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that the Igloo, at the very least, is not a completely true representation of the property type]. For the sake of this analysis, we will collapse these twenty types into three types:
-  
-1. **House**:  Includes properties labeled 'House' or 'Townhouse'
-2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium'
-3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt. 
-
-Within the long-term ltral data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories:
-  
-1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse'
-2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio'
-3. **Other**: Includes properties labeled as 'Semi' and 'Villa'
-
-Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the AirBNB data conforms to North American lexicon.  This is most appaltr when talking about apartment dwellings.  In Australia these are referred to as Units, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure).  Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context. 
-
-We then create a new variable in each dataset and give each one of the three categories discussed above.
-
-```{r fix_type, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- ## Short Term data  
-
-  abb.data$type <- 'Other'
-  abb.data$type[abb.data$property.type %in% c('Apartment', 'Condominium')] <- 'Apartment'
-  abb.data$type[abb.data$property.type %in% c('House', 'Townhouse')] <- 'House'
-
- ## Long Term data  
-
-  ltr.data$type <- 'Other'
-  ltr.data$type[ltr.data$property.type %in% c('Duplex', 'House',
-                                           'Terrace', 'Townhouse')] <- 'House'
-  ltr.data$type[ltr.data$property.type %in% c('Studio', 'Unit')] <- 'Apartment'
-
-```
-
-The **Other** categories contain very small percentage of properties in both the AirBNB and the ltral data.  As a result, we remove the 'Others' from the data. 
-
-```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
-
-  abb.data <- subset(abb.data, type != 'Other')
-  ltr.data <- subset(ltr.data, type != 'Other')
-
-```
-
-Next, for the short term ltrals units can be listed as one of three types relating to the extent of the property which is able to be booked:
-
-1. **Entire Home/Apt**: The entire home or apartment is available
-2. **Private Room**: One room within a house or apartment is available
-3. **Shared Room**: A bed within a room shared by other occupants is available
-
-As long-term ltrals do not offer **Private Room** or **Shared Room** options and our purpose here is a comparison of the two we remove all short term properties that do not lease the entire home/apt. Unfortunately, this filter does remove about 40% of the short term data, however, given the research question it is unavoidable. 
-
-```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
-
-  abb.data$listing.type <- as.character(abb.data$listing.type)
-  abb.data$listing.type[abb.data$listing.type == 'Entire home/apt'] <- 'Entire home'
-
-  ggplot(abb.data, aes(x=listing.type)) + 
-    geom_bar(color=abb.col[1], fill=abb.col[1]) +
-    xlab('\nListing Type\n') + 
-    ggtitle('\nShort Term ltrals\n')  +
-    ylab('# of Properties\n')
-  
-```
-
-```{r keep_entire_home, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  abb.room <- abb.data[abb.data$listing.type != 'Entire home', ]
-  abb.data <- abb.data[abb.data$listing.type == 'Entire home', ]
-
-```
 
 
 
