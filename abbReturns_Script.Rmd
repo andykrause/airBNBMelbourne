@@ -687,7 +687,7 @@ Having fixed the missing lat/long issue, we then assign the suburb, SA1, city-co
  
   ## Add Beach Designation
   
-  spJoin <- over(rent.prop.shp, beach.buffer)
+  spJoin <- over(ltr.prop.shp, beach.buffer)
   ltr.data$beach <- ifelse(is.na(spJoin), 0 ,1)
   
   # Remove those missing a suburb classification (out of area)
@@ -774,7 +774,7 @@ The chart below break down the relative frequency of short and long term rental 
   # Make Airbnb submarket map
   
   abbtype.map <- ggplot() +
-    geom_bar(data=abb.dataf, aes(x=sub.mrkt, fill=sub.mrkt)) +
+    geom_bar(data=abb.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
     scale_fill_manual(values=sm.col) +
     facet_wrap(~type) +
     ylab('# of Properties\n') + xlab('')+
@@ -787,7 +787,7 @@ The chart below break down the relative frequency of short and long term rental 
   # Make Long term rental map
 
   ltrtype.map <- ggplot() +
-    geom_bar(data=ltr.dataf, aes(x=sub.mrkt, fill=sub.mrkt)) +
+    geom_bar(data=ltr.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
     scale_fill_manual(values=sm.col) +
     facet_wrap(~type) +
     ylab('# of Properties\n') + xlab('')+
@@ -901,7 +901,7 @@ For both short and long term ltrals we see that most apartments have less than 4
   ltra <- which(ltr.data$bedrooms > 3 & ltr.data$type =='Apartment')
 
   if(length(abba) > 0) abb.data <- abb.data[-abba, ]
-  if(length(renta) > 0) ltr.data <- ltr.data[-renta, ]
+  if(length(ltra) > 0) ltr.data <- ltr.data[-ltra, ]
 
   # Convert 0 Bed to 1 Bed  
   abb.data$bedrooms[abb.data$bedrooms == 0] <- 1
