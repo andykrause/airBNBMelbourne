@@ -404,6 +404,12 @@ makePrefPlot <- function(pref.data,
   
   pref.full <- rbind.fill(pref.list)
   
+  if(group.field == 'sub.mrkt'){
+    pref.full$ID <- factor(pref.full$ID, 
+                           levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
+    
+  }
+  
  ## Creat the base plot  
   
   pref.plot <- ggplot(pref.full,
@@ -441,7 +447,7 @@ makeHeatMap <- function(hm.data,
   hm.plot <- ggplot(data=hm.data,
                     aes(x=x.var, y=y.var))
   if(add.points){
-    hm.plot <- hm.plot + geom_point(size=.1, color='gray50') 
+    hm.plot <- hm.plot + geom_point(size=.1, color='gray50', alpha=.2) 
   }
   
   hm.plot <- hm.plot + 
