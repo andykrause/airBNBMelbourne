@@ -51,6 +51,8 @@
   source("c:/code/research/AirBNBMelbourne/analysis_Functions.R")
   source("c:/code/research/AirBNBMelbourne/dataPrep_Functions.R")
 
+  sm.col <- abb.col[c(2, 1, 3, 5, 6)]
+  
 ### Working analysis ---------------------------------------------------------------------  
 
  ## Global model
@@ -111,6 +113,8 @@
  ## Make a table  
   
   mrkt.table <- createCompTable(abb.revs, ltr.revs, 'sub.mrkt')
+  mrkt.table$ID <- factor(mrkt.table$ID, 
+                          levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
   
 ## make basic 2x2 comparison
   
@@ -206,6 +210,156 @@
     coord_cartesian(ylim=c(-.5,1))
   
   
+  ## Make a table  
+  
+  abb.act.table <- mrkt.table[mrkt.table$est == 'Actual Rates & Rents' &
+                               mrkt.table$data == 'Airbnb', ]
+  
+  ## make basic 2x2 comparison
+  
+  abb.act.plot <- 
+    ggplot(abb.act.table, 
+           aes(x=ID, weights=Var, fill=ID)) + 
+    geom_bar() +
+    scale_fill_manual(values=sm.col) +
+    xlab('') +
+    ylab('% of properties where Airbnb is more profitable') +
+    scale_y_continuous(breaks=c(0,.25,.5,.75,1),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='none') +
+    coord_cartesian(ylim=c(0,1))
+  
+  # Make pref plot
+  
+
+  rawocc.pplot <- makePrefPlot(abb.revs,
+                               x.field='occ.rate',
+                               y.field='abb.act',
+                               group.field='sub.mrkt',
+                               smooth=TRUE,
+                               smooth.span=.75)
+  rawocc.pplot <- rawocc.pplot +
+    xlab('\nOccupancy Rate') +
+    ylab('\n% of Properties where Airbnb is more profitable') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_color_manual(values=sm.col)
+  
+  ## Look at occupancy rates
+  
+  abb.revs$sub.mrkt <- factor(abb.revs$sub.mrkt, 
+                         levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
+  ggplot(abb.revs, aes(x=occ.rate, group=sub.mrkt, color=sub.mrkt, fill=sub.mrkt)) +
+    geom_density(alpha=.3) +
+    facet_wrap(~sub.mrkt) +
+    scale_color_manual(values=sm.col) +
+    scale_fill_manual(values=sm.col) +
+    scale_x_continuous(breaks=seq(0, 1, by=.5),
+                       labels=c('0%', '50%', '100%')) +
+    ylab('') +
+    xlab('Occupancy Rate') +
+    theme(legend.position='none',
+          axis.line=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks=element_blank(),
+          axis.title.y=element_blank())
+
+  ## Add the quantile location
+  
+  abb.revs$occ.qtl <- makeWtdQtl(abb.revs$occ.rate, 
+                                      return.type='rank') 
+  
+  ## Make quartile location plot
+  
+  qtlocc.pplot <- makePrefPlot(abb.revs,
+                               x.field='occ.qtl',
+                               y.field='abb.act',
+                               group.field='sub.mrkt',
+                               smooth=TRUE,
+                               smooth.span=.75)
+  qtlocc.pplot <- qtlocc.pplot +
+    xlab('\nQualtile of Occupancy Rate') +
+    ylab('\n% of Properties where Airbnb is more profitable') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_color_manual(values=sm.col)
+  
+  
+  # Make the rate heatmap  
+  
+  rate.heatmap <- makeHeatMap(abb.revs,
+                              x.field='occ.rate',
+                              y.field='med.rate',
+                              alpha.field='abb.act',
+                              bins=c(.05, 30),
+                              add.points=TRUE)
+  rate.heatmap <- rate.heatmap +
+    xlab('\n Occupancy Rate') +
+    ylab('\n Nightly Rate') +
+    scale_x_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='none')
+ 
+  ## Add the rate quartle location   
+  
+  abb.revs$rate.qtl <- makeWtdQtl(abb.revs$med.rate, 
+                                  return.type='rank') 
+  
+  ## Make quartile heat map  
+  
+  qtl.heatmap <- makeHeatMap(abb.revs,
+                             x.field='occ.qtl',
+                             y.field='rate.qtl',
+                             alpha.field='abb.act',
+                             bins=c(5,5))+
+  xlab('\n Occupancy Rate Quantile') +
+    ylab('\n Nightly Rate Quantile') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25th', '50th', '75th', '100th')) +
+    scale_y_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25th', '50th', '75th', '100th')) +
+    
+    theme(legend.position='none')
+  
+  
+### Adding the SVM separation
+  
+  
+  
+  library(kernlab)
+  
+  
+  xy <- cbind(abb.revs$occ.rate, abb.revs$nightly.rate)
+  
+  aaa <- ksvm(x=xy,
+              y=abb.revs$abb.act,
+              data=xy,
+              type='C-svc',
+              kernel='polydot',
+              kpar=list(degree=4))
+  
+  abb.revs$svm <- aaa@fitted
+  
+  pred.abb <- expand.grid(seq(0,1,by=.005),
+                          seq(min(abb.revs$nightly.rate-25),
+                              max(abb.revs$nightly.rate+25),
+                              by=1))
+  tt <- predict(aaa, pred.abb)
+  pred.abb$ok <- tt
+  
+  
+  makeHeatMap(pred.abb,
+              x.field='Var1',
+              y.field='Var2',
+              alpha.field='ok',
+              bins=c(.02, 5)) +
+    geom_point(data=abb.revs,aes(x=occ.rate, y=nightly.rate), size=.1, alpha=.1) +
+    ylab('Nightly Rate') +
+    xlab('Occupancy Rate')
   
   
   
@@ -215,6 +369,24 @@
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    
   
   
   glob <- fullMarketAnalysis(ltr.df=ltr.data,
