@@ -33,7 +33,6 @@ imputeRatesRents <- function(ltr.df,
                              abb.df,
                              ltr.mod.spec,
                              abb.mod.spec,
-                             exch.rate,
                              clip.fields=NULL)
 {
   
@@ -89,7 +88,7 @@ imputeRatesRents <- function(ltr.df,
 
  ## Add the predicted values to the short term data
   
-  ltr.df$imp.rate <- exp(predict(abb.mod, ltr.df)) * exch.rate
+  ltr.df$imp.rate <- exp(predict(abb.mod, ltr.df))
 
  ## Return Values  
   
@@ -170,7 +169,7 @@ imputeDOM <- function(abb.df,
   
   ## Return Values
   
-  return(abb.df)
+  return(abb.df$imp.dom)
   
 }
 
@@ -199,7 +198,7 @@ imputeOccRate <- function(ltr.df,
   
   ## Return Values
   
-  return(ltr.df)
+  return(ltr.df$imp.occ)
   
 }
 
@@ -210,22 +209,22 @@ compareRevenues <- function(abb.df,
   
   ## Abb act (1) to abb imp ltr (4)
   
-  abb.df$abb.prem <- abb.df$abb.rev.act - abb.df$ltr.rev.imp
+  abb.df$abb.prem <- abb.df$revenue - abb.df$imp.ltr.revenue
   abb.df$abb.act <- ifelse(abb.df$abb.prem > 0, 1, 0)
   
   ## Abb imp (2) to abb imp ltr (4)
   
-  abb.df$abb.prem.imp <- abb.df$abb.rev.imp - abb.df$ltr.rev.imp
+  abb.df$abb.prem.imp <- abb.df$imp.revenue - abb.df$imp.ltr.revenue
   abb.df$abb.imp <- ifelse(abb.df$abb.prem.imp > 0, 1, 0)
   
   ## Abb imp (2) to ltr act (3)
   
-  ltr.df$abb.prem <- ltr.df$abb.rev.imp - ltr.df$ltr.rev.act
+  ltr.df$abb.prem <- ltr.df$imp.abb.revenue - ltr.df$revenue
   ltr.df$abb.act <- ifelse(ltr.df$abb.prem > 0, 1, 0)
   
   ## Abb imp (2) to ltr imp (4)
   
-  ltr.df$abb.prem.imp <- ltr.df$abb.rev.imp - ltr.df$ltr.rev.imp
+  ltr.df$abb.prem.imp <- ltr.df$imp.abb.revenue - ltr.df$imp.revenue
   ltr.df$abb.imp <- ifelse(ltr.df$abb.prem.imp > 0, 1, 0)
   
   ## Return Values 
@@ -241,7 +240,6 @@ revCompWrapper <- function(ltr.df,
                            abb.df,
                            ltr.mod.spec,
                            abb.mod.spec,
-                           exch.rate,
                            clip.field='suburb'){  
   
  ## Calculate the actual revenues  
@@ -258,7 +256,6 @@ revCompWrapper <- function(ltr.df,
                                abb.df=abb.df, 
                                ltr.mod.spec=ltr.mod.spec, 
                                abb.mod.spec=abb.mod.spec,
-                               exch.rate=exch.rate,
                                clip.field='suburb')
   
   # Extract out DFs
@@ -273,16 +270,16 @@ revCompWrapper <- function(ltr.df,
                             rent.field='imp.rent')
   
   # Add back to DFs
-  abb.df$abb.rev.imp <- imp.revs$abb
-  ltr.df$ltr.rev.imp <- imp.revs$ltr
+  abb.df$imp.revenue <- imp.revs$abb
+  ltr.df$imp.revenue <- imp.revs$ltr
   
  ## Cross type revenue estimation
   
   # Apply dom to abb
-  abb.df <- imputeDOM(abb.df, ltr.df, calc.type='median')
+  abb.df$imp.dom <- imputeDOM(abb.df, ltr.df, calc.type='median')
   
   # Apply occ.rate to ltr
-  ltr.df <- imputeOccRate(ltr.df, abb.df, calc.type='median')
+  ltr.df$imp.occ <- imputeOccRate(ltr.df, abb.df, calc.type='median')
   
   # Estimate cross revenues
   impx.revs <- revenueEngine(abb.df=ltr.df, 
@@ -293,8 +290,8 @@ revCompWrapper <- function(ltr.df,
                              dom.field='imp.dom')
   
    # Add back to DFs
-   abb.df$ltr.rev.imp <- impx.revs$ltr
-   ltr.df$abb.rev.imp <- impx.revs$abb
+   abb.df$imp.ltr.revenue <- impx.revs$ltr
+   ltr.df$imp.abb.revenue <- impx.revs$abb
   
  ## Compare revenues
   
@@ -324,10 +321,10 @@ createCompTable <- function(abb.df,
     ltr.act <- tapply2DF(ltr.df$abb.act, ltr.df[, split.field], mean)
     
     # Add names
-    abb.imp$est <- ltr.imp$est <- 'imputed'
-    abb.imp$data <- abb.act$data <- 'abb'
-    ltr.act$est <- abb.act$est <- 'actual'
-    ltr.act$data <- ltr.imp$data <- 'ltr'
+    abb.imp$est <- ltr.imp$est <- 'Imputed Rates & Rents'
+    abb.imp$data <- abb.act$data <- 'Airbnb'
+    ltr.act$est <- abb.act$est <- 'Actual Rates & Rents'
+    ltr.act$data <- ltr.imp$data <- 'Long-Term'
     
     # Combine into table
     rate.table <- rbind(abb.imp, abb.act, ltr.imp, ltr.act)
