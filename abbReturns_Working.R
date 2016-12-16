@@ -22,6 +22,8 @@
   library(stringr)
   library(RColorBrewer)
   library(Hmisc)
+  library(kernlab)
+
 
  ## Set path location
 
@@ -270,6 +272,8 @@
   
   abb.revs$occ.qtl <- makeWtdQtl(abb.revs$occ.rate, 
                                       return.type='rank') 
+  abb.revs$rate.qtl <- makeWtdQtl(abb.revs$med.rate, 
+                                  return.type='rank') 
   
   ## Make quartile location plot
   
@@ -287,139 +291,114 @@
     scale_y_continuous(breaks=seq(0, 1, by=.25),
                        labels=c('0%', '25%', '50%', '75%', '100%')) +
     scale_color_manual(values=sm.col)
+
+ # Make the rate heatmap  
   
+  rate.hm <- makeHeatMap(abb.revs,
+                x.field='occ.rate',
+                y.field='nightly.rate',
+                color.field='abb.act',
+                bins=c(.05, 25),
+                svm=F, 
+                alpha.count=T,
+                add.points=T,
+                fill.colors=c(abb.col[1], abb.col[5]))
   
-  # Make the rate heatmap  
-  
-  rate.heatmap <- makeHeatMap(abb.revs,
-                              x.field='occ.rate',
-                              y.field='med.rate',
-                              alpha.field='abb.act',
-                              bins=c(.05, 30),
-                              add.points=TRUE)
-  rate.heatmap <- rate.heatmap +
+  rate.hm <- rate.hm +
     xlab('\n Occupancy Rate') +
     ylab('\n Nightly Rate') +
     scale_x_continuous(breaks=seq(0, 1, by=.25),
                        labels=c('0%', '25%', '50%', '75%', '100%')) +
-    theme(legend.position='none')
- 
-  ## Add the rate quartle location   
+    theme(legend.position='bottom')
   
-  abb.revs$rate.qtl <- makeWtdQtl(abb.revs$med.rate, 
-                                  return.type='rank') 
+ # Rate SVM heatmap
+  
+  rate.hm.svm <- makeHeatMap(abb.revs,
+                         x.field='occ.rate',
+                         y.field='nightly.rate',
+                         color.field='abb.act',
+                         bins=c(.05, 25),
+                         svm=T, 
+                         alpha.count=F,
+                         add.points=T,
+                         fill.colors=c(abb.col[1], abb.col[5]))
+  
+  rate.hm.svm <- rate.hm.svm +
+    xlab('\n Occupancy Rate') +
+    ylab('\n Nightly Rate') +
+    scale_x_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom')
+  
+  
+
+  ## Make quartile heat map  
+  
+  qtl.hm <- makeHeatMap(abb.revs,
+                         x.field='occ.qtl',
+                         y.field='rate.qtl',
+                         color.field='abb.act',
+                         bins=c(5, 5),
+                         svm=F, 
+                         alpha.count=T,
+                         add.points=T,
+                         fill.colors=c(abb.col[1], abb.col[5]))
+  
+  qtl.hm <- qtl.hm +
+    xlab('\n Quantile of Occupancy Rate') +
+    ylab('\n Quantile of Nightly Rate') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    scale_y_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    theme(legend.position='bottom')
   
   ## Make quartile heat map  
   
-  qtl.heatmap <- makeHeatMap(abb.revs,
-                             x.field='occ.qtl',
-                             y.field='rate.qtl',
-                             alpha.field='abb.act',
-                             bins=c(5,5))+
-  xlab('\n Occupancy Rate Quantile') +
-    ylab('\n Nightly Rate Quantile') +
+  qtl.hm.svm <- makeHeatMap(abb.revs,
+                        x.field='occ.qtl',
+                        y.field='rate.qtl',
+                        color.field='abb.act',
+                        bins=c(5, 5),
+                        svm=T, 
+                        alpha.count=F,
+                        add.points=T,
+                        fill.colors=c(abb.col[1], abb.col[5]))
+  
+  qtl.hm.svm <- qtl.hm.svm +
+    xlab('\n Quantile of Occupancy Rate') +
+    ylab('\n Quantile of Nightly Rate') +
     scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0%', '25th', '50th', '75th', '100th')) +
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
     scale_y_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0%', '25th', '50th', '75th', '100th')) +
-    
-    theme(legend.position='none')
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    theme(legend.position='bottom')
   
   
-### Adding the SVM separation
+  ## Get SVM Counts for market analysis
   
+  svm.rate <- makeSVM(abb.revs,
+                     x.field='occ.rate',
+                     y.field='nightly.rate',
+                     z.field='abb.act',
+                     svm.type='C-svc',
+                     svm.kernel='polydot',
+                     poly.degree=4,
+                     expand.factor=100)
   
+  svm.qtl <- makeSVM(abb.revs,
+                      x.field='occ.qtl',
+                      y.field='rate.qtl',
+                      z.field='abb.act',
+                      svm.type='C-svc',
+                      svm.kernel='polydot',
+                      poly.degree=4,
+                      expand.factor=100)
   
-  library(kernlab)
+  market.ratio <- data.frame(type=c('rate', 'qtl'),
+                             actual=rep(mean(abb.revs$abb.act), 2),
+                             fitted=c(mean(svm.rate$orig$fitted),
+                                      mean(svm.qtl$orig$fitted)),
+                             svm=c(mean(svm.rate$pred$pred),
+                                   mean(svm.qtl$pred$pred)))
   
-  
-  xy <- cbind(abb.revs$occ.rate, abb.revs$nightly.rate)
-  
-  aaa <- ksvm(x=xy,
-              y=abb.revs$abb.act,
-              data=xy,
-              type='C-svc',
-              kernel='polydot',
-              kpar=list(degree=4))
-  
-  abb.revs$svm <- aaa@fitted
-  
-  pred.abb <- expand.grid(seq(0,1,by=.005),
-                          seq(min(abb.revs$nightly.rate-25),
-                              max(abb.revs$nightly.rate+25),
-                              by=1))
-  tt <- predict(aaa, pred.abb)
-  pred.abb$ok <- tt
-  
-  
-  makeHeatMap(pred.abb,
-              x.field='Var1',
-              y.field='Var2',
-              alpha.field='ok',
-              bins=c(.02, 5)) +
-    geom_point(data=abb.revs,aes(x=occ.rate, y=nightly.rate), size=.1, alpha=.1) +
-    ylab('Nightly Rate') +
-    xlab('Occupancy Rate')
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-    
-  
-  
-  glob <- fullMarketAnalysis(ltr.df=ltr.data,
-                             abb.df=abb.data,
-                             ltr.mod.spec=ltr.mod.spec,
-                             abb.mod.spec=abb.mod.spec,
-                             exch.rate=exch.rate,
-                             clip.field='suburb')
-  
-  ltr.type <- split(ltr.dataf, ltr.dataf$type)
-  abb.type <- split(abb.dataf, abb.dataf$type)
-  
-  apt <- fullMarketAnalysis(ltr.df=ltr.type[[1]],
-                            abb.df=abb.type[[1]],
-                                 ltr.mod.spec=ltr.mod.spec,
-                                 abb.mod.spec=abb.mod.spec,
-                                 exch.rate=exch.rate,
-                                 clip.field='suburb')
-  
-  
-  house <- fullMarketAnalysis(ltr.df=ltr.type[[2]],
-                              abb.df=abb.type[[2]],
-                              ltr.mod.spec=ltr.mod.spec,
-                              abb.mod.spec=abb.mod.spec,
-                              exch.rate=exch.rate,
-                              clip.field='suburb')
-  
-  ggplot(glob$abb, aes(x=longitude, y=latitude)) + 
-    geom_point(size=.1) + 
-    stat_bin2d(data=apt$abb, aes(alpha=..count.., fill=as.factor(abb.act)), 
-               binwidth=c(.005,.005)) + 
-    coord_cartesian(xlim=c(144.95,145.05), ylim=c(-37.75,-37.95))
-  
-  
-  
-  ggplot(glob$abb, aes(x=longitude, y=latitude)) + geom_point(size=.1) + stat_bin2d(data=apt$abb, aes(alpha=..count.., fill=as.factor(abb.act)), binwidth=c(.005,.005)) + coord_cartesian(xlim=c(144.95,145.05), ylim=c(-37.75,-37.95))
