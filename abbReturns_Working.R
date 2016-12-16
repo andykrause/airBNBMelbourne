@@ -402,3 +402,25 @@
                              svm=c(mean(svm.rate$pred$pred),
                                    mean(svm.qtl$pred$pred)))
   
+
+  
+abb.apt <- which(abb.revs$type == 'Apartment')
+ltr.apt <- which(ltr.revs$type == 'Apartment')
+
+    
+abc <- fullMarketAnalysis(ltr.df=ltr.revs[-ltr.apt,],
+                          abb.df=abb.revs[-abb.apt, ],
+                          ltr.mod.spec=ltr.mod.spec,
+                          abb.mod.spec=abb.mod.spec,
+                          clip.field='suburb',
+                          market.field='sub.mrkt',
+                          mrkt.col=sm.col,
+                          heat.col=c(abb.col[1], abb.col[5]))
+
+    
+      
+  
+  
+  
+  
+  

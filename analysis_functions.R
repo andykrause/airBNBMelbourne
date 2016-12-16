@@ -242,21 +242,14 @@ revCompWrapper <- function(ltr.df,
                            abb.mod.spec,
                            clip.field='suburb'){  
   
- ## Calculate the actual revenues  
-  
-  act.revs <- revenueEngine(abb.df, ltr.df) 
-  
-  # Add back to DFs
-  abb.df$abb.rev.act <- act.revs$abb
-  ltr.df$ltr.rev.act <- act.revs$ltr
-  
+
  ## Impute rates and rents
   
   imp.data <- imputeRatesRents(ltr.df=ltr.df, 
                                abb.df=abb.df, 
                                ltr.mod.spec=ltr.mod.spec, 
                                abb.mod.spec=abb.mod.spec,
-                               clip.field='suburb')
+                               clip.field=clip.field)
   
   # Extract out DFs
   abb.df <- imp.data$abb
@@ -643,10 +636,14 @@ fullMarketAnalysis <- function(ltr.df,
                                abb.df,
                                ltr.mod.spec,
                                abb.mod.spec,
-                               exch.rate,
-                               clip.field
-)
+                               clip.field,
+                               market.field='sub.mrkt',
+                               mrkt.col=NULL,
+                               heat.col=c('red', 'green'))
+
 {  
+  
+ ## Fix null
   
  ## Make comparison between two markets  
   
@@ -654,69 +651,209 @@ fullMarketAnalysis <- function(ltr.df,
                               abb.df=abb.df,
                               ltr.mod.spec=ltr.mod.spec,
                               abb.mod.spec=abb.mod.spec,
-                              exch.rate=exch.rate,
                               clip.field='suburb')   
   
   
  ## Make a simple table of comparison
   
-  mrkt.table <- createCompTable(mrkt.comp$abb, mrkt.comp$ltr, 'sub.mrkt')
+  mrkt.table <- createCompTable(mrkt.comp$abb, mrkt.comp$ltr, market.field)
+  
+  if(market.field == 'sub.mrkt'){
+    mrkt.table$ID <- factor(mrkt.table$ID, 
+                            levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
+  }
   
  ## make basic 2x2 comparison
   
-  twotwo.bar.plot <- ggplot(mrkt.table, aes(x=ID, weights=Var, fill=ID)) + 
+  # Set colors
+  if(is.null(mrkt.col)){
+    mrkt.col <- 1:(nrow(mrkt.table)/4)
+  }
+  
+  # Make Plot
+  twotwo.bar.plot <- 
+    ggplot(mrkt.table, 
+           aes(x=ID, weights=Var, fill=ID)) + 
     geom_bar() +
-    facet_grid(data ~ est)
+    facet_grid(est ~ data) +
+    scale_fill_manual(values=mrkt.col) +
+    xlab('') +
+    ylab('% of properties where Airbnb is more profitable') +
+    scale_y_continuous(breaks=c(0,.25,.5,.75,1),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='none')
+  
+ ## Make simple 1 Actual Airbnb plot  
+  
+  # Extract data  
+  
+  abb.act.table <- mrkt.table[mrkt.table$est == 'Actual Rates & Rents' &
+                                mrkt.table$data == 'Airbnb', ]
+  
+  # Make plot
+  
+  abb.act.plot <- 
+    ggplot(abb.act.table, 
+           aes(x=ID, weights=Var, fill=ID)) + 
+    geom_bar() +
+    scale_fill_manual(values=sm.col) +
+    xlab('') +
+    ylab('% of properties where Airbnb is more profitable') +
+    scale_y_continuous(breaks=c(0,.25,.5,.75,1),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='none') +
+    coord_cartesian(ylim=c(0, 1))
   
  ## Preferred option by occupancy rate
   
   rawocc.pplot <- makePrefPlot(mrkt.comp$abb,
                                x.field='occ.rate',
                                y.field='abb.act',
-                               group.field='sub.mrkt',
+                               group.field=market.field,
                                smooth=TRUE,
-                               smooth.span=.35)
+                               smooth.span=.75)
+  rawocc.pplot <- rawocc.pplot +
+    xlab('\nOccupancy Rate') +
+    ylab('\n% of Properties where Airbnb is more profitable') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_color_manual(values=mrkt.col)
   
- ## Add the quantile location
+ ## Add the quantile locations
   
   mrkt.comp$abb$occ.qtl <- makeWtdQtl(mrkt.comp$abb$occ.rate, 
                                       return.type='rank') 
+  mrkt.comp$abb$rate.qtl <- makeWtdQtl(mrkt.comp$abb$med.rate, 
+                                       return.type='rank') 
+  
   
  ## Make quartile location plot
   
   qtlocc.pplot <- makePrefPlot(mrkt.comp$abb,
                                x.field='occ.qtl',
                                y.field='abb.act',
-                               group.field='sub.mrkt',
+                               group.field=market.field,
                                smooth=TRUE,
-                               smooth.span=.35)
-  
- ## Add the rate quartle location   
-  
-  mrkt.comp$abb$rate.qtl <- makeWtdQtl(mrkt.comp$abb$med.rate, 
-                                       return.type='rank') 
-  
- ## Make quartile heat map  
-  
-  qtl.heatmap <- makeHeatMap(mrkt.comp$abb,
-                             x.field='occ.qtl',
-                             y.field='rate.qtl',
-                             alpha.field='abb.act',
-                             bins=c(5,5))
+                               smooth.span=.75)
+  qtlocc.pplot <- qtlocc.pplot +
+    xlab('\nQualtile of Occupancy Rate') +
+    ylab('\n% of Properties where Airbnb is more profitable') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_color_manual(values=mrkt.col)
   
  ## Make the rate heatmap  
   
-  rate.heatmap <- makeHeatMap(mrkt.comp$abb,
-                              x.field='occ.rate',
-                              y.field='med.rate',
-                              alpha.field='abb.act',
-                              bins=c(.05, 30),
-                              add.points=TRUE)
+  rate.hm <- makeHeatMap(mrkt.comp$abb,
+                         x.field='occ.rate',
+                         y.field='nightly.rate',
+                         color.field='abb.act',
+                         bins=c(.05, 25),
+                         svm=F, 
+                         alpha.count=T,
+                         add.points=T,
+                         fill.colors=heat.col)
   
- ## Calculate the overall market score
+  rate.hm <- rate.hm +
+    xlab('\n Occupancy Rate') +
+    ylab('\n Nightly Rate') +
+    scale_x_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom')
   
-  market.score <- calcMarketScore(mrkt.comp$abb,
-                                  calc.field='abb.act')
+  # Rate SVM heatmap
+  
+  rate.hm.svm <- makeHeatMap(mrkt.comp$abb,
+                             x.field='occ.rate',
+                             y.field='nightly.rate',
+                             color.field='abb.act',
+                             bins=c(.05, 25),
+                             svm=T, 
+                             alpha.count=F,
+                             add.points=T,
+                             fill.colors=heat.col)
+  
+  rate.hm.svm <- rate.hm.svm +
+    xlab('\n Occupancy Rate') +
+    ylab('\n Nightly Rate') +
+    scale_x_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom')
+  
+  ## Make quartile heat map  
+  
+  qtl.hm <- makeHeatMap(mrkt.comp$abb,
+                        x.field='occ.qtl',
+                        y.field='rate.qtl',
+                        color.field='abb.act',
+                        bins=c(5, 5),
+                        svm=F, 
+                        alpha.count=T,
+                        add.points=T,
+                        fill.colors=heat.col)
+  
+  qtl.hm <- qtl.hm +
+    xlab('\n Quantile of Occupancy Rate') +
+    ylab('\n Quantile of Nightly Rate') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    scale_y_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    theme(legend.position='bottom')
+  
+  ## Make quartile heat map  
+  
+  qtl.hm.svm <- makeHeatMap(mrkt.comp$abb,
+                            x.field='occ.qtl',
+                            y.field='rate.qtl',
+                            color.field='abb.act',
+                            bins=c(5, 5),
+                            svm=T, 
+                            alpha.count=F,
+                            add.points=T,
+                            fill.colors=heat.col)
+  
+  qtl.hm.svm <- qtl.hm.svm +
+    xlab('\n Quantile of Occupancy Rate') +
+    ylab('\n Quantile of Nightly Rate') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    scale_y_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    theme(legend.position='bottom')
+  
+ ## Get SVM Counts for market analysis
+  
+  svm.rate <- makeSVM(mrkt.comp$abb,
+                      x.field='occ.rate',
+                      y.field='nightly.rate',
+                      z.field='abb.act',
+                      svm.type='C-svc',
+                      svm.kernel='polydot',
+                      poly.degree=4,
+                      expand.factor=100)
+  
+  svm.qtl <- makeSVM(mrkt.comp$abb,
+                     x.field='occ.qtl',
+                     y.field='rate.qtl',
+                     z.field='abb.act',
+                     svm.type='C-svc',
+                     svm.kernel='polydot',
+                     poly.degree=4,
+                     expand.factor=100)
+  
+ ## Calculate the full market score  
+  
+  market.ratio <- data.frame(type=c('rate', 'qtl'),
+                             actual=rep(mean(mrkt.comp$abb$abb.act), 2),
+                             fitted=c(mean(svm.rate$orig$fitted),
+                                      mean(svm.qtl$orig$fitted)),
+                             svm=c(mean(svm.rate$pred$pred),
+                                   mean(svm.qtl$pred$pred)))
   
  ## Return values
   
@@ -724,11 +861,14 @@ fullMarketAnalysis <- function(ltr.df,
               abb=mrkt.comp$abb,
               mrkt.table=mrkt.table,
               plot.2.2=twotwo.bar.plot,
+              plot.1=abb.act.plot,
               rawocc.plot=rawocc.pplot,
               qtlocc.plot=qtlocc.pplot,
               qtl.hm=qtl.heatmap,
-              rate.hm=rate.heatmap,
-              mrkt.score=market.score))
+              qtl.hm.svm=qtl.hm.svm,
+              rate.hm=rate.hm,
+              rate.hm.svm=rate.hm.svm,
+              mrkt.score=market.ratio))
 }
 
 
