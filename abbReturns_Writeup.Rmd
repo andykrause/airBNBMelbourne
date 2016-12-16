@@ -1,0 +1,80 @@
+---
+title: "Should I AirBNB My Property"
+author: "Andy Krause"
+date: "December 17, 2016"
+output: html_document
+---
+
+## Intro
+
+## Lit Review
+
+## Method
+
+### Scenario
+
+You buy a property on Sept 1, 2015. In order to maximize the return over the next 12 months, should you rent long term or AirBNB?
+- Does it depend on the property type or location?
+- 'Market' sets LTR, you set STR.  
+- We will not consider non-economic costs (time, liquidity, etc.) at this point.
+
+### Equation
+
+AirbnbRev = nightly rate * occupancy - (short costs + long costs)
+-- short costs = cleaning, time
+-- long costs = taxes and maintenance
+
+LtRev = weekly rate * (52 - search time) - (short costs + long costs)
+-- short costs = brokerage
+-- long costs = taxes and maintenance
+
+When is AirbnbRev > LtRev?
+
+## Data
+
+Airbnb data from AirDNA.  All of Melbourne.  Most of Oct 2014 to Aug 30th 2016.  Full data from Sept 1 2015 to Aug 30 2016.  Daily and property data.  Is scraped weekly or so for each property.  All prices in US dollars.
+
+- Show example
+
+Long-term data from Domain.  All of Melbourne.  June 2010 to June 2016.  Rental listings and final agreed prices. All property types.
+
+- Show example
+
+No direct link between data (no addresses given in AirBNB)
+
+### Preparation
+
+### Imputing
+
+### Costs
+
+-- Assume long term costs are equivalent
+
+### Comparing
+
+## Results
+
+-- Start with a global analysis
+
+### What is accurate?
+
+- Discuss why Airbnb Actual is the only relevant one.  
+-- Show charts
+-- Discuss problems with Rate imputation
+-- Discuss problems with Occupancy imputation
+
+#### Comp Tables/Figs
+
+### Heat Maps
+
+### Submarkets
+
+### Flexible Geo Analysis
+
+### Logit Models (maybe?)
+
+### Reference to Shiny App
+
+## Future Research
+
+- Does time of purchase (which month) matter?
