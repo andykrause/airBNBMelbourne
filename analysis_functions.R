@@ -431,35 +431,196 @@ makePrefPlot <- function(pref.data,
 }
 
 ### Create heatmaps of profitability -----------------------------------------------------
-
 makeHeatMap <- function(hm.data,
                         x.field,
                         y.field,
-                        alpha.field,
+                        color.field,
                         bins=c(10, 10),
-                        add.points=FALSE){
+                        fill.colors=c('red', 'forestgreen'),
+                        alpha.count=TRUE,
+                        alpha.fill=1,
+                        add.points=FALSE,
+                        hexmap=FALSE,
+                        point.data=NULL,
+                        svm=FALSE,
+                        return.svm=FALSE,
+                        svm.opts=list(type='C-svc',
+                                      kernel='polydot',
+                                      poly.degree=4,
+                                      expand.factor=100)){
   
+ ## Prepare the plotting data  
   
-  hm.data$x.var <- hm.data[ ,x.field]
-  hm.data$y.var <- hm.data[ ,y.field]
-  hm.data$fill.var <- hm.data[ ,alpha.field]  
-  
-  hm.plot <- ggplot(data=hm.data,
-                    aes(x=x.var, y=y.var))
-  if(add.points){
-    hm.plot <- hm.plot + geom_point(size=.1, color='gray50', alpha=.2) 
+  # If SVM
+  if(svm){
+    
+    # create svm analysis
+    svm.obj <- makeSVM(hm.data,
+                       x.field=x.field,
+                       y.field=y.field,
+                       z.field=color.field,
+                       svm.type=svm.opts$type,
+                       svm.kernel=svm.opts$kernel,
+                       poly.degree=svm.opts$poly.degree,
+                       expand.factor=svm.opts$expand.factor)
+    
+    # Convert initial data to point data
+    point.data <- hm.data
+    point.data$x <- point.data[,x.field]
+    point.data$y <- point.data[,y.field]
+    
+    # Add predicted values to data
+    hm.data <- svm.obj$pred
+    names(hm.data) <- c('x.var', 'y.var', 'fill.var')
+    
+  # if not SVM  
+  } else {
+    
+    # Set up X, Y and fill variables
+    hm.data$x.var <- hm.data[ ,x.field]
+    hm.data$y.var <- hm.data[ ,y.field]
+    hm.data$fill.var <- hm.data[ ,color.field]  
+    
   }
   
+ ## Make the plot  
+  
+  # Set up the basics
+  hm.plot <- ggplot(data=hm.data,
+                    aes(x=x.var, y=y.var))
+
+  # If adding by count
+  if(alpha.count){
+    
+    # If Hex
+    if(hexmap){
+      hm.plot <- hm.plot + 
+        stat_binhex(data=hm.data,
+                    aes(alpha=..count.., fill=as.factor(fill.var)),
+                    binwidth=bins, 
+                    na.rm=T) +
+        guides(alpha=FALSE)
+    
+    # If not hex
+    } else {
+      hm.plot <- hm.plot + 
+        stat_bin2d(data=hm.data,
+                   aes(alpha=..count.., fill=as.factor(fill.var)),
+                   binwidth=bins) +
+        guides(alpha=FALSE)
+    }
+    
+  # if not adding by count  
+  } else {
+    
+    # if hex
+    if(hexmap){
+      hm.plot <- hm.plot + 
+        stat_binhex(data=hm.data,
+                    aes(fill=as.factor(fill.var)),
+                    binwidth=bins) +
+        guides(alpha=FALSE)
+      
+    # if not hex
+    } else {
+      hm.plot <- hm.plot + 
+        stat_bin2d(data=hm.data,
+                   aes(fill=as.factor(fill.var)),
+                   binwidth=bins)  +
+        guides(alpha=FALSE)
+    }
+  }
+  
+  # Adding points
+  
+  if(add.points){
+    if(is.null(point.data)){
+      hm.plot <- hm.plot + geom_point(size=.1, color='gray50', alpha=.35, 
+                                      show.legend=FALSE)
+    } else {
+      hm.plot <- hm.plot + geom_point(data=point.data,
+                                      aes(x=x, y=y),
+                                      size=.1, color='gray50', alpha=.35, 
+                                      show.legend=FALSE)
+    }
+  }
+  
+  # Add fill legend
   hm.plot <- hm.plot + 
-    stat_bin2d(data=hm.data,
-               aes(alpha=..count.., fill=as.factor(fill.var)),
-               binwidth=bins) +
-   scale_fill_manual(values=c('red', 'forestgreen'))
- 
-   
-  return(hm.plot)
+    scale_fill_manual(values=fill.colors,
+                      name='',
+                      labels=c('Long Term Preferred     ',
+                               'Airbnb Preferred        '))
+  
+ ## Return Values  
+  
+  # If return SVM data
+  if(return.svm){
+    return(list(svm=hm.data,
+                map=hm.plot))
+  
+  # if not returnign SVM data  
+  } else {
+    return(hm.plot)
+  }
   
 }
+
+### Create SVM prediction data ----------------------------------------------------------- 
+
+makeSVM <- function(svm.data,
+                    x.field,
+                    y.field,
+                    z.field,
+                    svm.type='C-svc',
+                    svm.kernel='polydot',
+                    poly.degree=4,
+                    expand.factor=100){
+  
+  
+  # Create XY data
+  xy.data <- cbind(svm.data[,x.field], svm.data[,y.field])
+  
+  # Specificy SVM
+  svm.obj <- ksvm(x=xy.data,
+                  y=svm.data[,z.field],
+                  data=xy.data,
+                  type=svm.type,
+                  kernel=svm.kernel,
+                  kpar=list(degree=poly.degree))
+  
+  # Add the fitted to the data
+  svm.data$fitted <- svm.obj@fitted
+  
+  ## Make predictions over grid
+  
+  # Set up grid
+  x.range <- max(svm.data[ ,x.field]) - min(svm.data[ ,x.field])
+  x.inc <- x.range / expand.factor
+  xx.min <- min(svm.data[, x.field]) - x.inc
+  xx.max <- max(svm.data[, x.field]) + x.inc
+  
+  y.range <- max(svm.data[ ,y.field]) - min(svm.data[ ,y.field])
+  y.inc <- y.range / expand.factor
+  yy.min <- min(svm.data[, y.field]) - y.inc
+  yy.max <- max(svm.data[, y.field]) + y.inc
+  
+  pred.grid <- expand.grid(seq(xx.min, xx.max, x.inc),
+                           seq(yy.min, yy.max, y.inc))  
+  
+  # Make the predictions
+  svm.pred <- predict(svm.obj, pred.grid)
+  
+  # Add predictions to the 
+  pred.grid$pred <- svm.pred
+  
+  ## Return values
+  
+  return(list(orig=svm.data,
+              pred=pred.grid))
+  
+}
+
 
 ### Calculate the full market score ------------------------------------------------------
 
