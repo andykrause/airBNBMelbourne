@@ -345,6 +345,7 @@ The dates in the long term data are not standardized.  To fix this issue we crea
 
 ```
 
+
 #### Trim by Time
 
 Next we trim the observations by time.  Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term rental versus an AirBNB, short term rental approach to generating income.  To determine the likely long term rental rate for any given property, we will use the observed rental transactions from the market from September 1, 2014 to August 31, 2015.  Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.  Another reason for using these two period of data is that the AirBNB data has missing daily values prior to September 1, 2015.  While we have imputed these missing daily observations, we hold the actual observed values to be of greater accuracy and have designed the initial simulated example to take advantage of the full observed set. 
@@ -363,6 +364,23 @@ Next we trim the observations by time.  Our hypothetical simulated decision is t
   listing.data <- listing.data[listing.data$id.key %in% ltr.data$id.key, ]
 
 ```
+
+
+
+```{r add_month, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Short term data
+
+  abb.data$abb.month <- 1
+  daily.data$abb.month <- as.numeric(as.factor(substr(daily.data$date, 1, 7)))
+
+  # Long term data
+
+  ltr.data$ltr.month <- as.numeric(as.factor(substr(ltr.data$event.date, 1, 7)))
+  listing.data$ltr.month <- as.numeric(as.factor(substr(listing.data$event.date, 1, 7))) - 8
+  
+```
+
 
 ### Standardize Property Types
 

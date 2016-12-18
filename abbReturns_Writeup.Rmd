@@ -7,18 +7,32 @@ output: html_document
 
 ## Intro
 
+With the rise of Airbnb and other self-hosting accommodation platforms, property owners and investors may consider short-term rental as a potential use for a home.  The question to be asked then is, in which circumstances would leasing in a short-term manner produce greater returns than a traditional long-term rental?  This work presents an examination of market transactions of both short and long-term rental aimed at answering this question. 
+
+To do so, we use long-term rental data and nightly Airbnb listing information from the Melbourne (Australia) metropolitan area.  Melbourne has a thriving Airbnb market with over 17,000 total properties listed on the portal.  The Airbnb data does not include exact addresses and therefore no direct matches between the datasets can be made.  As a result, we impute likely short and long-term rental rates and occupancies.  Comparisons of actual to estimated returns are made to determine the situation in which a short term rental, such as Airbnb, is more profitable.  
+
+Additionally, we break the results down by property types (apartment vs house), product type (ex. 1 bed, 1 bath) and by location (submarket).  Our results shows that the feasibility of a greater return through a short term rental is dependent on property type, product and location.  In answer to our question: it depends.  
+
 ## Lit Review
 
 ## Method
 
 ### Scenario
 
-You buy a property on Sept 1, 2015. In order to maximize the return over the next 12 months, should you rent long term or AirBNB?
-- Does it depend on the property type or location?
-- 'Market' sets LTR, you set STR.  
-- We will not consider non-economic costs (time, liquidity, etc.) at this point.
+We approach answering the question of Airbnb-ing or not by examining a scenario likely to be faced by a recent purchaser of a property.  More specifically, we examine the following case:
+
+* An investor purchases a property in Melbourne on Sept 1, 2015.
+* They are looking to maximize the revenue over the 12 month period from Sept 1 2015 to August 31 2016.
+* The choices are 1) traditional year long rental (long term), or: 2) short-term, Airbnb type rental.
+* Only direct monetary costs are considered, others such as liquidity and inconvience are not considered.  
+
+We will not, a priori, specify a location or property type as we hypothesize that the feasibility of a short term rental will vary by these characteristics.  Australia has a tax policy, Negative Gearing, that does allow for favourable tax treatment to real estate investors who experience greater costs than revenues on investment properties.  However, as this policy requires knowledge of the investor's personal income level, we will not be considering this policy in our analysis here.  
+
+One benefit of a short-term rental may be the ability to adjust the nightly rate over the course of the year to reflect changing demand and market trends.  As the future trends are unknown at the time of purchase and the decision of long vs short term rental, we make our comparisons using a fixed nightly short term rate to respresent the most likely state of knowledge for our hypothetical investor on September 1, 2015. Both long and short term rates and occupancy structures will be baesd on the market conditions as of this date.  
 
 ### Equation
+
+
 
 AirbnbRev = nightly rate * occupancy - (short costs + long costs)
 -- short costs = cleaning, time

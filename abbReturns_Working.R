@@ -10,6 +10,7 @@
   library(spdep)
   library(maptools)
   library(gstat)
+  library(kernlab)
   library(ggplot2)
   library(geosphere)
   library(ggmap)
@@ -22,8 +23,6 @@
   library(stringr)
   library(RColorBrewer)
   library(Hmisc)
-  library(kernlab)
-
 
  ## Set path location
 
@@ -60,7 +59,8 @@
  ## Global model
 
   # Set model specifications
-  ltr.mod.spec <- formula(log(event.price) ~ as.factor(bedbath) + as.factor(suburb))
+  ltr.mod.spec <- formula(log(event.price) ~ as.factor(bedbath) + as.factor(suburb) + 
+                            as.factor(ltr.month))
   abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(bedbath) + as.factor(suburb))
  
  # Make comparison between two markets  
