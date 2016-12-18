@@ -65,7 +65,11 @@ imputeRatesRents <- function(ltr.df,
     }
     
  }
-  
+
+ ## Add the monthly factors
+
+  abb.df$ltr.month <- 12
+    
  ## Build regression models for rental values
   
   ltr.mod <- lm(ltr.mod.spec, data=ltr.df)
@@ -864,7 +868,7 @@ fullMarketAnalysis <- function(ltr.df,
               plot.1=abb.act.plot,
               rawocc.plot=rawocc.pplot,
               qtlocc.plot=qtlocc.pplot,
-              qtl.hm=qtl.heatmap,
+              qtl.hm=qtl.hm,
               qtl.hm.svm=qtl.hm.svm,
               rate.hm=rate.hm,
               rate.hm.svm=rate.hm.svm,
