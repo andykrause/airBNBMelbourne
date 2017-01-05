@@ -178,23 +178,25 @@ As the chart below show, the **Other** category only makes up a very small perce
   daily.data <- before.PT$daily.data
 ``` 
 
-```{r type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4}
+```{r type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3, fig.cap='Tenure Type by Property Type'}
 
   # Create Airbnb plot
 
   abb.types <- ggplot(abb.data, aes(x=type)) + 
     geom_bar(color=str.col, fill=str.col) +
     xlab('') + 
-    ggtitle('\n      Short Term Rentals\n')  +
-    ylab('# of Properties\n')
+    ylab('# of Properties\n') +
+    labs(title = "Short Term Rentals\n") + 
+    theme(plot.title = element_text(hjust = 0.5))
 
   # Create long term rental plot
 
   ltr.types <- ggplot(ltr.data, aes(x=type)) + 
     geom_bar(color=ltr.col, fill=ltr.col) +
     xlab('') + 
-    ggtitle('\n      Long Term Rentals\n')  +
-    ylab('# of Properties\n')
+    ylab('# of Properties\n') +
+    labs(title = "Long Term Rentals\n") + 
+    theme(plot.title = element_text(hjust = 0.5))
 
   # Output plots
   
@@ -202,7 +204,7 @@ As the chart below show, the **Other** category only makes up a very small perce
   
 ```
 
-```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4}
+```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
 
   abb.data <- subset(abb.data, type != 'Other')
   ltr.data <- subset(ltr.data, type != 'Other')
@@ -217,7 +219,7 @@ Next, for the short term rentals properties can be listed as one of three types 
 
 As long-term rentals do not offer **Private Room** or **Shared Room** options^[Our dataset does not include rooming houses, purpose built student accomodations and other types of rental which may offer private or shared room options] and our purpose here is a comparison of long and short term returns, we remove all short term properties that do not lease the entire home/apt. Unfortunately, this filter does remove about 40% of the short term data, however, given the research question it is unavoidable. 
 
-```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4}
+```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.width=5, fig.cap='Listing Type of Short Term Rentals'}
 
   # Fix data types and names
   
@@ -229,8 +231,10 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
   ggplot(abb.data, aes(x=listing.type)) + 
     geom_bar(color=abb.col[1], fill=abb.col[1]) +
     xlab('') + 
-    ggtitle('\n                           Short Term Rentals by Listing Type\n')  +
-    ylab('# of Properties\n')
+    ylab('# of Properties\n') +
+    labs(title = "Short Term Rentals by Listing Type\n") + 
+    theme(plot.title = element_text(hjust = 0.5))
+   
   
 ```
 
@@ -254,7 +258,7 @@ We begin by removing all properties that are missing bedroom information or have
 
 ```
 
-```{r bed_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5}
+```{r bed_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5, fig.cap='Bedrooms by Tenure & Property Type'}
 
  # Build long term bar plot
 
@@ -262,9 +266,10 @@ We begin by removing all properties that are missing bedroom information or have
     geom_bar(fill=ltr.col, color=ltr.col) +
     facet_wrap(~type) +
     scale_x_continuous(labels=1:10, breaks=1:10)+
-    xlab('\nBedrooms\n') +
-    ylab('') +
-    ggtitle('Bedrooms in Long Term Rentals')
+    xlab('') +
+    ylab('# of Props\n') +
+    labs(title = "Bedrooms in Long Term Rentals\n") + 
+    theme(plot.title = element_text(hjust = 0.5))
  
  # Build short term bar plot
 
@@ -272,9 +277,10 @@ We begin by removing all properties that are missing bedroom information or have
     geom_bar(fill=str.col, color=str.col) +
     facet_wrap(~type) +
     scale_x_continuous(labels=0:10, breaks=0:10)+
-    xlab('\nBedrooms\n') +
-    ylab('') +
-    ggtitle('Bedrooms in Short Term Rentals')
+    xlab('') +
+    ylab('# of Props\n') +
+    labs(title = "Bedrooms in Short Term Rentals\n") + 
+    theme(plot.title = element_text(hjust = 0.5))
  
  # Make the comparison plot  
   
@@ -313,7 +319,7 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
 
 ```
 
-```{r bath_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5}
+```{r bath_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5, fig.cap='Bathrooms by Tenure & Property Type'}
 
  # Build long term plot
 
@@ -321,9 +327,10 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
     geom_bar(fill=ltr.col, color=ltr.col) +
     facet_wrap(~type) +
     scale_x_continuous(labels=1:8, breaks=1:8)+
-    xlab('\nBathrooms\n') +
-    ylab('') + 
-    ggtitle('Bathrooms in Long Term Rentals')
+    xlab('') +
+    ylab('# of Props\n') +
+    labs(title = "Bathrooms in Long Term Rentals\n") + 
+    theme(plot.title = element_text(hjust = 0.5))
 
  # Build short term plot 
 
@@ -331,9 +338,10 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
     geom_bar(fill=str.col, color=str.col) +
     facet_wrap(~type) +
     scale_x_continuous(labels=0:8, breaks=0:8)+
-    xlab('\nBathrooms\n') +
-    ylab('') + 
-    ggtitle('Bathrooms in Short Term ltrals')
+    xlab('') +
+    ylab('# of Props\n') +
+    labs(title = "Bathrooms in Short Term Rentals\n") + 
+    theme(plot.title = element_text(hjust = 0.5))
  
  # Make Plots  
   
@@ -371,26 +379,28 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
 
 ```
 
-```{r filtBB2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5}
+```{r filtBB2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5, fig.cap='Bed/Bath Combo by Tenure & Property Type'}
 
  # Make long term plot
 
   ltb <- ggplot(ltr.data, aes(x=bedbath)) + 
     geom_bar(fill=ltr.col, color=ltr.col) +
-    xlab('\nBed/Bath Combo\n') +
-    ylab('Number of Properties\n') +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    ggtitle('Long Term Rentals') + 
+    xlab('') +
+    ylab('# of Props\n') +
+    labs(title = "Bed/Bath Combo in Long Term Rentals\n") + 
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(axis.text.x = element_text(angle = 90, vjust=0.4)) +
     facet_wrap(~type)
 
  # Make short term plots
 
   stb <- ggplot(abb.data, aes(x=bedbath)) +
     geom_bar(fill=str.col, color=str.col) + 
-    xlab('\nBed/Bath Combo\n') +
-    ylab('Number of Properties\n') +
-    ggtitle('Short Term Rentals') + 
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    xlab('') +
+    ylab('# of Props\n') +
+    labs(title = "Bed/Bath Combo in Short Term Rentals\n") + 
+    theme(plot.title = element_text(hjust = 0.5)) + 
+    theme(axis.text.x = element_text(angle = 90, vjust=0.4)) +
     facet_wrap(~type)
 
  # Plot  
@@ -446,28 +456,31 @@ We now turn to filtering by the prices -- the nightly rates and weekly rental va
   
   ltr.plot <- ggplot(ltr.data, aes(x=event.price)) + 
     geom_density(fill=ltr.col, alpha=.8) +
-    ylab('') +
+    ylab('Frequency') +
     xlab('Weekly Rental') + 
     ggtitle('Long Term Rentals') + 
     scale_x_continuous(limits=c(0, 1500)) +
     theme(axis.title.y=element_blank(),
           axis.text.y=element_blank(),
-          axis.ticks.y=element_blank())
+          axis.ticks.y=element_blank(), 
+          plot.title = element_text(hjust = 0.5))
+
 
   # Nightly Rate plot
   rate.plot <- ggplot(abb.data, aes(x=nightly.rate)) + 
     geom_density(fill=str.col, alpha=.8) + 
-    ylab('') +
+    ylab('Frequency') +
     xlab('Nightly Rate') +
     ggtitle('Short Term Rentals') + 
     scale_x_continuous(limits=c(0, 600)) +
     theme(axis.title.y=element_blank(),
           axis.text.y=element_blank(),
-          axis.ticks.y=element_blank())
+          axis.ticks.y=element_blank(), 
+          plot.title = element_text(hjust = 0.5))
 
 ```
 
-```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Rates and Rents by Tenure Type'}
 
   ggMultiPlots(ltr.plot, rate.plot, cols=2)
 
@@ -500,20 +513,31 @@ We now turn to filtering by the prices -- the nightly rates and weekly rental va
   # Make map
   loc.map <- ggplot() +
     geom_polygon(data=subs, aes(x=long, y=lat, group=group, fill=des), alpha=.8) + 
-    scale_fill_manual(values=g.cols, labels=c('Inner      ',
-                                              'Middle      ',
-                                              'Outer')) +
-    geom_path(data=subs, aes(x=long, y=lat, group=group), col='gray40') +
+    scale_fill_manual(values=c('gray10', 'gray40', 'gray70'),
+                      labels=c('Inner      ',
+                               'Middle      ',
+                               'Outer')) +
+    geom_path(data=subs, aes(x=long, y=lat, group=group), col='gray90', size=.1, alpha=.2) +
     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
     xlab('') + ylab('')+
     theme(legend.position = 'bottom',
-          legend.title = element_blank()) +
+          legend.title = element_blank(), 
+          plot.title = element_text(hjust = 0.5),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(fill = "white"),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
     ggtitle("Melbourne Suburb Classifications")
 
 ```
 
-```{r plot_loc_map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=6}
+```{r plot_loc_map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=5, fig.cap='Melbourne Suburb Classifications'}
 
   loc.map  
 
@@ -536,15 +560,24 @@ We now turn to filtering by the prices -- the nightly rates and weekly rental va
   # Make map
 
   abb.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray80', fill='gray90') +
     geom_point(data=abb.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.2,
                alpha=.2) +
     scale_color_manual(values=sm.col) +
     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
-    xlab('') + ylab('')+
     theme(legend.position = 'bottom',
-          legend.title = element_blank()) +
+          legend.title = element_blank(), 
+          plot.title = element_text(hjust = 0.5),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(fill = "white"),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
     guides(colour = guide_legend(override.aes = list(size=3,
                                                      alpha=1))) + 
     ggtitle('AirBNB Location\nBy Submarket')
@@ -556,22 +589,32 @@ We now turn to filtering by the prices -- the nightly rates and weekly rental va
   # Make map
 
   ltr.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray80', fill='gray90') +
     geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.1,
                alpha=.1) +
     scale_color_manual(values=sm.col) +
     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
     xlab('') + ylab('')+
-    theme(legend.position = 'bottom',
-          legend.title = element_blank()) +
+   theme(legend.position = 'bottom',
+          legend.title = element_blank(), 
+          plot.title = element_text(hjust = 0.5),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(fill = "white"),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
     guides(colour = guide_legend(override.aes = list(size=3,
                                                      alpha=1))) + 
     ggtitle('Long Term Rental Location\nBy Submarket')
   
 ```
 
-```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.width=9}
+```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9}
 
   ggMultiPlots(abb.map, ltr.map, cols=2)
 
@@ -589,8 +632,9 @@ We now turn to filtering by the prices -- the nightly rates and weekly rental va
     theme(legend.position = 'bottom',
           legend.title = element_blank(),
           axis.text.x=element_blank(),
-          axis.ticks.x=element_blank()) +
-    ggtitle('AirBNB Property Type\nBy Submarket')
+          axis.ticks.x=element_blank(),
+          plot.title = element_text(hjust = 0.5)) +
+    ggtitle('AirBNB Property Type By Submarket')
   
   # Make Long term rental map
 
@@ -602,14 +646,21 @@ We now turn to filtering by the prices -- the nightly rates and weekly rental va
     theme(legend.position = 'bottom',
           legend.title = element_blank(),
           axis.text.x=element_blank(),
-          axis.ticks.x=element_blank()) +
-    ggtitle('Long Term Property Type\nBy Submarket')
+          axis.ticks.x=element_blank(),
+          plot.title = element_text(hjust = 0.5)) +
+    ggtitle('Long Term Property Type By Submarket')
   
 ```
 
-```{r loctype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.width=9}
+```{r abbtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=3.5}
 
-  ggMultiPlots(abbtype.map, ltrtype.map, cols=2)
+  abbtype.map
+
+```
+
+```{r ltrtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=3.5}
+
+  ltrtype.map
 
 ```
 
