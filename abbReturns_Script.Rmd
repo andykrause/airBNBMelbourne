@@ -345,7 +345,6 @@ The dates in the long term data are not standardized.  To fix this issue we crea
 
 ```
 
-
 #### Trim by Time
 
 Next we trim the observations by time.  Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term rental versus an AirBNB, short term rental approach to generating income.  To determine the likely long term rental rate for any given property, we will use the observed rental transactions from the market from September 1, 2014 to August 31, 2015.  Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.  Another reason for using these two period of data is that the AirBNB data has missing daily values prior to September 1, 2015.  While we have imputed these missing daily observations, we hold the actual observed values to be of greater accuracy and have designed the initial simulated example to take advantage of the full observed set. 
@@ -365,8 +364,6 @@ Next we trim the observations by time.  Our hypothetical simulated decision is t
 
 ```
 
-
-
 ```{r add_month, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   # Short term data
@@ -377,10 +374,10 @@ Next we trim the observations by time.  Our hypothetical simulated decision is t
   # Long term data
 
   ltr.data$ltr.month <- as.numeric(as.factor(substr(ltr.data$event.date, 1, 7)))
-  listing.data$ltr.month <- as.numeric(as.factor(substr(listing.data$event.date, 1, 7))) - 8
+  listing.data$ltr.month <- as.numeric(as.factor(substr(
+    listing.data$event.date, 1, 7))) - 8
   
 ```
-
 
 ### Standardize Property Types
 
@@ -420,6 +417,19 @@ We then create a new variable in each dataset and give each one of the three cat
 ```
 
 As the chart below show, the **Other** category only makes up a very small percentage of the properties in both the short and long term market, especially in the long-term market.  Additionally, a good portion of the **Others** in the Airbnb data are Bed & Breakfast units, a use which doesn't fit with our research question.  As a result, we remove the 'Others' from both the Airbnb and the long term rental data. 
+
+```{r write_beforeproptypeobj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+before.PT <- list(abb.data=abb.data,
+                  daily.data=daily.data,
+                  ltr.data=ltr.data,
+                  listing.data=listing.data)
+
+
+save(before.PT, file="C:/Dropbox/Research/airBNB/data/analyzed/abb_beforePT.RData")
+
+
+```
 
 ```{r type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
 
@@ -484,357 +494,6 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
 
 ```
 
-### Locations and Submarkets
-
-Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer).
-
-```{r mappoints, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- # Convert shapefile to ggplot-able object
-  
-  # Fix lat/long
- 
-  # Limit to extent of data
-  sub.table <- table(ltr.data$suburb)
-  sub.table <- sub.table[sub.table != 0]
-  
-  # Clip to only those with a ltral observation
-  study.suburbs <- suburbs.shp[suburbs.shp@data$name_2006 %in% names(sub.table),]
-  
-  # Convert to an outer bound with holes
-  ss.bound <- gUnaryUnion(study.suburbs)
-  
-  # Remove holes from the shapefile
-  ssb <- slot(ss.bound, "polygons") 
-  holes <- lapply(ssb, function(x) sapply(slot(x, "Polygons"), 
-                                          slot, "hole"))
-  res <- lapply(1:length(ssb), function(i) slot(ssb[[i]], "Polygons")[!holes[[i]]]) 
-  IDs <- row.names(ss.bound) 
-  ssb.fill <- SpatialPolygons(lapply(1:length(res), function(i) 
-   Polygons(res[[i]], ID=IDs[i])), proj4string=CRS(proj4string(ss.bound))) 
-  
-  # Identify which suburbs all in area covered by outer bound
-  ss.in <- gIntersects(suburbs.shp, ssb.fill, byid=T)
-  study.suburbs <- suburbs.shp[which(ss.in), ]
-  
-  # Convert into a ggplot-able format
-  subs <- fortify(study.suburbs, region='name_2006')
-
-  # Add suburb category
-  subs$des <- suburbs.shp@data$suburbdesi[
-    match(subs$id, suburbs.shp@data$name_2006)]
-
-```
-
-```{r mappoints2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
-
- ## Build the map object
-
-  # Set colors
-  g.cols <- abb.col[c(2, 10, 9)]
-
-  # Make map
-  loc.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group, fill=des), alpha=.8) + 
-    scale_fill_manual(values=g.cols, labels=c('Inner      ',
-                                              'Middle      ',
-                                              'Outer')) +
-    geom_path(data=subs, aes(x=long, y=lat, group=group), col='gray40') +
-    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
-    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
-    xlab('') + ylab('')+
-    theme(legend.position = 'bottom',
-          legend.title = element_blank()) +
-    ggtitle("Melbourne Suburb Classifications")
-
-```
-
-```{r plot_loc_map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=6}
-
-  loc.map  
-
-```
-
-It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beach; and 2) Proximity to key tourist activities and events.  Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analysing short and long term ltrals in Melboure:
-
-1. Rural (Outer suburbs, not Beach)
-2. Suburban (Middle suburbs, not Beach)
-3. City (Inner Suburbs, not Beach, not Core)
-4. City-Core (Select inner suburbs with tourist activities and near CBD)
-5. Beach (Properties within 500m of Port Phillip Bay east of Yarra River)
-
-We assign these designations by: 1) Adding suburb designations to the properties; 2) Assigning submarkets 1-4 based on suburb location; and 3) Indicating proximity to beach and labeling as 'Beach' submarket.  This process is repeated for both the short and long term data.  We also add the Statistical Area 1 code for each property for use in additional spatial modeling later on. Finally, we also remove any observations that fall outside of outer suburbs (the extent of the suburbs). 
-
-We select the 18 suburbs below to represent the 'core' of the city.  The majority of tourist destinations and major events such as the Australian Open and the Grand Prix are located in these suburbs.  All are well serviced by public transportation and possess abundant amenties for tourists. 
-
-```{r core_suburbs, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- core.suburbs <- c('Albert Park', 'Carlton', 'Collingwood', 'Cremorne', 'Docklands',
-                   'East Melbourne', 'Fitzroy', 'Melbourne', 'Port Melbourne', 'Prahran',
-                   'Richmond', 'South Melbourne', 'South Yarra', 'Southbank', 'St Kilda',
-                   'St Kilda West', 'West Melbourne', 'Windsor')
-
-```
-
-We then apply a 500 meter buffer to the beach along Port Phillip Bay. 
-
-```{r beachbuffer, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- # Determine centroid of study area
- 
-  latMid <- median(abb.data$latitude)
-  longMid <- median(abb.data$longitude)
-
- # Calculate Degress to Meters conversion 
- 
-  m.lat = 111132.954 - 559.822 * cos(2 * latMid) + 1.175 * cos(4 * latMid)
-  m.long = 111132.954 * cos (latMid)
-  m.conv <- mean(m.lat, m.long)
- 
- # Create the beach buffer  
-  
-  beach.buffer <- gBuffer(beach.shp, byid=FALSE, width=500/m.conv)
-
-```
-
-Next we assign the suburb, SA1, city-core and beach designations to observations in the Airbnb dataset.  
-
-```{r add_st_space, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- ## Short term data  
-
-  # Convert to point shapefile
-  abb.prop.shp <- SpatialPointsDataFrame(cbind(abb.data$longitude,
-                                               abb.data$latitude),
-                                         abb.data,
-                                         proj4string=CRS("+init=epsg:4283")) 
-
-  # Add suburb name 
-  spJoin <- over(abb.prop.shp, suburbs.shp)
-  abb.data$suburb <- as.character(spJoin$name_2006)
-  abb.data$suburb[is.na(abb.data$suburb)] <- 'missing'
-
-  # Add suburb designation
-  abb.data$sub.class <- as.character(spJoin$suburbdesi)
-  abb.data$sub.class[is.na(abb.data$sub.class)] <- 'missing'
-  
-  # Add SA1 designation
-  spJoin <- over(abb.prop.shp, sa1s.shp)
-  abb.data$sa1 <- spJoin$sa1_main11
- 
-  ## Add Beach Designation
-  spJoin <- over(abb.prop.shp, beach.buffer)
-  abb.data$beach <- ifelse(is.na(spJoin), 0 ,1)
-  
-  # Remove those missing a suburb classification (out of area)
-  abb.data <- abb.data[abb.data$sub.class != 'missing', ]
-  abb.data <- abb.data[abb.data$sa1 != 'missing', ]
-
-```
-
-```{r convert_st_subm, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- ## Add the submarket designations
-
-  # Add individual classes
-  abb.data$sub.mrkt <- 'rural'
-  abb.data$sub.mrkt[abb.data$sub.class == 'Middle'] <- 'suburban'
-  abb.data$sub.mrkt[abb.data$sub.class == 'Inner'] <- 'city'
-  abb.data$sub.mrkt[abb.data$suburb %in% core.suburbs] <- 'city-core'
-  abb.data$sub.mrkt[abb.data$beach == 1] <- 'beach'
-  
-  # Order the factors properly
-  abb.data$sub.mrkt <- factor(abb.data$sub.mrkt, 
-                              levels=c('city-core', 'city', 'suburban', 
-                                        'rural', 'beach'))
-  
-```
-
-Before we do the same for the long term data, we must remedy the fact that about 5% of the long term rental observations have missing latitude and longitude values.  Half of these do, however, have a lat/long value for the centroid of the street that the property faces.  To retain as many observations as possible in these intial steps for those properties that lack a specific lat/long value we apply the street centroid value.  For those without either (3% of the total) we remove them from the dataset at this point. 
-
-```{r fix_ltt_geo, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- # Label those missing lat/long  
-
-  miss.LL <- which(is.na(ltr.data$latitude))  
-
- # Create a field to indicate the approximate matches  
-
-  ltr.data$miss.LL <- 0
-  ltr.data$miss.LL[miss.LL] <- 1
-
- # Apply approximate match    
-
-  ltr.data$latitude[miss.LL] <- ltr.data$street.latitude[miss.LL]
-  ltr.data$longitude[miss.LL] <- ltr.data$street.longitude[miss.LL]
-
- # Remove those still missing latitude data   
-
-  ltr.data <- ltr.data[!is.na(ltr.data$latitude), ]
-
-```
-
-Having fixed the missing lat/long issue, we then assign the suburb, SA1, city-core and beach designations to observations in the long term rental dataset.  
-
-```{r add_lt_space, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Long term data  
-
-  # Convert to point shapefile
-
-  ltr.prop.shp <- SpatialPointsDataFrame(cbind(ltr.data$longitude,
-                                               ltr.data$latitude),
-                                         ltr.data,
-                                         proj4string=CRS("+init=epsg:4283")) 
-
-  # Add suburb name 
-  
-  spJoin <- over(ltr.prop.shp, suburbs.shp)
-  ltr.data$suburb <- as.character(spJoin$name_2006)
-  ltr.data$suburb[is.na(ltr.data$suburb)] <- 'missing'
-
-  # Add suburb designation
-  
-  ltr.data$sub.class <- as.character(spJoin$suburbdesi)
-  ltr.data$sub.class[is.na(ltr.data$sub.class)] <- 'missing'
-  
-  # Add SA1 designation
-  
-  spJoin <- over(ltr.prop.shp, sa1s.shp)
-  ltr.data$sa1 <- spJoin$sa1_main11
- 
-  ## Add Beach Designation
-  
-  spJoin <- over(ltr.prop.shp, beach.buffer)
-  ltr.data$beach <- ifelse(is.na(spJoin), 0 ,1)
-  
-  # Remove those missing a suburb classification (out of area)
-  
-  ltr.data <- ltr.data[ltr.data$sub.class != 'missing', ]
-  ltr.data <- ltr.data[ltr.data$sa1 != 'missing', ]
-
-```
-
-```{r convert_lt_subm, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- ## Add the submarket designations
-
-  # Add individual classes
-  ltr.data$sub.mrkt <- 'rural'
-  ltr.data$sub.mrkt[ltr.data$sub.class == 'Middle'] <- 'suburban'
-  ltr.data$sub.mrkt[ltr.data$sub.class == 'Inner'] <- 'city'
-  ltr.data$sub.mrkt[ltr.data$suburb %in% core.suburbs] <- 'city-core'
-  ltr.data$sub.mrkt[ltr.data$beach == 1] <- 'beach'
-  
-  # Order the factors properly
-  ltr.data$sub.mrkt <- factor(ltr.data$sub.mrkt, 
-                              levels=c('city-core', 'city', 'suburban', 
-                                        'rural', 'beach'))
-  
-```
-
-The location of the short and long term rentals, colored by submarket, are shown below
-
-```{r abb.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Set submarket colors
-  
-  sm.col <- abb.col[c(1, 3, 6, 5, 2)]
-
-  # Make map
-
-  abb.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
-    geom_point(data=abb.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.2,
-               alpha=.2) +
-    scale_color_manual(values=sm.col) +
-    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
-    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
-    xlab('') + ylab('')+
-    theme(legend.position = 'bottom',
-          legend.title = element_blank()) +
-    guides(colour = guide_legend(override.aes = list(size=3,
-                                                     alpha=1))) + 
-    ggtitle('AirBNB Location\nBy Submarket')
-  
-```
-
-```{r ltr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Make map
-
-  ltr.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
-    geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.1,
-               alpha=.1) +
-    scale_color_manual(values=sm.col) +
-    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
-    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
-    xlab('') + ylab('')+
-    theme(legend.position = 'bottom',
-          legend.title = element_blank()) +
-    guides(colour = guide_legend(override.aes = list(size=3,
-                                                     alpha=1))) + 
-    ggtitle('Long Term Rental Location\nBy Submarket')
-  
-```
-
-```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.width=9}
-
-  ggMultiPlots(abb.map, ltr.map, cols=2)
-
-```
-
-The chart below break down the relative frequency of short and long term rental properties across the five submarkets. 
-
-```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.width=9}
-
-  # Make Airbnb submarket map
-  
-  abbtype.map <- ggplot() +
-    geom_bar(data=abb.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
-    scale_fill_manual(values=sm.col) +
-    facet_wrap(~type) +
-    ylab('# of Properties\n') + xlab('')+
-    theme(legend.position = 'bottom',
-          legend.title = element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank()) +
-    ggtitle('AirBNB Property Type\nBy Submarket')
-  
-  # Make Long term rental map
-
-  ltrtype.map <- ggplot() +
-    geom_bar(data=ltr.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
-    scale_fill_manual(values=sm.col) +
-    facet_wrap(~type) +
-    ylab('# of Properties\n') + xlab('')+
-    theme(legend.position = 'bottom',
-          legend.title = element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank()) +
-    ggtitle('Long Term Property Type\nBy Submarket')
-  
-```
-
-
-```{r loctype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.width=9}
-
-  ggMultiPlots(abbtype.map, ltrtype.map, cols=2)
-
-```
-
-Finally, we convert the suburb names from factors to character, which will help with the imputation exercises later on. 
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Convert suburbs from factor to character
-  abb.data$suburb <- as.character(abb.data$suburb)
-  ltr.data$suburb <- as.character(ltr.data$suburb)
-  
-```
-
-&nbsp;
 
 ## Structural Characteristics
 
@@ -1089,7 +748,6 @@ Next, we convert the Airbnb values to Australian dollars from US dollars using t
 
 ```
 
-
 ```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
   # ltr Plot
@@ -1138,6 +796,372 @@ From these density plots we see that most weekly Rentals are greater than $200 a
                          abb.data$nightly.rate <= 500, ]
 
 ```
+
+### Locations and Submarkets
+
+Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer).
+
+```{r mappoints, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Convert shapefile to ggplot-able object
+  
+  # Fix lat/long
+ 
+  # Limit to extent of data
+  sub.table <- table(ltr.data$suburb)
+  sub.table <- sub.table[sub.table != 0]
+  
+  # Clip to only those with a ltral observation
+  study.suburbs <- suburbs.shp[suburbs.shp@data$name_2006 %in% names(sub.table),]
+  
+  # Convert to an outer bound with holes
+  ss.bound <- gUnaryUnion(study.suburbs)
+  
+  # Remove holes from the shapefile
+  ssb <- slot(ss.bound, "polygons") 
+  holes <- lapply(ssb, function(x) sapply(slot(x, "Polygons"), 
+                                          slot, "hole"))
+  res <- lapply(1:length(ssb), function(i) slot(ssb[[i]], "Polygons")[!holes[[i]]]) 
+  IDs <- row.names(ss.bound) 
+  ssb.fill <- SpatialPolygons(lapply(1:length(res), function(i) 
+   Polygons(res[[i]], ID=IDs[i])), proj4string=CRS(proj4string(ss.bound))) 
+  
+  # Identify which suburbs all in area covered by outer bound
+  ss.in <- gIntersects(suburbs.shp, ssb.fill, byid=T)
+  study.suburbs <- suburbs.shp[which(ss.in), ]
+  
+  # Convert into a ggplot-able format
+  subs <- fortify(study.suburbs, region='name_2006')
+
+  # Add suburb category
+  subs$des <- suburbs.shp@data$suburbdesi[
+    match(subs$id, suburbs.shp@data$name_2006)]
+
+```
+
+```{r mappoints2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+ ## Build the map object
+
+  # Set colors
+  g.cols <- abb.col[c(2, 10, 9)]
+
+  # Make map
+  loc.map <- ggplot() +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group, fill=des), alpha=.8) + 
+    scale_fill_manual(values=g.cols, labels=c('Inner      ',
+                                              'Middle      ',
+                                              'Outer')) +
+    geom_path(data=subs, aes(x=long, y=lat, group=group), col='gray40') +
+    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
+    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
+    xlab('') + ylab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank()) +
+    ggtitle("Melbourne Suburb Classifications")
+
+```
+
+```{r plot_loc_map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=6}
+
+  loc.map  
+
+```
+
+It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beach; and 2) Proximity to key tourist activities and events.  Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analysing short and long term ltrals in Melboure:
+
+1. Rural (Outer suburbs, not Beach)
+2. Suburban (Middle suburbs, not Beach)
+3. City (Inner Suburbs, not Beach, not Core)
+4. City-Core (Select inner suburbs with tourist activities and near CBD)
+5. Beach (Properties within 500m of Port Phillip Bay east of Yarra River)
+
+We assign these designations by: 1) Adding suburb designations to the properties; 2) Assigning submarkets 1-4 based on suburb location; and 3) Indicating proximity to beach and labeling as 'Beach' submarket.  This process is repeated for both the short and long term data.  We also add the Statistical Area 1 code for each property for use in additional spatial modeling later on. Finally, we also remove any observations that fall outside of outer suburbs (the extent of the suburbs). 
+
+We select the 18 suburbs below to represent the 'core' of the city.  The majority of tourist destinations and major events such as the Australian Open and the Grand Prix are located in these suburbs.  All are well serviced by public transportation and possess abundant amenties for tourists. 
+
+```{r core_suburbs, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ core.suburbs <- c('Albert Park', 'Carlton', 'Collingwood', 'Cremorne', 'Docklands',
+                   'East Melbourne', 'Fitzroy', 'Melbourne', 'Port Melbourne', 'Prahran',
+                   'Richmond', 'South Melbourne', 'South Yarra', 'Southbank', 'St Kilda',
+                   'St Kilda West', 'West Melbourne', 'Windsor')
+
+```
+
+We then apply a 500 meter buffer to the beach along Port Phillip Bay. 
+
+```{r beachbuffer, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Determine centroid of study area
+ 
+  latMid <- median(abb.data$latitude)
+  longMid <- median(abb.data$longitude)
+
+ # Calculate Degress to Meters conversion 
+ 
+  m.lat = 111132.954 - 559.822 * cos(2 * latMid) + 1.175 * cos(4 * latMid)
+  m.long = 111132.954 * cos (latMid)
+  m.conv <- mean(m.lat, m.long)
+ 
+ # Create the beach buffer  
+  
+  beach.buffer <- gBuffer(beach.shp, byid=FALSE, width=500/m.conv)
+
+```
+
+Next we assign the suburb, SA1, city-core and beach designations to observations in the Airbnb dataset.  
+
+```{r add_st_space, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Short term data  
+
+  # Convert to point shapefile
+  abb.prop.shp <- SpatialPointsDataFrame(cbind(abb.data$longitude,
+                                               abb.data$latitude),
+                                         abb.data,
+                                         proj4string=CRS("+init=epsg:4283")) 
+
+  # Add suburb name 
+  spJoin <- over(abb.prop.shp, suburbs.shp)
+  abb.data$suburb <- as.character(spJoin$name_2006)
+  abb.data$suburb[is.na(abb.data$suburb)] <- 'missing'
+
+  # Add suburb designation
+  abb.data$sub.class <- as.character(spJoin$suburbdesi)
+  abb.data$sub.class[is.na(abb.data$sub.class)] <- 'missing'
+  
+  # Add SA1 designation
+  spJoin <- over(abb.prop.shp, sa1s.shp)
+  abb.data$sa1 <- spJoin$sa1_main11
+ 
+  ## Add Beach Designation
+  spJoin <- over(abb.prop.shp, beach.buffer)
+  abb.data$beach <- ifelse(is.na(spJoin), 0 ,1)
+  
+  # Remove those missing a suburb classification (out of area)
+  abb.data <- abb.data[abb.data$sub.class != 'missing', ]
+  abb.data <- abb.data[abb.data$sa1 != 'missing', ]
+
+```
+
+```{r convert_st_subm, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Add the submarket designations
+
+  # Add individual classes
+  abb.data$sub.mrkt <- 'rural'
+  abb.data$sub.mrkt[abb.data$sub.class == 'Middle'] <- 'suburban'
+  abb.data$sub.mrkt[abb.data$sub.class == 'Inner'] <- 'city'
+  abb.data$sub.mrkt[abb.data$suburb %in% core.suburbs] <- 'city-core'
+  abb.data$sub.mrkt[abb.data$beach == 1] <- 'beach'
+  
+  # Order the factors properly
+  abb.data$sub.mrkt <- factor(abb.data$sub.mrkt, 
+                              levels=c('city-core', 'city', 'suburban', 
+                                        'rural', 'beach'))
+  
+```
+
+Before we do the same for the long term data, we must remedy the fact that about 5% of the long term rental observations have missing latitude and longitude values.  Half of these do, however, have a lat/long value for the centroid of the street that the property faces.  To retain as many observations as possible in these intial steps for those properties that lack a specific lat/long value we apply the street centroid value.  For those without either (3% of the total) we remove them from the dataset at this point. 
+
+```{r fix_ltt_geo, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Label those missing lat/long  
+
+  miss.LL <- which(is.na(ltr.data$latitude))  
+
+ # Create a field to indicate the approximate matches  
+
+  ltr.data$miss.LL <- 0
+  ltr.data$miss.LL[miss.LL] <- 1
+
+ # Apply approximate match    
+
+  ltr.data$latitude[miss.LL] <- ltr.data$street.latitude[miss.LL]
+  ltr.data$longitude[miss.LL] <- ltr.data$street.longitude[miss.LL]
+
+ # Remove those still missing latitude data   
+
+  ltr.data <- ltr.data[!is.na(ltr.data$latitude), ]
+
+```
+
+Having fixed the missing lat/long issue, we then assign the suburb, SA1, city-core and beach designations to observations in the long term rental dataset.  
+
+```{r add_lt_space, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Long term data  
+
+  # Convert to point shapefile
+
+  ltr.prop.shp <- SpatialPointsDataFrame(cbind(ltr.data$longitude,
+                                               ltr.data$latitude),
+                                         ltr.data,
+                                         proj4string=CRS("+init=epsg:4283")) 
+
+  # Add suburb name 
+  
+  spJoin <- over(ltr.prop.shp, suburbs.shp)
+  ltr.data$suburb <- as.character(spJoin$name_2006)
+  ltr.data$suburb[is.na(ltr.data$suburb)] <- 'missing'
+
+  # Add suburb designation
+  
+  ltr.data$sub.class <- as.character(spJoin$suburbdesi)
+  ltr.data$sub.class[is.na(ltr.data$sub.class)] <- 'missing'
+  
+  # Add SA1 designation
+  
+  spJoin <- over(ltr.prop.shp, sa1s.shp)
+  ltr.data$sa1 <- spJoin$sa1_main11
+ 
+  ## Add Beach Designation
+  
+  spJoin <- over(ltr.prop.shp, beach.buffer)
+  ltr.data$beach <- ifelse(is.na(spJoin), 0 ,1)
+  
+  # Remove those missing a suburb classification (out of area)
+  
+  ltr.data <- ltr.data[ltr.data$sub.class != 'missing', ]
+  ltr.data <- ltr.data[ltr.data$sa1 != 'missing', ]
+
+```
+
+```{r convert_lt_subm, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Add the submarket designations
+
+  # Add individual classes
+  ltr.data$sub.mrkt <- 'rural'
+  ltr.data$sub.mrkt[ltr.data$sub.class == 'Middle'] <- 'suburban'
+  ltr.data$sub.mrkt[ltr.data$sub.class == 'Inner'] <- 'city'
+  ltr.data$sub.mrkt[ltr.data$suburb %in% core.suburbs] <- 'city-core'
+  ltr.data$sub.mrkt[ltr.data$beach == 1] <- 'beach'
+  
+  # Order the factors properly
+  ltr.data$sub.mrkt <- factor(ltr.data$sub.mrkt, 
+                              levels=c('city-core', 'city', 'suburban', 
+                                        'rural', 'beach'))
+  
+```
+
+```{r write_afterspobj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+after.SP <- list(abb.data=abb.data,
+                  daily.data=daily.data,
+                  ltr.data=ltr.data,
+                  listing.data=listing.data)
+
+
+save(after.SP, file="C:/Dropbox/Research/airBNB/data/analyzed/abb_afterSP.RData")
+
+
+```
+
+The location of the short and long term rentals, colored by submarket, are shown below
+
+```{r abb.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Set submarket colors
+  
+  sm.col <- abb.col[c(1, 3, 6, 5, 2)]
+
+  # Make map
+
+  abb.map <- ggplot() +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
+    geom_point(data=abb.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.2,
+               alpha=.2) +
+    scale_color_manual(values=sm.col) +
+    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
+    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
+    xlab('') + ylab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank()) +
+    guides(colour = guide_legend(override.aes = list(size=3,
+                                                     alpha=1))) + 
+    ggtitle('AirBNB Location\nBy Submarket')
+  
+```
+
+```{r ltr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Make map
+
+  ltr.map <- ggplot() +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
+    geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.1,
+               alpha=.1) +
+    scale_color_manual(values=sm.col) +
+    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
+    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
+    xlab('') + ylab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank()) +
+    guides(colour = guide_legend(override.aes = list(size=3,
+                                                     alpha=1))) + 
+    ggtitle('Long Term Rental Location\nBy Submarket')
+  
+```
+
+```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.width=9}
+
+  ggMultiPlots(abb.map, ltr.map, cols=2)
+
+```
+
+The chart below break down the relative frequency of short and long term rental properties across the five submarkets. 
+
+```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.width=9}
+
+  # Make Airbnb submarket map
+  
+  abbtype.map <- ggplot() +
+    geom_bar(data=abb.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
+    scale_fill_manual(values=sm.col) +
+    facet_wrap(~type) +
+    ylab('# of Properties\n') + xlab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle('AirBNB Property Type\nBy Submarket')
+  
+  # Make Long term rental map
+
+  ltrtype.map <- ggplot() +
+    geom_bar(data=ltr.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
+    scale_fill_manual(values=sm.col) +
+    facet_wrap(~type) +
+    ylab('# of Properties\n') + xlab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle('Long Term Property Type\nBy Submarket')
+  
+```
+
+
+```{r loctype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.width=9}
+
+  ggMultiPlots(abbtype.map, ltrtype.map, cols=2)
+
+```
+
+Finally, we convert the suburb names from factors to character, which will help with the imputation exercises later on. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Convert suburbs from factor to character
+  abb.data$suburb <- as.character(abb.data$suburb)
+  ltr.data$suburb <- as.character(ltr.data$suburb)
+  
+```
+
+&nbsp;
+
 
 ## Filter Transaction Data
 
@@ -1232,17 +1256,14 @@ SAVE HERE FOR SUBTRACTION OF COSTS FROM REVENUE
 
 Finally, we create and fix three variables. One factor variable for bed/bath combination, a factor variable that splits bed/bath by house and apartment and then we convert suburb from a factor to a character. 
 
-
-
-
-
-
-
 ### Save Workspace for using in 'Working' script
 
 ```{r savewrkspc, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  save.image("C:/Dropbox/Research/airBNB/data/analyzed/abb_working.RData")
+  #save.image("C:/Dropbox/Research/airBNB/data/analyzed/abb_working.RData")
+  save(abb.data, listing.data, daily.data, ltr.data, subs, abb.col,
+       file="C:/Dropbox/Research/airBNB/data/analyzed/abb_working.RData")
+
 
 ```
 
