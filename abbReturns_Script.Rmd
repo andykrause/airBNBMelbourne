@@ -349,8 +349,57 @@ The dates in the long term data are not standardized.  To fix this issue we crea
 
 Next we trim the observations by time.  Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term rental versus an AirBNB, short term rental approach to generating income.  To determine the likely long term rental rate for any given property, we will use the observed rental transactions from the market from September 1, 2014 to August 31, 2015.  Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.  Another reason for using these two period of data is that the AirBNB data has missing daily values prior to September 1, 2015.  While we have imputed these missing daily observations, we hold the actual observed values to be of greater accuracy and have designed the initial simulated example to take advantage of the full observed set. 
 
-```{r clip_time, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+```{r}
 
+setCleanCount <- function(){
+  
+  abb.orig <- nrow(abb.data)
+  daily.orig <- nrow(daily.data)
+  ltr.orig <- nrow(ltr.data)
+  list.orig <- nrow(listing.data)
+  
+  clean.df <- data.frame(operation='initial',
+                         abb=abb.orig,
+                         daily=daily.orig,
+                         ltr=ltr.orig,
+                         list=list.orig)
+  assign('clean.count', clean.df, envir=.GlobalEnv)
+  assign('abb.run.total', nrow(abb.data), envir=.GlobalEnv)
+  assign('ltr.run.total', nrow(ltr.data), envir=.GlobalEnv)
+  assign('list.run.total', nrow(listing.data), envir=.GlobalEnv)
+  assign('daily.run.total', nrow(daily.data), envir=.GlobalEnv)
+  
+}
+
+countCleaning <- function(operation){
+  
+  abb.cut <- abb.run.total - nrow(abb.data)
+  daily.cut <- daily.run.total - nrow(daily.data)
+  ltr.cut <- ltr.run.total - nrow(ltr.data)
+  listing.cut <- list.run.total - nrow(listing.data)
+
+  new.df <- data.frame(operation=operation,
+                       abb=abb.cut,
+                       daily=daily.cut,
+                       ltr=ltr.cut,
+                       list=listing.cut)
+  comb.df <- rbind(clean.count, new.df)
+  assign('clean.count', comb.df, envir=.GlobalEnv)
+  assign('abb.run.total', nrow(abb.data), envir=.GlobalEnv)
+  assign('ltr.run.total', nrow(ltr.data), envir=.GlobalEnv)
+  assign('list.run.total', nrow(listing.data), envir=.GlobalEnv)
+  assign('daily.run.total', nrow(daily.data), envir=.GlobalEnv)
+  
+}
+
+setCleanCount()
+
+```
+
+
+
+```{r clip_time, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+ 
  # Limit short term data
 
   abb.data <- abb.data[abb.data$min.date >= '2015-09-01', ]
@@ -361,7 +410,11 @@ Next we trim the observations by time.  Our hypothetical simulated decision is t
   ltr.data <- ltr.data[ltr.data$event.date >= '2014-09-01' & 
                             ltr.data$event.date <= '2015-08-31', ]
   listing.data <- listing.data[listing.data$id.key %in% ltr.data$id.key, ]
-
+  
+ # Count cleaning
+  
+  countCleaning('time')
+  
 ```
 
 ```{r add_month, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
@@ -459,6 +512,8 @@ save(before.PT, file="C:/Dropbox/Research/airBNB/data/analyzed/abb_beforePT.RDat
 
   abb.data <- subset(abb.data, type != 'Other')
   ltr.data <- subset(ltr.data, type != 'Other')
+  
+  countCleaning('property.type')
 
 ```
 
@@ -491,6 +546,8 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
 
   abb.room <- abb.data[abb.data$listing.type != 'Entire home', ]
   abb.data <- abb.data[abb.data$listing.type == 'Entire home', ]
+  
+  countCleaning('listing.type')
 
 ```
 
@@ -582,6 +639,8 @@ For both short and long term ltrals we see that most apartments have less than 4
 
   # Convert 0 Bed to 1 Bed  
   abb.data$bedrooms[abb.data$bedrooms == 0] <- 1
+  
+  countCleaning('bedrooms')
 
 ```
 
@@ -643,6 +702,9 @@ Here we see that nearly all properties have 3 or fewer bathrooms and we filter t
 
   abb.data$baths <- round(abb.data$baths + .01, 0)
 
+  countCleaning('bathrooms')
+  
+  
 ```
 
 ### Bed/Bath Combination
@@ -698,6 +760,8 @@ From this analysis we see that there are 6 combinations that make up most all pr
 
   ltr.data <- ltr.data[ltr.data$bedbath %in% acc.bb, ]
   abb.data <- abb.data[abb.data$bedbath %in% acc.bb, ]
+
+  countCleaning('bedbath')
 
 ```
 
@@ -795,6 +859,9 @@ From these density plots we see that most weekly Rentals are greater than $200 a
   abb.data <- abb.data[abb.data$nightly.rate >= 50 &
                          abb.data$nightly.rate <= 500, ]
 
+  countCleaning('rates.rents')
+  
+  
 ```
 
 ### Locations and Submarkets
@@ -1044,6 +1111,8 @@ Having fixed the missing lat/long issue, we then assign the suburb, SA1, city-co
                               levels=c('city-core', 'city', 'suburban', 
                                         'rural', 'beach'))
   
+  countCleaning('location')
+  
 ```
 
 ```{r write_afterspobj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
@@ -1247,6 +1316,8 @@ Next, we calculate the revenue for the long term rental data, saving only those 
   
   # Remove those with very low revenues (due to very long DOMs)
   ltr.data <- ltr.data[ltr.data$revenue > 5000, ]
+  
+  countCleaning('revenue')
 
 ```
 
@@ -1261,7 +1332,7 @@ Finally, we create and fix three variables. One factor variable for bed/bath com
 ```{r savewrkspc, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   #save.image("C:/Dropbox/Research/airBNB/data/analyzed/abb_working.RData")
-  save(abb.data, listing.data, daily.data, ltr.data, subs, abb.col,
+  save(abb.data, listing.data, daily.data, ltr.data, subs, abb.col, clean.count,
        file="C:/Dropbox/Research/airBNB/data/analyzed/abb_working.RData")
 
 
