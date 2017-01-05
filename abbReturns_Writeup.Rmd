@@ -111,19 +111,41 @@ One benefit of a short-term rental may be the ability to adjust the nightly rate
 
 ### Equation
 
+In this above scenario we compare the 12-month returns from the a long term rental with those of a short term rental.  We define returns here as the gross revenue minus the direct costs associated with each of the two tenure possibilities.  
+
+$$ R_{LT} = Rev_{LT} - C_{LT} $$
+$$ R_{ST} = Rev_{ST} - C_{ST} $$
+
+$$ Rev_{LT} = Rent_{M} * (12 - C_{S}) $$  
+where $C_{S}$ are search costs defined in terms of the time (in months) spent to find a long-term tenant.  
 
 
-AirbnbRev = nightly rate * occupancy - (short costs + long costs)
--- short costs = cleaning, time
--- long costs = taxes and maintenance
+$$ Rev_{ST} = Rate_{N} * O_{Total} $$
 
-LtRev = weekly rate * (52 - search time) - (short costs + long costs)
--- short costs = brokerage
--- long costs = taxes and maintenance
 
-When is AirbnbRev > LtRev?
+where $O_{Total}$ are the total number of occupancies over the 12-month period. 
+
+$$ C_{LT} = T + M $$
+
+where 
+
+where $T$ are tax related expenses and $M$ are general maintenance expenses.  
+
+
+$$ C_{ST} = T + M + J $$
+
+where $T$ are tax related expenses, $M$ are general maintenance expenses and $J$ are janitorial expenses incurred after each short term tenancy.  
+
+We assume for the sake of this scenario that the tax $T$ and general maintenance $M$ expenses are identical between tenure options and therefore cancel out.  With the analysis that follows we will consider short term rental to be prefable to long-term if the following inequality holds:
+
+$$ Rate_{N} * O_{Total} - J > Rent_{M} * (12 - C_{S}) $$
 
 ## Data
+
+Data for this studies were gathered from two different sources, one for short-term rental market and one for the long-term rental market.  The Airbnb online portal is used as evidence of the short-term rental market.  Airbnb is the largest short-term rental hub in the Melbourne region, though others do exist.  As opposed to similar sites such as VRBO.com and homeaway.com which focus on vacation homes in tourist dominated areas such as beaches and ski resorts, Airbnb offers considerable coverage in urban areas and, in way ways, directly compete with more traditional long term rentals.  The data on the AirBNB market in Melbourne have been purchased from www.airdna.co, a data provider specializing in AirBNB data collection and analysis. The short term data include two types of observations, property level and nightly.  Property-level data concist of a single observation for each property that is or has been listed on the Airbnb portal over the October 2014 to August 2016 period^[This time period represents the period in which AirDNA was engaged in data collection in Melbourne.]  The nightly data offer one observation for each property for each night of the year.  This data indicates the advertised price, the occupancy status and a unique reservation identification (useful for determining the length of stay.).
+
+The data on long-term leases was provided by Australia Property Monitors (APM), a Fairfax Group company. 
+
 
 Airbnb data from AirDNA.  All of Melbourne.  Most of Oct 2014 to Aug 30th 2016.  Full data from Sept 1 2015 to Aug 30 2016.  Daily and property data.  Is scraped weekly or so for each property.  All prices in US dollars.
 
