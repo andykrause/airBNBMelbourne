@@ -59,9 +59,11 @@
  ## Global model
 
   # Set model specifications
-  ltr.mod.spec <- formula(log(event.price) ~ as.factor(bedbath) + as.factor(suburb) + 
+  ltr.mod.spec <- formula(log(event.price) ~ as.factor(type) + 
+                            as.factor(bedbath) + as.factor(suburb) + 
                             as.factor(ltr.month))
-  abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(bedbath) + as.factor(suburb))
+  abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(type) + 
+                            as.factor(bedbath) + as.factor(suburb))
  
  # Make comparison between two markets  
   imp.data <- imputeRatesRents(ltr.df=ltr.data, 
@@ -192,7 +194,7 @@
   explain.plot <- blank.plot +
     geom_text(data=ann.df,
               label=ann.df$lab,
-              size=4.5) +
+              size=3) +
     geom_text(data=num.df,
               label=num.df$count,
               size=9.5) +
@@ -205,7 +207,7 @@
               ymin = -Inf,ymax = Inf, alpha = 0.4) +
     geom_text(data=reason.df,
               label=reason.df$lab,
-              size=4.5) +
+              size=3) +
     geom_text(data=num.df,
               label=num.df$count,
               size=9.5) +
@@ -402,24 +404,146 @@
                              svm=c(mean(svm.rate$pred$pred),
                                    mean(svm.qtl$pred$pred)))
   
-
+### Split by Type -----------------------------------------------------------------------
   
-abb.apt <- which(abb.revs$type == 'Apartment')
-ltr.apt <- which(ltr.revs$type == 'Apartment')
-
-    
-abc <- fullMarketAnalysis(ltr.df=ltr.revs[-ltr.apt,],
-                          abb.df=abb.revs[-abb.apt, ],
-                          ltr.mod.spec=ltr.mod.spec,
-                          abb.mod.spec=abb.mod.spec,
-                          clip.field='suburb',
-                          market.field='sub.mrkt',
-                          mrkt.col=sm.col,
-                          heat.col=c(abb.col[1], abb.col[5]))
-
-    
-      
+  # Set model specifications
+  ltr.mod.spec <- formula(log(event.price) ~ as.factor(bedbath) + as.factor(suburb) + 
+                            as.factor(ltr.month))
+  abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(bedbath) + as.factor(suburb))
   
+  # Select data
+  abb.apt <- which(abb.revs$type == 'Apartment')
+  ltr.apt <- which(ltr.revs$type == 'Apartment')
+
+  # Estimate House Results  
+  house <- fullMarketAnalysis(ltr.df=ltr.revs[-ltr.apt,],
+                              abb.df=abb.revs[-abb.apt, ],
+                              ltr.mod.spec=ltr.mod.spec,
+                              abb.mod.spec=abb.mod.spec,
+                              clip.field='suburb',
+                              market.field='sub.mrkt',
+                              mrkt.col=sm.col,
+                              heat.col=c(abb.col[1], abb.col[5]))
+
+   apt <- fullMarketAnalysis(ltr.df=ltr.revs[ltr.apt,],
+                             abb.df=abb.revs[abb.apt, ],
+                             ltr.mod.spec=ltr.mod.spec,
+                             abb.mod.spec=abb.mod.spec,
+                             clip.field='suburb',
+                             market.field='sub.mrkt',
+                             mrkt.col=sm.col,
+                             heat.col=c(abb.col[1], abb.col[5]))
+
+### Split by Submarkets ------------------------------------------------------------------   
+   
+  # Set model specifications
+  ltr.mod.spec <- formula(log(event.price) ~ as.factor(type) + 
+                          as.factor(bedbath) +
+                          as.factor(suburb) + 
+                          as.factor(ltr.month))
+  abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(type) + 
+                          as.factor(bedbath) +
+                          as.factor(suburb))
+
+  #  Extract levels and set capture
+  s.levels <- levels(abb.revs$sub.mrkt)
+  sm.results <- list()
+  sm.pos <- 1
+
+  # Estimate results
+  for(sm in s.levels){
+  
+    abb.x <- which(abb.revs$sub.mrkt == sm)
+    ltr.x <- which(ltr.revs$sub.mrkt == sm)
+  
+    x.res <- fullMarketAnalysis(ltr.df=ltr.revs[ltr.x,],
+                                abb.df=abb.revs[abb.x, ],
+                                ltr.mod.spec=ltr.mod.spec,
+                                abb.mod.spec=abb.mod.spec,
+                                clip.field='suburb',
+                                market.field='sub.mrkt',
+                                mrkt.col=sm.col,
+                                heat.col=c(abb.col[1], abb.col[5]))
+  
+    sm.results[[sm.pos]] <- x.res
+    sm.pos <- sm.pos + 1
+  
+  }
+
+### Estimate at bed/bath level -----------------------------------------------------------  
+
+  # Set model specifications
+  ltr.mod.spec <- formula(log(event.price) ~ as.factor(type) + 
+                            as.factor(suburb) + 
+                            as.factor(ltr.month))
+  abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(type) + 
+                            as.factor(suburb))
+  
+  # Set levels and capture
+  bb.levels <- levels(abb.revs$bedbath)
+  bb.results <- list()
+  bb.pos <- 1
+
+  # Estimate results
+  for(bb in bb.levels){
+  
+    abb.x <- which(abb.revs$bedbath == bb)
+    ltr.x <- which(ltr.revs$bedbath == bb)
+  
+    x.res <- fullMarketAnalysis(ltr.df=ltr.revs[ltr.x,],
+                                abb.df=abb.revs[abb.x, ],
+                                ltr.mod.spec=ltr.mod.spec,
+                                abb.mod.spec=abb.mod.spec,
+                                clip.field='suburb',
+                                market.field='bedbath',
+                                mrkt.col=sm.col,
+                                heat.col=c(abb.col[1], abb.col[5]))
+  
+    bb.results[[bb.pos]] <- x.res
+    bb.pos <- bb.pos + 1
+  
+  }
+  
+### Split by submarket and type ----------------------------------------------------------  
+  
+  # Set model specifications
+  ltr.mod.spec <- formula(log(event.price) ~ as.factor(suburb) + 
+                            as.factor(ltr.month))
+  abb.mod.spec <- formula(log(nightly.rate) ~ as.factor(suburb))
+  
+  # Create smt variable  
+  abb.revs$smt <- as.factor(paste0(abb.revs$type, '.', abb.revs$sub.mrkt))
+  ltr.revs$smt <- as.factor(paste0(ltr.revs$type, '.', ltr.revs$sub.mrkt))
+
+  # Create levels and captures
+  smt.levels <- levels(abb.revs$smt)
+  smt.results <- list()
+  smt.pos <- 1
+
+  # Estimate the smt models
+  for(smt in smt.levels){
+  
+    abb.x <- which(abb.revs$smt == smt)
+    ltr.x <- which(ltr.revs$smt == smt)
+  
+    x.res <- fullMarketAnalysis(ltr.df=ltr.revs[ltr.x,],
+                                abb.df=abb.revs[abb.x, ],
+                                ltr.mod.spec=ltr.mod.spec,
+                                abb.mod.spec=abb.mod.spec,
+                                clip.field='suburb',
+                                market.field='smt',
+                                mrkt.col=sm.col,
+                                heat.col=c(abb.col[1], abb.col[5]))
+  
+    smt.results[[smt.pos]] <- x.res
+    smt.pos <- smt.pos + 1
+  }
+  
+### Save workspace -----------------------------------------------------------------------
+  
+  save.image("C:/Dropbox/Research/airBNB/data/analyzed/abb_results.RData")
+
+
   
   
   
