@@ -349,7 +349,7 @@ createCompTable <- function(abb.df,
 makePrefPlot <- function(pref.data,
                          x.field,
                          y.field,
-                         group.field,
+                         group.field='none',
                          metric='mean',
                          cumulative=FALSE,
                          smooth=FALSE,
@@ -384,10 +384,18 @@ makePrefPlot <- function(pref.data,
       pref.df <- pref.data[pref.data[,x.field] == i.pl, ]
     }
     
-    # Create the table
-    pref.table <- tapply2DF(pref.df[ ,y.field], 
-                            pref.df[ ,group.field],
-                            metric.fnct)
+    
+    if(group.field != 'none'){
+      
+      # Create the table
+      pref.table <- tapply2DF(pref.df[ ,y.field], 
+                              pref.df[ ,group.field],
+                              metric.fnct)
+    } else {
+      
+      pref.table <- data.frame(ID='all', 
+                               Var=metric.fnct(pref.df[,y.field], na.rm=T))
+    }
     
     # Add the x variable
     pref.table$x.var <- i.pl
@@ -443,7 +451,7 @@ makeHeatMap <- function(hm.data,
                         return.svm=FALSE,
                         svm.opts=list(type='C-svc',
                                       kernel='polydot',
-                                      poly.degree=4,
+                                      poly.degree=2,
                                       expand.factor=100)){
   
  ## Prepare the plotting data  
@@ -649,6 +657,17 @@ fullMarketAnalysis <- function(ltr.df,
   
  ## Fix null
   
+  if(market.field != 'type'){
+    if(length(table(abb.df$type)) == 1 |
+       length(table(ltr.df$type)) == 1){
+    
+      ltr.mod.spec <- update(ltr.mod.spec, . ~ . - as.factor(type))
+      abb.mod.spec <- update(abb.mod.spec, . ~ . - as.factor(type))
+      
+    }
+  }
+  
+    
  ## Make comparison between two markets  
   
   mrkt.comp <- revCompWrapper(ltr.df=ltr.df,
