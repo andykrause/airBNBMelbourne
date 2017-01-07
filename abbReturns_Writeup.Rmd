@@ -5,7 +5,20 @@ date: "December 17, 2016"
 output:
   pdf_document: default
   html_document: default
+geometry: margin=3cm
 ---
+
+<!-- <script type="text/x-mathjax-config"> -->
+<!-- MathJax.Hub.Config({ -->
+<!--   TeX: {  -->
+<!--       equationNumbers: { -->
+
+<!--             autoNumber: "all", -->
+<!--             formatNumber: function (n) {return '9.'+n} -->
+<!--       }  -->
+<!--   } -->
+<!-- }); -->
+<!-- </script> -->
 
 ```{r load_libraries, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'}
 
@@ -25,6 +38,8 @@ output:
   library(RColorBrewer)
   library(Hmisc)
   library(kernlab)
+  library(lmtest)
+
 
 ```
 
@@ -113,32 +128,45 @@ One benefit of a short-term rental may be the ability to adjust the nightly rate
 
 In this above scenario we compare the 12-month returns from the a long term rental with those of a short term rental.  We define returns here as the gross revenue minus the direct costs associated with each of the two tenure possibilities.  
 
-$$ R_{LT} = Rev_{LT} - C_{LT} $$
-$$ R_{ST} = Rev_{ST} - C_{ST} $$
+\begin{equation} 
+R_{LT} = Rev_{LT} - C_{LT}
+\end{equation}
 
-$$ Rev_{LT} = Rent_{M} * (12 - C_{S}) $$  
+\begin{equation} 
+R_{ST} = Rev_{ST} - C_{ST}
+\end{equation}
+
+\begin{equation} 
+Rev_{LT} = Rent_{M} * (12 - C_{S}) 
+\end{equation}
+
 where $C_{S}$ are search costs defined in terms of the time (in months) spent to find a long-term tenant.  
 
-
-$$ Rev_{ST} = Rate_{N} * O_{Total} $$
-
+\begin{equation} 
+Rev_{ST} = Rate_{N} * O_{Total} 
+\end{equation}
 
 where $O_{Total}$ are the total number of occupancies over the 12-month period. 
 
-$$ C_{LT} = T + M $$
+\begin{equation} 
+C_{LT} = T + M 
+\end{equation}
 
 where 
 
 where $T$ are tax related expenses and $M$ are general maintenance expenses.  
 
-
-$$ C_{ST} = T + M + J $$
+\begin{equation} 
+C_{ST} = T + M + J 
+\end{equation}
 
 where $T$ are tax related expenses, $M$ are general maintenance expenses and $J$ are janitorial expenses incurred after each short term tenancy.  
 
 We assume for the sake of this scenario that the tax $T$ and general maintenance $M$ expenses are identical between tenure options and therefore cancel out.  With the analysis that follows we will consider short term rental to be prefable to long-term if the following inequality holds:
 
-$$ Rate_{N} * O_{Total} - J > Rent_{M} * (12 - C_{S}) $$
+\begin{equation} 
+Rate_{N} * O_{Total} - J > Rent_{M} * (12 - C_{S}) 
+\end{equation}
 
 ## Data
 
@@ -728,7 +756,7 @@ Looking at the distribution of the revenues from each tenure type, we see that t
 
 ```{r load_workspace2, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}  
 
- load(paste0(data.path, '/analyzed/abb_working.RData'))  
+ load(paste0(data.path, '/analyzed/abb_results.RData'))  
 
 ```
 
@@ -798,52 +826,307 @@ print(xtable(clean.table,
 
 ## Comparison
 
+Data prepared, we now turn to comparing returns between long and short term rental options.  As mentioned above, there are no direct matches between the datasets. In other words we have not direct observed a property which has been in a long-term rental followed by short-term or vice versa.  We will, instead, make the comparisons between the two by imputing likely short-term (long-term) rental revenues for the long-term (short-term) data and then comparing the observed revenues to the imputed revenues of the unobserved tenure type.  
 
+We make our imputations via hedonic price models, one for long-term rentals and one for short-term rentals.  We model the long-term market with the long-term data and then use this model to predict or impute the likely long-term rental for the short term properties.  We do the same for the long-term properties using a modeled derived from the short-term data.  
 
+For the long-term market, we use the following model specification:
 
+\begin{equation} 
+  \label{eq:test}
+ln(RentLT_{i}) = \beta_{1} BedBath_{i} + \gamma_{2} Suburb_{i} + \tau_{3} Time_{i} + \epsilon_{i} 
+\end{equation}
 
+where *$ ln(RentLT_{i})$* is the natural log of the weekly rent, BedBath is the bedroom/bathroom combination, *Suburb* is a fixed effect for the location of the property, *Time* is the month of rental and $\epsilon$ a random error term. 
 
+For the short-term market the specification is similar, minus the time correction.  We eliminate this control because the short term rates are based on the medium value over the entire period and not monthly. This specification is: 
 
+\begin{equation} 
+ln(RentST_{i}) = \beta_{1} BedBath_{i} + \gamma_{2} Suburb_{i} + \epsilon_{i} 
+\end{equation}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Imputing
+where *$ ln(RentLT_{i})$* is the natural log of the weekly rent, BedBath is the bedroom/bathroom combination, *Suburb* is a fixed effect for the location of the property and $\epsilon$ a random error term. 
 
 ### Costs
 
 -- Assume long term costs are equivalent
 
-### Comparing
-
 ## Results
 
--- Start with a global analysis
+We will begin our analysis by making a comparison of the short and long-term markets at a metro-level.  What we mean by this is that we will treat the entire region as the functional market and will impute rates and rents with a model using all data.  It is likely that different submarkets operate differently, we will explore this hypothesis after first analyzing the full metropolitan region.  
 
-### What is accurate?
+We begin by imputing the likely long-term rents for the short-term observations, and vice versa at a metro level. A comparison between the actual (observed) and imputed rates and rents shows that, in general, the long-term properties are composed of properties that have a higher nightly rate than the short term observations (left-panel).  This is likely due to the fact that there are more houses (compared to apartments) in the long-term data than in the short-term data. Interestingly, the observed (long-term) and imputed (short term) weekly rental values are somewhat similar, suggesting that the higher rent, city-core apartments push the distribution of the imputed short-term values upwards.
 
-- Discuss why Airbnb Actual is the only relevant one.  
--- Show charts
--- Discuss problems with Rate imputation
--- Discuss problems with Occupancy imputation
+For each of the observed values we also create a fitted value for that observation in the model.  This may help to reduce the influence of outlying observed values in our model.  To be clear, Each observation will now have three estimates of rates and rents.  For the short-term properties they will have: 1) an actual nightly rate; 2) an estimated nightly rate; and 3) an estimated long-term (weekly) rent.  The long-term properties will have: 1) an actual long-term (weekly) rent; 2) an estimated long-term (weekly) rent; and 3) an estimated nightly rate.  
 
-#### Comp Tables/Figs
+```{r pred.glob.imp, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
 
-### Heat Maps
+  abbir <- abb.imp[,c('bedbath', 'imp.rent', 'med.rate')]
+  abbir$tenure.rate <- 'short-term (observed)'
+  abbir$tenure.rent <- 'short-term (imputed)'
+  
+  ltrir <- ltr.imp[,c('bedbath', 'event.price', 'imp.rate')]
+  ltrir$tenure.rate <- 'long-term (imputed)'
+  ltrir$tenure.rent <- 'long-term (observed)'
+  
+  names(abbir) <- names(ltrir) <- c('bedbath', 'rent', 'rate', 'tenure.rate', 'tenure.rent')
+  allir <- rbind(abbir, ltrir)
+
+```
+
+```{r imp.rate.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
+
+  irate.plot <- ggplot(allir, aes(x=rate, fill=tenure.rate, color=tenure.rate)) + 
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=c(ltr.col, abb.col)) +
+    scale_color_manual(values=c(ltr.col, abb.col)) +
+    ggtitle('Nightly Rates by Tenure Type') + 
+    xlab('Nightly Rate') +
+    scale_x_continuous(breaks=c(seq(0,600, by=200)),
+                       labels=c('$0', '$200', '$400', '$600'))+
+    theme(legend.position='bottom',
+          legend.title = element_blank(), 
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y=element_blank()) +
+    coord_cartesian(xlim=c(0, 625))
+
+```
+
+```{r imp.rent.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
+
+  irent.plot <- ggplot(allir, aes(x=rent, fill=tenure.rent, color=tenure.rent)) + 
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=c(ltr.col, abb.col)) +
+    scale_color_manual(values=c(ltr.col, abb.col)) +
+    ggtitle('Weekly Rents by Tenure Type') + 
+    xlab('Weekly Rents') +
+    scale_x_continuous(breaks=c(seq(0,1000, by=200)),
+                       labels=c('$0', '$200', '$400', '$600', '$800', '$1,000'))+
+    theme(legend.position='bottom',
+          legend.title = element_blank(), 
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y=element_blank()) +
+    coord_cartesian(xlim=c(150, 1000))
+
+```
+
+```{r imp.rr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=3.5}
+ 
+ ggMultiPlots(irate.plot, irent.plot, cols=2)
+
+```
+
+The question of whether or not the imputations are accurate remains.  The table belows shows some simple diagnostics from the two imputation models.  From this we see that the short-term model performs rather poorly, with a standard error of 34.6\% and over half of the residuals greater than 20\%.  The long term model, on the other hand, performs quite well, with a standard error under 32\% and less than 19\% of fitted errors greater than 20\%.  Given the small amount of independent variable available to the models, the long term market appear much more predictable than the short term market.  This could be due to omitted variables in the short term market or a greater level of variability in the price setting (which is done by individuals) as opposed to the long-term market in which most owners get help with leasing from an agency.  
+
+```{r, results="asis", echo=FALSE}
+
+abb.sum <- summary(imp.data$abb.mod)
+ltr.sum <- summary(imp.data$ltr.mod)
+
+abbs <- c(abb.sum$r.squared, abb.sum$adj.r.squared,
+          abb.sum$sigma, 
+          length(which(abs(abb.sum$residuals) > .2)) / length(abb.sum$residuals))
+ltrs <- c(ltr.sum$r.squared, ltr.sum$adj.r.squared,
+          ltr.sum$sigma, 
+          length(which(abs(ltr.sum$residuals) > .2)) / length(ltr.sum$residuals))
+
+summ.table <- data.frame(shortterm=round(abbs, 3),
+                         longterm=round(ltrs, 3))
+rownames(summ.table) <- c('r-squared', 'adj r-squared',
+                          'sigma', '% fit errors > 20%')
+names(summ.table) <- c('Short Term', 'Long Term')
+                   
+print(xtable(summ.table,
+       digits=3),
+       include.rownames=TRUE)
+
+
+```
+
+Next, to create an estimated short-term revenue for the long-term properties we have to create an estimate of the occupancy rate.  For the estimated long-term rentals we have to create an estimate of the search time (days on market).  To derive an occupancy rate, we use the weighted median value^[Weighted by the total number of days the property was offered on Airbnb over the year.] of the market, the entire metro region in this case, which is about 37%^[We attempted to use a logistic regression model to predict occupancy but were unsucessful to develop an appropriate approach.  Work continues toward this end.].  The range of occupancy varies widely from essentially 0 to 100%,with a standard deviation of 27%.
+
+For the long term search time, or days on market, we also use the median value of the observations. The median days on market is 24, with a standard deviation of 37. About 60\% of long term rental spent one month or less on the market and 85\% spent less than two months searching for a tenant. 
+
+Using these estimated occupancy rates and days on market, we have used equations 3 and 4 to produce estimates of long-term and short-term revenues for the short and long term observations, respectively. We do these for the observed and the estimated rates and rents for each tenure type. As we have imputed and actual observations for one of each dataset in the comparison, this creates 4 different comparisons, roughly broken down as follows:
+
+```{r, results="asis", echo=FALSE, fig.width=4,fig.height=4}
+ 
+  explain.plot <- blank.plot +
+    geom_text(data=ann.df,
+              label=ann.df$lab,
+              size=3) +
+    geom_text(data=num.df,
+              label=num.df$count,
+              size=9.5) +
+    coord_cartesian(ylim=c(-.5,1))
+
+ explain.plot
+
+```
+
+In other word the left hand panels are comparison made on Airbnb properties, where the top is the actual Airbnb revenue and the bottom is the estimated (fitted) with the imputed rates and median-based occupancy rates.  In the right hand panels we have the comparison on the long-term properties, again with top being of the actual long term revenue and the bottom with the estimated (fitted) rents and median based days on market.  
+
+The plot below shows the percent of properties in which a short-term rental would bring in more revenue over the coures of the year, across these four scenarios.  The variation between these estimates is significant and troublesome.  However, given our difficulty in accurately estimating short term nightly rates (see Table X) and the fact that occupancy rates are highly variable for short-term rentals, these variation are not surprising.  As we have a difficult time estimating short-term market performance, both measures in the right hand column are immediately suspicious. Additionally, the estimates in the lower left also depend on estimate nightly rate, causing their accuracy to be questioned.  
+
+```{r, results="asis", echo=FALSE}
+
+  one.df <- data.frame(x=rep(0, 4),
+                       y=rep(0, 4), 
+                       lab=c('31%', '87%', '54%', '79%'),
+                       est=c('Actual Rates & Rents', 'Actual Rates & Rents',
+                             'Imputed Rates & Rents', 'Imputed Rates & Rents'),
+                       data=c('Airbnb', 'Long-Term', 'Airbnb', 'Long-Term'))
+  
+  sizes <- c(.31, .87, .54, .79)
+
+  one.plot <- blank.plot +
+    geom_text(data=one.df,
+              label=one.df$lab,
+              size=18*sizes) +
+    ggtitle('% of Properties where \n Airbnb is more profitable') +
+    theme(legend.position='bottom',
+          legend.title = element_blank(), 
+          plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r 22r.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=4,fig.height=4}
+ 
+ one.plot
+
+```
+
+In short, only in the upper left hand panel are we using the actual nightly rates and the actual occupancy rates from the short term market.  We do estimate the long-term rates and days on market here, but as shown above, the models for those figures are much more robust. The plusses and minus of each comparison quadrant is shown below.  As a result of these issues, we consider only those comparisons in quadrant 1 to be legitimate and use these going forward.  
+
+```{r reason.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=4,fig.height=4}
+ 
+  reason.plot <- blank.plot +
+    geom_rect(data = mrkt.table, aes(fill=good),
+              xmin = -Inf,xmax = Inf,
+              ymin = -Inf,ymax = Inf, alpha = 0.4) +
+    geom_text(data=reason.df,
+              label=reason.df$lab,
+              size=3) +
+    geom_text(data=num.df,
+              label=num.df$count,
+              size=9.5) +
+    coord_cartesian(ylim=c(-.5,1))
+
+  reason.plot
+
+```
+
+```{r}
+  rawocc.pplot <- makePrefPlot(abb.revs,
+                               x.field='occ.rate',
+                               y.field='abb.act',
+                                    smooth=TRUE,
+                               smooth.span=.75)
+  rawocc.pplot <- rawocc.pplot +
+    xlab('\nOccupancy Rate') +
+    ylab('\n% of Properties where \nAirbnb is more profitable') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_color_manual(values=sm.col) +
+    theme(legend.position='none')
+
+```
+
+```{r, fig.width=7, fig.height=5}
+
+  rawocc.pplot
+
+```
+
+```{r}
+
+  ggplot(abb.revs, aes(x=occ.rate)) +
+    geom_density(alpha=.3, fill=1) +
+    scale_color_manual(values=sm.col) +
+    scale_fill_manual(values=sm.col) +
+    scale_x_continuous(breaks=seq(0, 1, by=.5),
+                       labels=c('0%', '50%', '100%')) +
+    ylab('') +
+    xlab('Occupancy Rate') +
+    theme(legend.position='none',
+          axis.line=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks=element_blank(),
+          axis.title.y=element_blank())
+```
+
+```{r}
+
+  
+  abb.revs$occ.qtl <- makeWtdQtl(abb.revs$occ.rate, 
+                                      return.type='rank') 
+  abb.revs$rate.qtl <- makeWtdQtl(abb.revs$med.rate, 
+                                  return.type='rank') 
+  
+  ## Make quartile location plot
+  
+  qtlocc.pplot <- makePrefPlot(abb.revs,
+                               x.field='occ.qtl',
+                               y.field='abb.act',
+                               smooth=TRUE,
+                               smooth.span=.55)
+  qtlocc.pplot <- qtlocc.pplot +
+    xlab('\nQuantile of Occupancy Rate') +
+    ylab('\n% of Properties where Airbnb is more profitable') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0', '25th', '50th', '75th', '100th')) +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_color_manual(values=sm.col) +
+    theme(legend.position='none')
+
+```
+
+```{r, fig.width=7, fig.height=5}
+
+  qtlocc.pplot
+
+```
+
+
+```{r, fig.width=7, fig.height=5}
+
+ rate.hm
+
+```
+
+```{r, fig.width=7, fig.height=5}
+
+  rate.hm.svm
+
+```
+
+```{r, fig.width=7, fig.height=5}
+
+ qtl.hm
+
+```
+
+```{r, fig.width=7, fig.height=5}
+
+  qtl.hm.svm
+
+```
+
+```{r, results="asis", echo=FALSE}
+
+print(xtable(market.ratio,
+       digits=3),
+       include.rownames=FALSE)
+
+
+```
 
 ### Submarkets
 
