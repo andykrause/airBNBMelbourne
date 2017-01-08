@@ -8,18 +8,6 @@ output:
 geometry: margin=3cm
 ---
 
-<!-- <script type="text/x-mathjax-config"> -->
-<!-- MathJax.Hub.Config({ -->
-<!--   TeX: {  -->
-<!--       equationNumbers: { -->
-
-<!--             autoNumber: "all", -->
-<!--             formatNumber: function (n) {return '9.'+n} -->
-<!--       }  -->
-<!--   } -->
-<!-- }); -->
-<!-- </script> -->
-
 ```{r load_libraries, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'}
 
   library(spdep)
@@ -958,19 +946,17 @@ Using these estimated occupancy rates and days on market, we have used equations
   explain.plot <- blank.plot +
     geom_text(data=ann.df,
               label=ann.df$lab,
-              size=3) +
+              size=2.8) +
     geom_text(data=num.df,
               label=num.df$count,
               size=9.5) +
-    coord_cartesian(ylim=c(-.5,1))
-
- explain.plot
+    coord_cartesian(ylim=c(-.5,1)) +
+    ggtitle('Explanation of \n Revenue Comparisons') +
+    theme(legend.position='bottom',
+          legend.title = element_blank(), 
+          plot.title = element_text(hjust = 0.5))
 
 ```
-
-In other word the left hand panels are comparison made on Airbnb properties, where the top is the actual Airbnb revenue and the bottom is the estimated (fitted) with the imputed rates and median-based occupancy rates.  In the right hand panels we have the comparison on the long-term properties, again with top being of the actual long term revenue and the bottom with the estimated (fitted) rents and median based days on market.  
-
-The plot below shows the percent of properties in which a short-term rental would bring in more revenue over the coures of the year, across these four scenarios.  The variation between these estimates is significant and troublesome.  However, given our difficulty in accurately estimating short term nightly rates (see Table X) and the fact that occupancy rates are highly variable for short-term rentals, these variation are not surprising.  As we have a difficult time estimating short-term market performance, both measures in the right hand column are immediately suspicious. Additionally, the estimates in the lower left also depend on estimate nightly rate, causing their accuracy to be questioned.  
 
 ```{r, results="asis", echo=FALSE}
 
@@ -994,15 +980,19 @@ The plot below shows the percent of properties in which a short-term rental woul
 
 ```
 
-```{r 22r.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=4,fig.height=4}
+In other word the left hand panels are comparison made on Airbnb properties, where the top is the actual Airbnb revenue and the bottom is the estimated (fitted) with the imputed rates and median-based occupancy rates.  In the right hand panels we have the comparison on the long-term properties, again with top being of the actual long term revenue and the bottom with the estimated (fitted) rents and median based days on market.  
+
+The plot below shows the percent of properties in which a short-term rental would bring in more revenue over the coures of the year, across these four scenarios.  The variation between these estimates is significant and troublesome.  However, given our difficulty in accurately estimating short term nightly rates (see Table X) and the fact that occupancy rates are highly variable for short-term rentals, these variation are not surprising.  As we have a difficult time estimating short-term market performance, both measures in the right hand column are immediately suspicious. Additionally, the estimates in the lower left also depend on estimate nightly rate, causing their accuracy to be questioned.  
+
+```{r 22r.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7.5,fig.height=3.5, fig.align='center'}
  
- one.plot
+ ggMultiPlots(explain.plot, one.plot, cols=2)
 
 ```
 
 In short, only in the upper left hand panel are we using the actual nightly rates and the actual occupancy rates from the short term market.  We do estimate the long-term rates and days on market here, but as shown above, the models for those figures are much more robust. The plusses and minus of each comparison quadrant is shown below.  As a result of these issues, we consider only those comparisons in quadrant 1 to be legitimate and use these going forward.  
 
-```{r reason.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=4,fig.height=4}
+```{r reason.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=4.5, fig.height=3.5, fig.align='center'}
  
   reason.plot <- blank.plot +
     geom_rect(data = mrkt.table, aes(fill=good),
@@ -1020,7 +1010,14 @@ In short, only in the upper left hand panel are we using the actual nightly rate
 
 ```
 
-```{r}
+### Occupancy Rates
+
+Occupancy rates are one of the most important compoenent in determining the profitability of short-term rentals. Unfortunately, these are also the most difficult factor to estimate or impute. Below we plot (left-panel) the percentage of properties for which short-term rental is more profitable versus the occupancy rate.  We see that likelihood of short-term rental being a better option increases sharply with occupancy rate up until about 75\% occupancy.  For occupancy rates less than 50\%, long-term rental is more likely to be the better option.  The decrease in profitabilty after 75\% occupancy is likely due to: 1) small sample sizes in this tail of the data; and 2) that lowering overall nightly rates too low simply to boost occupancy can result in lower overall revenue.  
+
+As the distribution of occupancy rates is not uniform, the initial plot may be misleading as to the frequency of short-term rentals being more profitable than long term. In Figure X, we transform the x-axis to represent the quantile of the full distribution of occupancy rates. By doing so, we see that, in general, properties need to be in the upper 1/3 of occupancy rates across the entire market in order to have a equal likelihood of being more profitable as a short-term rental than as a more traditional long term one.   
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+
   rawocc.pplot <- makePrefPlot(abb.revs,
                                x.field='occ.rate',
                                y.field='abb.act',
@@ -1034,34 +1031,41 @@ In short, only in the upper left hand panel are we using the actual nightly rate
     scale_y_continuous(breaks=seq(0, 1, by=.25),
                        labels=c('0%', '25%', '50%', '75%', '100%')) +
     scale_color_manual(values=sm.col) +
-    theme(legend.position='none')
+    ggtitle('Tenure Profitability vs \n Occupancy Rate') +
+    theme(legend.position='none',
+          plot.title = element_text(hjust = 0.5)) + 
+    coord_cartesian(ylim=c(0,1)) +
+    geom_hline(aes(yintercept=.5))
+    
 
 ```
 
-```{r, fig.width=7, fig.height=5}
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
 
-  rawocc.pplot
-
-```
-
-```{r}
-
-  ggplot(abb.revs, aes(x=occ.rate)) +
+  dens.plot <- ggplot(abb.revs, aes(x=occ.rate)) +
     geom_density(alpha=.3, fill=1) +
     scale_color_manual(values=sm.col) +
     scale_fill_manual(values=sm.col) +
-    scale_x_continuous(breaks=seq(0, 1, by=.5),
-                       labels=c('0%', '50%', '100%')) +
-    ylab('') +
-    xlab('Occupancy Rate') +
+    scale_x_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+  
+    ylab('\nFrequency of Occurance') +
+    xlab('\nOccupancy Rate') +
+    ggtitle('Distribution of \n Occupancy Rates') +
     theme(legend.position='none',
+          plot.title = element_text(hjust = 0.5),
           axis.line=element_blank(),
           axis.text.y=element_blank(),
-          axis.ticks=element_blank(),
-          axis.title.y=element_blank())
+          axis.ticks.y=element_blank())
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5}
+
+  ggMultiPlots(rawocc.pplot, dens.plot, cols=2)
+
+```
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
 
   
   abb.revs$occ.qtl <- makeWtdQtl(abb.revs$occ.rate, 
@@ -1078,46 +1082,52 @@ In short, only in the upper left hand panel are we using the actual nightly rate
                                smooth.span=.55)
   qtlocc.pplot <- qtlocc.pplot +
     xlab('\nQuantile of Occupancy Rate') +
-    ylab('\n% of Properties where Airbnb is more profitable') +
+    ylab('\n% of Properties where \n Airbnb is more profitable') +
     scale_x_continuous(breaks=seq(0, 100, by=25),
                        labels=c('0', '25th', '50th', '75th', '100th')) +
     scale_y_continuous(breaks=seq(0, 1, by=.25),
                        labels=c('0%', '25%', '50%', '75%', '100%')) +
     scale_color_manual(values=sm.col) +
-    theme(legend.position='none')
+    theme(legend.position='none') + 
+    coord_cartesian(ylim=c(0,1))+
+    geom_hline(aes(yintercept=.5))
 
 ```
 
-```{r, fig.width=7, fig.height=5}
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5, fig.height=3.5, fig.align='center'}
 
   qtlocc.pplot
 
 ```
 
+Along with occupancy rate, the other important consideration is the nightly rate.  High occupancy rates with low nightly rates may not be any better than lower occupancy rate with a higher nightly rate.  In Figure X (left panel) we plot nightly rates versus occupancy rates.  We then divide the area of the scatter plot into 400 equal areas (20 x 20) and color each based on which is more common in the area, short term or long term revenue.  The transparency is related to the total count of actual market properties falling into that area.  
 
-```{r, fig.width=7, fig.height=5}
+A general trend is what is expected, higher rates and occupancies, ceteris paribus, means more profitability for short term rentals.  This relationship is not a perfectly linear because the long-term rental revenue varies greatly based on the characteristics of the property.  While the left panel of Figure X helps show the general pattern is doe leave many indeterminate areas.  In order to better delimit the situations where short-term rentals are more profitable we turn to a support vector machine (SVM) algorithm.
 
- rate.hm
+An SVM can be used as a classifier to delineate the boundaries between two (or more) classes of observations.  In this case, we delineate the boundary (right panel) between situations where long-term rentals are more profitable (red) and where short term are (green).  In order to avoid an overly broad straight line delineation we use a polynomial fitting technique. While this process does provide more flexible fit in the area of high data density, it also has the side effect of creating somewhat counter intuitive results in areas of low data (such as the far upper right corner.)  Overall, from the SVM model we see that there short-term prefernce begins at about 30\% occupancy rate, regardless of nightly rate.  As the occupancy rate increases, the required nighly rate decreases, down to near $100 once occupancies hit 65\% or greater.  
 
-```
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
 
-```{r, fig.width=7, fig.height=5}
-
-  rate.hm.svm
-
-```
-
-```{r, fig.width=7, fig.height=5}
-
- qtl.hm
+ ggMultiPlots(rate.hm, rate.hm.svm, cols=2)
 
 ```
 
-```{r, fig.width=7, fig.height=5}
+Both the occupancy rates and the nightly rates are not uniformly distributed and therefore the plots in figure X may be misleading.  We convert both axis to quantiles and replot both figures.  Here we see a more even distibution of points across the figures.  Additionally, a more reasonable SVM breakdown occurs as well.  The right panel shows that , in order for the likelihood of a property to be more profitable in short-term rental to be above 50\% the lowest occupancy rate it can have is 40\%, if the nightly rate is in the top 95th percentile of the market.  For example, if we drop the nightly rate to the median, the occupancy rate need to be at the 60th percentile.  
+```{r, fig.width=8, fig.height=4, echo=FALSE}
 
-  qtl.hm.svm
+ ggMultiPlots(qtl.hm, qtl.hm.svm, cols=2)
 
 ```
+
+Finally, we summarize the entire market by looking at three metrics:
+
+1. Actual: The percentage of properties in the market in which Airbnb generates more revenue
+2. Fitted: The percentage of properties (when plotted by occupancy rate and nightly rate) that fall in the SVM area considered profitable
+3. SVM Area: The percentage of the total area in the SVM plot that represents a situation where the short-term rental is more profitable.  
+
+None of these metrics on their own is perfect.  The 'actual' measure responds directly to the sample of the current market and may not be as useful to a potential investor. The 'fitted' and 'svm' metric minimize some bias from the sample, but suffer from forcing all observations into a binary condition (there are no 'gray' areas) and the 'svm area' metric may be biases by large areas of the scatterplot that have few actual observations.  This latter issue is partially limited by plotting by quantile, but, nonetheless still exists.  
+
+We calculate each for the raw rates as well as for the quantile situation.  These are show in Table X.  Overall, 31.4\% of the observed Airbnb properties raised more actual revenue from short term lending than the estimated long-term revenue that they would have gained.  Analyzing these by raw rates in the SVM, we find that a nearly identical 31.4\% fall within the contiguous area of short-term preference and this area takes up 40.6% of the total plotted area.  When scale the plots by quantile, we find that 37.2\% of all observations fall in the short-term preference area and that this area takes up 37.8\% of the total plotted area.  As the difference between the fitted and the svm area is considerably smaller in the quantile approach, there is less bias from outlying, empty areas.  
 
 ```{r, results="asis", echo=FALSE}
 
@@ -1130,12 +1140,87 @@ print(xtable(market.ratio,
 
 ### Submarkets
 
-### Flexible Geo Analysis
+A major deficit in this analysis is that the potential rents, rates, days on market and occupancy rates are estimated globally.  As a result, there is the likelihood of significant bias within certain submarkets.  Below, we break down the results by type (apartment vs house), by geographic market (5 submarketd listed above) and by type and submarket.  We show only the summary tables and the quantile heat map plots.  Full results can be found on the ....ENTER SHINY WEBSITE....
 
-### Logit Models (maybe?)
+#### Property Type
 
-### Reference to Shiny App
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
 
-## Future Research
+ggMultiPlots(house$qtl.hm, house$qtl.hm.svm, cols=2)
 
-- Does time of purchase (which month) matter?
+```
+
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
+
+ggMultiPlots(apt$qtl.hm, apt$qtl.hm.svm, cols=2)
+
+```
+
+```{r, results="asis", echo=FALSE}
+
+ type.table <- rbind(apt$mrkt.score, house$mrkt.score)
+ type.table$property.type <- c('apartment', '', 'house', '')
+ type.table <- type.table[,c(5,1:4)]
+ print(xtable(type.table,
+       digits=3),
+       include.rownames=FALSE, hline.after=c(-1,0,2,4))
+
+
+```
+
+#### Geographic Submarkets
+
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
+
+names(sm.results)[[1]] <- 'core'
+
+ggMultiPlots(sm.results$core$qtl.hm.svm,
+             sm.results$city$qtl.hm.svm, cols=2)
+```
+
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
+
+ggMultiPlots(sm.results$suburban$qtl.hm.svm, 
+             sm.results$rural$qtl.hm.svm, cols=2)
+
+```
+
+```{r, fig.width=4, fig.height=4, echo=FALSE, fig.align='center'}
+
+             sm.results$beach$qtl.hm.svm
+             
+```
+
+```{r, results="asis", echo=FALSE}
+
+ sm.table <- rbind(sm.results$core$mrkt.score, 
+                     sm.results$city$mrkt.score, 
+                     sm.results$suburban$mrkt.score, 
+                     sm.results$rural$mrkt.score, 
+                     sm.results$beach$mrkt.score)
+
+ sm.table$sub.market <- c('core', '', 'city', '', 'suburban', ''
+                            , 'rural', '', 'beach', '')
+ sm.table <- sm.table[,c(5,1:4)]
+ print(xtable(sm.table,
+       digits=3),
+       include.rownames=FALSE, hline.after=c(-1,0,2,4,6,8,10))
+
+
+```
+
+
+
+
+
+<!-- ### Submarkets -->
+
+<!-- ### Flexible Geo Analysis -->
+
+<!-- ### Logit Models (maybe?) -->
+
+<!-- ### Reference to Shiny App -->
+
+<!-- ## Future Research -->
+
+<!-- - Does time of purchase (which month) matter? -->
