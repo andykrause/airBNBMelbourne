@@ -167,7 +167,7 @@
                             paste0('Long-Term Properties: \n (Imputed Airbnb Revenue \n vs.',
                                    '\n Imputed Long Term Revenue)')),
                       est=c('Actual Rates & Rents', 'Actual Rates & Rents',
-                            'Imputed Rates & Rents', 'Imputed Rates & Rents'),
+                            'Imp. Rates & Rents', 'Imp. Rates & Rents'),
                       data=c('Airbnb', 'Long-Term', 'Airbnb', 'Long-Term'))
   
   reason.df <- data.frame(x=rep(0, 4),
@@ -181,7 +181,7 @@
                              paste0('- Imputed occupancy rates \n',
                                     '- Imputed nightly rate estimates')),
                        est=c('Actual Rates & Rents', 'Actual Rates & Rents',
-                             'Imputed Rates & Rents', 'Imputed Rates & Rents'),
+                             'Imp. Rates & Rents', 'Imp. Rates & Rents'),
                        data=c('Airbnb', 'Long-Term', 'Airbnb', 'Long-Term'))
   
   num.df <- data.frame(x=rep(0, 4),
@@ -421,7 +421,7 @@
                               ltr.mod.spec=ltr.mod.spec,
                               abb.mod.spec=abb.mod.spec,
                               clip.field='suburb',
-                              market.field='sub.mrkt',
+                              market.field='none',
                               mrkt.col=sm.col,
                               heat.col=c(abb.col[1], abb.col[5]))
 
@@ -469,6 +469,7 @@
     sm.pos <- sm.pos + 1
   
   }
+  names(sm.results) <- as.character(s.levels)
 
 ### Estimate at bed/bath level -----------------------------------------------------------  
 
@@ -503,6 +504,7 @@
     bb.pos <- bb.pos + 1
   
   }
+  names(bb.results) <- as.character(bb.levels)
   
 ### Split by submarket and type ----------------------------------------------------------  
   
@@ -538,6 +540,7 @@
     smt.results[[smt.pos]] <- x.res
     smt.pos <- smt.pos + 1
   }
+  names(smt.results) <- as.character(smt.levels)
   
 ### Save workspace -----------------------------------------------------------------------
   

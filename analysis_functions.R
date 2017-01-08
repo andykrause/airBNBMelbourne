@@ -307,7 +307,21 @@ createCompTable <- function(abb.df,
                             ltr.df,
                             split.field=NULL){
   
-  if(is.null(split.field)){
+  if(split.field == 'none'){
+    
+    abb.imp <- mean(abb.df$abb.imp)
+    abb.act <- mean(abb.df$abb.act)
+    ltr.imp <- mean(ltr.df$abb.imp)
+    ltr.act <- mean(ltr.df$abb.act)
+    
+    rate.table <- data.frame(ID='all',
+                             var=c(abb.imp, abb.act, ltr.imp, ltr.act),
+                             est=c('Imputed Rates & Rents', 
+                                   'Actual Rates & Rent',
+                                   'Imputed Rates & Rents',
+                                   'Actual Rates & Rents'), 
+                             data=c('Airbnb', 'Airbnb',
+                                    'Long-Term', 'Long-Term'))
     
   } else {
     
@@ -334,8 +348,6 @@ createCompTable <- function(abb.df,
                                        'suburban', 'rural'))
         
     }
-    
-    
   }
   
   ## Return Values
@@ -649,7 +661,7 @@ fullMarketAnalysis <- function(ltr.df,
                                ltr.mod.spec,
                                abb.mod.spec,
                                clip.field,
-                               market.field='sub.mrkt',
+                               market.field='none',
                                mrkt.col=NULL,
                                heat.col=c('red', 'green'))
 
@@ -681,7 +693,7 @@ fullMarketAnalysis <- function(ltr.df,
   
   mrkt.table <- createCompTable(mrkt.comp$abb, mrkt.comp$ltr, market.field)
   
-  if(market.field == 'sub.mrkt'){
+  if(!is.null(market.field) && market.field == 'sub.mrkt'){
     mrkt.table$ID <- factor(mrkt.table$ID, 
                             levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
   }
