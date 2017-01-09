@@ -1,11 +1,12 @@
 ---
-title: "Should I AirBNB My Property?"
+title: "Should I Airbnb My Property?"
 author: "Andy Krause and Gideon Aschwanden"
-date: "December 17, 2016"
+date: "January 9, 2017"
 output:
   pdf_document: default
   html_document: default
-geometry: margin=3cm
+geometry: margin=3.4cm
+bibliography: abb.bib
 ---
 
 ```{r load_libraries, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'}
@@ -81,1136 +82,1166 @@ geometry: margin=3cm
   
 ```
 
-```{r load_workspace, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
+```{r load_workspace, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, cache=TRUE}
 
   load(paste0(data.path, '/analyzed/abb_working.RData'))
 
 ```
 
-## Intro
+&nbsp;
+&nbsp;
 
-With the rise of Airbnb and other self-hosting accommodation platforms, property owners and investors may consider short-term rental as a potential use for a home.  The question to be asked then is, in which circumstances would leasing in a short-term manner produce greater returns than a traditional long-term rental?  This work presents an examination of market transactions of both short and long-term rental aimed at answering this question. 
+## Introduction
 
-To do so, we use long-term rental data and nightly Airbnb listing information from the Melbourne (Australia) metropolitan area.  Melbourne has a thriving Airbnb market with over 17,000 total properties listed on the portal.  The Airbnb data does not include exact addresses and therefore no direct matches between the datasets can be made.  As a result, we impute likely short and long-term rental rates and occupancies.  Comparisons of actual to estimated returns are made to determine the situation in which a short term rental, such as Airbnb, is more profitable.  
+With the rise of Airbnb and other self-hosting accommodation platforms^[Flipkey.com, VRBO.com, Homeaway.com, Tripping.com as examples.], it is easier than ever for property owners and investors to consider short-term rental (STR) as a potential use for a revenue generating residential property. Should they though?  And which types of properties and in which locations would short-term leasing produce greater revenue than a traditional long-term rental (LTR), if any? 
 
-Additionally, we break the results down by property types (apartment vs house), product type (ex. 1 bed, 1 bath) and by location (submarket).  Our results shows that the feasibility of a greater return through a short term rental is dependent on property type, product and location.  In answer to our question: it depends.  
+To address these questions and provide some guidance to potential and current investors and owners, we use long-term rental data and nightly Airbnb listing information from the Melbourne (Australia) metropolitan area.  Melbourne has a thriving Airbnb market with over 20,000 total properties listed on the portal. We adopt a scenario-based approach in which we compare potential annual revenues for properties under both a short-term rental (STR) and a long-term rental (LTR) situation. Additionally, we break the results down by property types (apartment vs house), product type (ex. 1 bed, 1 bath) and by location (submarket).  Our results shows that the feasibility of a greater return through a short term rental is dependent on property type, product and location.  In answer to whether or not a owner or investor should opt for a short-term leasing strategy: it depends.  
 
-## Lit Review
+## Literature Review
+
+Existing research into short-term rental markets is sparse. However, with the arrival of Airbnb, and the controversies surrounding it, the topic is creating interest both in real estate and economics as well as in a wide variety of fields outside of real estate as evidenced by a growth in recent publications and on-going working papers. 
+
+Much of the existing work focuses on price or rent formation in second home markets.  Specifically, the impacts of amenties such as water access [@nelson2010valuing], water quality [@gibbs2002hedonic; @clapper2014water] and proximity to ski facilities  [@soguel2008impact; @nelson2010valuing] and theme parks [@tsai2015impact] are shown to positively impact sales prices in tourism-dominated areas.  @benjamin2001value note that leasing policies, in this case smoking prohibitions, can also influence the weekly rental rates for vacation homes.  @nilsson2015influence makes a key distinction, finding that rural vacation home markets value amenties whereas urban holiday properties tend to derive large premiums from proximity to attractive residential areas.
+
+Focusing specifically on the short-term rental market, @cassidy2007tourist suggest that within Australia's Gold Coast, the STR industry lacks sophistication and efficiency.  Most notably, they find that most nightly or weekly rates are set by resident unit managers (RUMs) and are often under-priced as there is little accountability toward owners.  The authors also note that very little research has been put toward understanding this growing market segment.  
+
+A set of recent work has looked into the impact of short-term markets on housing prices and affordability. These working papers examine the influence of Airbnb on existing housing prices in New York [@sheppard2016airbnb], Los Angeles [@lee2016airbnb] and Boston [@merante2016home]. Though very broad analyses, all suggest that Airbnb has had a positive impact on local home prices and/or a negative impact on affordability. Other work examines the impact of short term rentals on the hotel market, with @gutierrez2016airbnb finding that Airbnb and hotels have similar location patterns in Barcelona and @zervas2014rise showing an inverse relationship between Airbnb listings and hotel revenues.
+
+A critical theme that arises out of the extant literature is that fundamentals of the markets for primary dwellings (owner-occupied and long-term rentals) may differ from those of vacation homes (or, by association, short term rentals). Or, in other words, the factors that influence prices and rents in the two are not equivalent. @cho2003impacts find that the second home market is more sensitive to proximity to environmental amenities than the owner occupied market. In Switzerland, @soguel2008impact test to see if second homes pay a higher premium for ski resort access.  Their results fail to show a statistically significant difference in the impact of ski resorts between markets, but do find that other property characteristics have heterogenous effects between the two.  
+
+Though issues of second homes were primarily treated as a rural phenomenom for decades  [@gallent2007second], a wave of ``new urban tourism'' [@fuller2014stop] has re-focused some of the problems of short term rentals on large, urban environments. With this move to urban areas, issues such as nuisance, property rights and regulation have naturally arisen.  As a result, the short-term rental market has garnered significant interest in the public policy and legal sphere as of late. As many second homes are not permitted for or regulated as commercial entities, STRs can have serious effects on neighbors in the way of externalies such as noise and congestion [@frost2006commentary].  While strict regulation is often proposed, doing so may constititute regulatory takings [@jefferson2015can].  Other, rights-based, regulatory approaches have been suggested [@miller2014transferable].  Many of the key legal decisions regarding short term rentals, particulary though Airbnb, are still in progress and much remains to be settled in this area in terms of the regulatory and legal environment in which STRs are allowed to operate. 
+
+Overall, the extant literature on short-term rentals is limited, but growing.  Of the three types of research -- pricing, impacts on housing market and legalities/externalities -- none specifically address the decision faced by an owner who is trying to decide between a long- or short-term leasing strategy. The closest analog in the literature is a piece by @larsen2009purchase examining the choice between purchasing a time-share or simply paying for hotel rooms.  Theoretically, the literature shows that in most cases there is a demonstratable difference between first and second home market dynamics due to the use differences of the occupants.  We hypothesize that this same thinking can be extended to the difference between short-term occupants (tourists) and long-term rental occupants (workers and retirees) and, as a result, there should be differences in the market which make certain housing products and locations preferable (more profitable) under a short-term versus long-term tenure. 
 
 ## Method
 
-### Scenario
-
-We approach answering the question of Airbnb-ing or not by examining a scenario likely to be faced by a recent purchaser of a property.  More specifically, we examine the following case:
+We approach answering the question of whether to pursue a short- or long-term leasing strategy by creating and assessing a scenario likely to be faced by a recent purchaser of a property.  More specifically, we examine the following case:
 
 * An investor purchases a property in Melbourne on Sept 1, 2015.
-* They are looking to maximize the revenue over the 12 month period from Sept 1 2015 to August 31 2016.
+* They are looking to maximize the revenue over the 12-month period from September 1, 2015 to August 31, 2016.
 * The choices are 1) traditional year long rental (long term), or: 2) short-term, Airbnb type rental.
-* Only direct monetary costs are considered, others such as liquidity and inconvience are not considered.  
+* Only direct monetary revenues and costs are considered, others such as liquidity and inconvience are not considered.  
 
-We will not, a priori, specify a location or property type as we hypothesize that the feasibility of a short term rental will vary by these characteristics.  Australia has a tax policy, Negative Gearing, that does allow for favourable tax treatment to real estate investors who experience greater costs than revenues on investment properties.  However, as this policy requires knowledge of the investor's personal income level, we will not be considering this policy in our analysis here.  
+We will not, a priori, specify a location or property type as we hypothesize that the preference of a short-term rental over a long-term one will vary by the location and property characteristics.  Additionally, Australia implements a particular tax policy, often termed `negative gearing', that does allow for favourable tax treatment to real estate investors who experience greater costs than revenues on investment properties^[See @fane2004negative for a complete explanation of negative gearing.  However, as the negative gearing policy requires knowledge of the investor's personal income situation, we will not be considering any effects of this policy in our analysis here.  
 
-One benefit of a short-term rental may be the ability to adjust the nightly rate over the course of the year to reflect changing demand and market trends.  As the future trends are unknown at the time of purchase and the decision of long vs short term rental, we make our comparisons using a fixed nightly short term rate to respresent the most likely state of knowledge for our hypothetical investor on September 1, 2015. Both long and short term rates and occupancy structures will be baesd on the market conditions as of this date.  
+One benefit of a short-term rental may be the ability to adjust the nightly rate over the course of the year to reflect changing demand and market trends. As future market trends are unknown at the time of purchase and the decision of long- vs short-term leasing strategy is asymetrically irreversable (can go from short to long, but not long to short), we make our comparisons using a fixed nightly (short-term) rate to respresent the most likely state of knowledge for our hypothetical investor on September 1, 2015. Both long- term rents and short-term rates and occupancy structures will be baesd on the market conditions as of this date.  
 
-### Equation
+We do not directly observe properties that are utilized in both a short and long term leasing strategy.  Therefore, comparisons are done based on estimated or imputed revenues.  Most specifically, we will estimate short-term revenue for observations of long-term rentals (LTRs) and long-term revenue for observations of short-term rentals (STRs). A preference for short or long term leasing strategy will be determined based on comparing the observed and estimated revenues.    
 
-In this above scenario we compare the 12-month returns from the a long term rental with those of a short term rental.  We define returns here as the gross revenue minus the direct costs associated with each of the two tenure possibilities.  
+### Comparison
 
-\begin{equation} 
-R_{LT} = Rev_{LT} - C_{LT}
+In this above scenario we compare the 12-month revenues from the a long-term rental with those of a short-term rental.  We define returns here as the gross revenue minus the direct costs associated with each of the two tenure possibilities.
+
+\begin{equation}
+Rev_{LT} = RevG_{LT} - C_{LT}
 \end{equation}
 
-\begin{equation} 
-R_{ST} = Rev_{ST} - C_{ST}
+\begin{equation}
+Rev_{ST} = RevG_{ST} - C_{ST}
 \end{equation}
 
-\begin{equation} 
-Rev_{LT} = Rent_{M} * (12 - C_{S}) 
+Where $Rev_{LT}$ is the net revenue for a long-term rental, $RevG_{LT}$ is the gross revenue and $C_{LT}$ are the costs associated with long-term rental. The gross long-term revenue is expressed by: 
+
+\begin{equation}
+RevG_{LT} = Rent_{M} * (12 - C_{S})
 \end{equation}
 
-where $C_{S}$ are search costs defined in terms of the time (in months) spent to find a long-term tenant.  
+where $Rent_{M}$ is the nominal monthly rent and $C_{S}$ are search costs defined in terms of the time (in months) spent to find a long-term tenant.
 
-\begin{equation} 
-Rev_{ST} = Rate_{N} * O_{Total} 
+The short-term revenue is expresse by:
+
+\begin{equation}
+RevG_{ST} = Rate_{N} * O_{Total}
 \end{equation}
 
-where $O_{Total}$ are the total number of occupancies over the 12-month period. 
+where $Rate_{N}$ is the average nightly rate and $O_{Total}$ are the total number of occupancies (bookings) over the 12-month period.
 
-\begin{equation} 
-C_{LT} = T + M 
+We have limited our consideration of costs in this case to be those undergone during a single year of ownership.  Broadly speaking, these fall into three categories for long-term rental and four categories for short-term properties.  Long-term costs are summarized as:
+
+\begin{equation}
+C_{LT} = T + M + F
 \end{equation}
 
-where 
+where $T$ are tax related expenses, $M$ are general maintenance expenses and $F$ are finaning costs. Short-term properies experience the same three costs ($T$, $M$ and $F$) plus additional janitorial costs between each of the short-term occupants. 
 
-where $T$ are tax related expenses and $M$ are general maintenance expenses.  
-
-\begin{equation} 
-C_{ST} = T + M + J 
+\begin{equation}
+C_{ST} = T + M + F + J
 \end{equation}
 
-where $T$ are tax related expenses, $M$ are general maintenance expenses and $J$ are janitorial expenses incurred after each short term tenancy.  
+As our scenario compares a hypothetical and particular owner over the course of a single  year the tax $T$ and $F$ costs are identical between the two leasing strategy and therefore cancel out. General maintenance $M$ expenses may differ between the two strategies, and an argument could be made for either to be higher. Long-term renters spend more time in the property over the course of the year and bring their own appliance and furniture which may damage the home. They are also more likely to affix items to the structure.  Conversely, short-term rentals are usually furnished and the occupants have less incentive not to be evicted as their damage is not often uncovered until after they have left^[Note that Airbnb's rating policy may help protect hosts as bad guests can be flagged on the platform.].  Both arguments are meritous and we were unable to find any evidence to support maintenance costs being higher in short or long term rentals. As a result we have made the assumption that the maintenance costs will be identical, and they too cancel out. 
 
-We assume for the sake of this scenario that the tax $T$ and general maintenance $M$ expenses are identical between tenure options and therefore cancel out.  With the analysis that follows we will consider short term rental to be prefable to long-term if the following inequality holds:
+Finally, we have janitorial costs $J$. These cover the costs to 'turn-over' the property between occupants.  For a short-term leasing strategy, these costs can be experiences every day or two, depending on the minimum length of stay and the total number of occupancies over the course of the year. Our data for short-term rentals comes from the Airbnb platform.  In addition to the nightly rate that an occupant pays to the owner there is also a separate 'cleaning fee' that is attached, as is a booking fee to Airbnb. Some hosts add additional 'linen' fees to cover costs of laundering.  While it may be advantageous for hosts in competitive markets to underquote their cleaning fees to keep occupancies up, we have no evidence to suggest that owners are exhibiting such behavior.  As a result of janitorial fees being a separate line item and directly paid by the occupants can also be ignored in the comparative analysis below as they are direct.      
 
-\begin{equation} 
-Rate_{N} * O_{Total} - J > Rent_{M} * (12 - C_{S}) 
+Given that the costs cancel out between the two options, we will consider short-term rental (STR) strategy to be prefable to long-term rental (LTR) strategy if the following inequality holds:
+
+\begin{equation}
+RevG_{ST} > RevG_{LT} 
+\end{equation}
+
+More specifically, if:
+
+\begin{equation}
+Rate_{N} * O_{Total} > Rent_{M} * (12 - C_{S})
 \end{equation}
 
 ## Data
 
-Data for this studies were gathered from two different sources, one for short-term rental market and one for the long-term rental market.  The Airbnb online portal is used as evidence of the short-term rental market.  Airbnb is the largest short-term rental hub in the Melbourne region, though others do exist.  As opposed to similar sites such as VRBO.com and homeaway.com which focus on vacation homes in tourist dominated areas such as beaches and ski resorts, Airbnb offers considerable coverage in urban areas and, in way ways, directly compete with more traditional long term rentals.  The data on the AirBNB market in Melbourne have been purchased from www.airdna.co, a data provider specializing in AirBNB data collection and analysis. The short term data include two types of observations, property level and nightly.  Property-level data consists of a single observation for each property that is or has been listed on the Airbnb portal over the October 2014 to August 2016 period^[This time period represents the period in which AirDNA was engaged in data collection in Melbourne.]  The nightly data offer one observation for each property for each night of the year.  This data indicate the advertised price, the occupancy status and a unique reservation identification (useful for determining the length of stay).
+<!-- Data for this studies were gathered from two different sources, one for short-term rental market and one for the long-term rental market.  The Airbnb online portal is used as evidence of the short-term rental market.  Airbnb is the largest short-term rental hub in the Melbourne region, though others do exist.  As opposed to similar sites such as VRBO.com and homeaway.com which focus on vacation homes in tourist dominated areas such as beaches and ski resorts, Airbnb offers considerable coverage in urban areas and, in way ways, directly compete with more traditional long term rentals.  The data on the AirBNB market in Melbourne have been purchased from www.airdna.co, a data provider specializing in AirBNB data collection and analysis. The short term data include two types of observations, property level and nightly.  Property-level data consists of a single observation for each property that is or has been listed on the Airbnb portal over the October 2014 to August 2016 period^[This time period represents the period in which AirDNA was engaged in data collection in Melbourne.]  The nightly data offer one observation for each property for each night of the year.  This data indicate the advertised price, the occupancy status and a unique reservation identification (useful for determining the length of stay). -->
 
-The Airbnb data cover the Melbourne metropolitan region from October 1st 2014 to August 30th 2016. There are missing nightly observations during the time period before September 1 2015.  While we initially imputed these observations we found the results unreliable and have structured the analysis to only cover the time period containing complete data.  All monetary values in the Airbnb data are in US dollars and have been converted to Australian dollars using the median of the exchange rate during this time period, 1.32 Australian dollars to 1 US dollar. 
+<!-- The Airbnb data cover the Melbourne metropolitan region from October 1st 2014 to August 30th 2016. There are missing nightly observations during the time period before September 1 2015.  While we initially imputed these observations we found the results unreliable and have structured the analysis to only cover the time period containing complete data.  All monetary values in the Airbnb data are in US dollars and have been converted to Australian dollars using the median of the exchange rate during this time period, 1.32 Australian dollars to 1 US dollar.  -->
 
-The data on long-term leases was provided by Australia Property Monitors (APM), a Fairfax Group company. This data also includes an observation for each rental property each time a detail of the listing changed.  For example, if a property were listed for rent for one month and the price was dropped once each week there would be four observations in the dataset. These four observations are grouped by an event-specific identification number. In each case the last observation signifies the final price of the rental contract.  We separate this data into two sets for efficiency reasons. The first data set includes all information about the property, physical and economic (date and amount of rent contract), while the second contains a property ID, a rental event ID, the list price and the date of the change.  As such, the first dataset is a set of market observations with associated characteristics and the second is a listing history of each event. The long-term lease data covers the period from January 2014 to December 2015.  
+<!-- The data on long-term leases was provided by Australia Property Monitors (APM), a Fairfax Group company. This data also includes an observation for each rental property each time a detail of the listing changed.  For example, if a property were listed for rent for one month and the price was dropped once each week there would be four observations in the dataset. These four observations are grouped by an event-specific identification number. In each case the last observation signifies the final price of the rental contract.  We separate this data into two sets for efficiency reasons. The first data set includes all information about the property, physical and economic (date and amount of rent contract), while the second contains a property ID, a rental event ID, the list price and the date of the change.  As such, the first dataset is a set of market observations with associated characteristics and the second is a listing history of each event. The long-term lease data covers the period from January 2014 to December 2015.   -->
 
-Unfortunately, there are no common identifiers between the two dataset as the Airbnb data does not include address.  Both sets of data do include latitude and longitude, but in a dense urban area with many multiple-family dwellings it is impossible to match apartments based on a two-dimensional coordinates.  As a result of this, we are unable to directly match observations from the two datasets.  However, the number of properties that rented long term for the 2014 to 2015 period and then switched to Airbnb for the 2015 to 2016 period are likely very small and this inability to directly match properties does not greatly impact our modeling strategy. 
+<!-- Unfortunately, there are no common identifiers between the two dataset as the Airbnb data does not include address.  Both sets of data do include latitude and longitude, but in a dense urban area with many multiple-family dwellings it is impossible to match apartments based on a two-dimensional coordinates.  As a result of this, we are unable to directly match observations from the two datasets.  However, the number of properties that rented long term for the 2014 to 2015 period and then switched to Airbnb for the 2015 to 2016 period are likely very small and this inability to directly match properties does not greatly impact our modeling strategy.  -->
 
-```{r set_constants, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'}
+<!-- ```{r set_constants, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'} -->
 
-  exch.rate <- 1.32  
+<!--   exch.rate <- 1.32   -->
 
-```
+<!-- ``` -->
 
-### Preparation
+<!-- ### Preparation -->
 
-In this section we describe the operations that we have performed to prepare the two sets of raw data for analysis.  Primarily, this involves the filtering out of data errors and/or outlier values.  However, as our data are from two different sources, number of fields also require standardization so that comparisons between the two tenure options can be made. 
+<!-- In this section we describe the operations that we have performed to prepare the two sets of raw data for analysis.  Primarily, this involves the filtering out of data errors and/or outlier values.  However, as our data are from two different sources, number of fields also require standardization so that comparisons between the two tenure options can be made.  -->
 
-We begin by filtering observations by time. Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term rental versus an AirBNB, short term rental approach to generating income. To determine the likely long term rental rate for any given property, we will use the observed rental transactions from the market from September 1, 2014 to August 31, 2015. Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.  
+<!-- We begin by filtering observations by time. Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term rental versus an AirBNB, short term rental approach to generating income. To determine the likely long term rental rate for any given property, we will use the observed rental transactions from the market from September 1, 2014 to August 31, 2015. Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.   -->
 
-Next, we examine property types. AirBNB units are classified into 19 different property types. The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that the Igloo, at the very least, is not a completely true representation of the property type]. For the sake of this analysis, we will collapse these twenty types into three types:
-  
-1. **House**:  Includes properties labeled 'House' or 'Townhouse'
-2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium'
-3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt. 
+<!-- Next, we examine property types. AirBNB units are classified into 19 different property types. The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that the Igloo, at the very least, is not a completely true representation of the property type]. For the sake of this analysis, we will collapse these twenty types into three types: -->
 
-Within the long-term rental data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories:
-  
-1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse'
-2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio'
-3. **Other**: Includes properties labeled as 'Semi' and 'Villa'
+<!-- 1. **House**:  Includes properties labeled 'House' or 'Townhouse' -->
+<!-- 2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium' -->
+<!-- 3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt.  -->
 
-Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the AirBNB data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure).  Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context. 
+<!-- Within the long-term rental data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories: -->
 
-As the chart below show, the **Other** category only makes up a very small percentage of the properties in both the short and long term market, especially in the long-term market.  Additionally, a good portion of the **Others** in the Airbnb data are Bed & Breakfast units, a use which doesn't fit with our research question.  As a result, we remove the 'Others' from both the Airbnb and the long term rental data. 
+<!-- 1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse' -->
+<!-- 2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio' -->
+<!-- 3. **Other**: Includes properties labeled as 'Semi' and 'Villa' -->
 
-```{r load_beforePT, message=FALSE, warning=FALSE, cache=TRUE, comment=FALSE, echo=FALSE, results='hide'}  
-  data.path <- 'c:/dropbox/research/airBNB/data/'
-  load(paste0(data.path, '/analyzed/abb_beforePT.RData'))
-  abb.data <- before.PT$abb.data
-  ltr.data <- before.PT$ltr.data
-  daily.data <- before.PT$daily.data
+<!-- Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the AirBNB data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure).  Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context.  -->
 
-``` 
+Berry 2000 about unique australia market
 
-```{r type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3, fig.cap='Tenure Type by Property Type'}
+<!-- As the chart below show, the **Other** category only makes up a very small percentage of the properties in both the short and long term market, especially in the long-term market.  Additionally, a good portion of the **Others** in the Airbnb data are Bed & Breakfast units, a use which doesn't fit with our research question.  As a result, we remove the 'Others' from both the Airbnb and the long term rental data.  -->
 
-  # Create Airbnb plot
+<!-- ```{r load_beforePT, message=FALSE, warning=FALSE, cache=TRUE, comment=FALSE, echo=FALSE, results='hide'}   -->
+<!--   data.path <- 'c:/dropbox/research/airBNB/data/' -->
+<!--   load(paste0(data.path, '/analyzed/abb_beforePT.RData')) -->
+<!--   abb.data <- before.PT$abb.data -->
+<!--   ltr.data <- before.PT$ltr.data -->
+<!--   daily.data <- before.PT$daily.data -->
 
-  abb.types <- ggplot(abb.data, aes(x=type)) + 
-    geom_bar(color=str.col, fill=str.col) +
-    xlab('') + 
-    ylab('# of Properties\n') +
-    labs(title = "Short Term Rentals\n") + 
-    theme(plot.title = element_text(hjust = 0.5))
+<!-- ```  -->
 
-  # Create long term rental plot
+<!-- ```{r type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3, fig.cap='Tenure Type by Property Type'} -->
 
-  ltr.types <- ggplot(ltr.data, aes(x=type)) + 
-    geom_bar(color=ltr.col, fill=ltr.col) +
-    xlab('') + 
-    ylab('# of Properties\n') +
-    labs(title = "Long Term Rentals\n") + 
-    theme(plot.title = element_text(hjust = 0.5))
+<!--   # Create Airbnb plot -->
 
-  # Output plots
-  
-  ggMultiPlots(abb.types, ltr.types, cols=2)
-  
-```
+<!--   abb.types <- ggplot(abb.data, aes(x=type)) +  -->
+<!--     geom_bar(color=str.col, fill=str.col) + -->
+<!--     xlab('') +  -->
+<!--     ylab('# of Properties\n') + -->
+<!--     labs(title = "Short Term Rentals\n") +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
 
-```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!--   # Create long term rental plot -->
 
-  abb.data <- subset(abb.data, type != 'Other')
-  ltr.data <- subset(ltr.data, type != 'Other')
+<!--   ltr.types <- ggplot(ltr.data, aes(x=type)) +  -->
+<!--     geom_bar(color=ltr.col, fill=ltr.col) + -->
+<!--     xlab('') +  -->
+<!--     ylab('# of Properties\n') + -->
+<!--     labs(title = "Long Term Rentals\n") +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
 
-```
+<!--   # Output plots -->
 
-Next, for the short term rentals properties can be listed as one of three types relating to the extent of the property which is able to be booked:
+<!--   ggMultiPlots(abb.types, ltr.types, cols=2) -->
 
-1. **Entire Home/Apt**: The entire home or apartment is available
-2. **Private Room**: One room within a house or apartment is available
-3. **Shared Room**: A bed within a room shared by another occupant(s) is available
+<!-- ``` -->
 
-As long-term rentals do not offer **Private Room** or **Shared Room** options^[Our dataset does not include rooming houses, purpose built student accomodations and other types of rental which may offer private or shared room options] and our purpose here is a comparison of long and short term returns, we remove all short term properties that do not lease the entire home/apt. Unfortunately, this filter does remove about 40% of the short term data, however, given the research question it is unavoidable. 
+<!-- ```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.width=5, fig.cap='Listing Type of Short Term Rentals'}
+<!--   abb.data <- subset(abb.data, type != 'Other') -->
+<!--   ltr.data <- subset(ltr.data, type != 'Other') -->
 
-  # Fix data types and names
-  
-  abb.data$listing.type <- as.character(abb.data$listing.type)
-  abb.data$listing.type[abb.data$listing.type == 'Entire home/apt'] <- 'Entire home'
-  
-  # Make Plot
-  
-  ggplot(abb.data, aes(x=listing.type)) + 
-    geom_bar(color=abb.col[1], fill=abb.col[1]) +
-    xlab('') + 
-    ylab('# of Properties\n') +
-    labs(title = "Short Term Rentals by Listing Type\n") + 
-    theme(plot.title = element_text(hjust = 0.5))
-   
-  
-```
+<!-- ``` -->
 
-```{r keep_entire_home, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!-- Next, for the short term rentals properties can be listed as one of three types relating to the extent of the property which is able to be booked: -->
 
-  abb.room <- abb.data[abb.data$listing.type != 'Entire home', ]
-  abb.data <- abb.data[abb.data$listing.type == 'Entire home', ]
+<!-- 1. **Entire Home/Apt**: The entire home or apartment is available -->
+<!-- 2. **Private Room**: One room within a house or apartment is available -->
+<!-- 3. **Shared Room**: A bed within a room shared by another occupant(s) is available -->
 
-```
+<!-- As long-term rentals do not offer **Private Room** or **Shared Room** options^[Our dataset does not include rooming houses, purpose built student accomodations and other types of rental which may offer private or shared room options] and our purpose here is a comparison of long and short term returns, we remove all short term properties that do not lease the entire home/apt. Unfortunately, this filter does remove about 40% of the short term data, however, given the research question it is unavoidable.  -->
 
-#### Structural Characteristics
+<!-- ```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.width=5, fig.cap='Listing Type of Short Term Rentals'} -->
 
-We now turn to filtering by structural characteristics.  As the Airbnb data provides limited information on the structural characteristics, the only overlapping fields that we have between the two datasets are bedrooms and bathrooms. Additionally, as the markets and structural components of houses and apartment differ, we bifurcate our analysis between the two property types from this point forward. 
+<!--   # Fix data types and names -->
 
-We begin by removing all properties that are missing bedroom information or have a likely data error in this fields (more than 14 bedrooms). For both short and long term rentals we see that most apartments have less than 4 bedrooms and houses less than 5.  We filter the data accordingly. Additionally, note that short term rentals consider studio apartments to be 0 bed units while the long term data considers these as 1 bedroom. We convert the 0 bed short term units to 1 bed units.
+<!--   abb.data$listing.type <- as.character(abb.data$listing.type) -->
+<!--   abb.data$listing.type[abb.data$listing.type == 'Entire home/apt'] <- 'Entire home' -->
 
-```{r bed_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!--   # Make Plot -->
 
- # Remove missing and data errors
+<!--   ggplot(abb.data, aes(x=listing.type)) +  -->
+<!--     geom_bar(color=abb.col[1], fill=abb.col[1]) + -->
+<!--     xlab('') +  -->
+<!--     ylab('# of Properties\n') + -->
+<!--     labs(title = "Short Term Rentals by Listing Type\n") +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
 
-  # Long term data
-  ltr.data <- ltr.data[!is.na(ltr.data$bedrooms), ]
-  ltr.data <- ltr.data[ltr.data$bedrooms <= 10, ]
 
-  # Short term data
-  abb.data <- abb.data[!is.na(abb.data$bedrooms), ]
-  abb.data <- abb.data[abb.data$bedrooms <= 10, ]
+<!-- ``` -->
 
-```
+<!-- ```{r keep_entire_home, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-```{r bed_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Bedrooms by Tenure & Property Type'}
+<!--   abb.room <- abb.data[abb.data$listing.type != 'Entire home', ] -->
+<!--   abb.data <- abb.data[abb.data$listing.type == 'Entire home', ] -->
 
- # Build long term bar plot
+<!-- ``` -->
 
-   ltrbed <- ggplot(ltr.data, aes(x=bedrooms)) + 
-    geom_bar(fill=ltr.col, color=ltr.col) +
-    facet_wrap(~type) +
-    scale_x_continuous(labels=1:10, breaks=1:10)+
-    xlab('') +
-    ylab('# of Props\n') +
-    labs(title = "Bedrooms in Long Term Rentals\n") + 
-    theme(plot.title = element_text(hjust = 0.5))
- 
- # Build short term bar plot
+<!-- #### Structural Characteristics -->
 
-  abbbed <- ggplot(abb.data, aes(x=bedrooms)) + 
-    geom_bar(fill=str.col, color=str.col) +
-    facet_wrap(~type) +
-    scale_x_continuous(labels=0:10, breaks=0:10)+
-    xlab('') +
-    ylab('# of Props\n') +
-    labs(title = "Bedrooms in Short Term Rentals\n") + 
-    theme(plot.title = element_text(hjust = 0.5))
- 
- # Make the comparison plot  
-  
-  ggMultiPlots(abbbed, ltrbed, cols=1)
+<!-- We now turn to filtering by structural characteristics.  As the Airbnb data provides limited information on the structural characteristics, the only overlapping fields that we have between the two datasets are bedrooms and bathrooms. Additionally, as the markets and structural components of houses and apartment differ, we bifurcate our analysis between the two property types from this point forward.  -->
 
-```
+<!-- We begin by removing all properties that are missing bedroom information or have a likely data error in this fields (more than 14 bedrooms). For both short and long term rentals we see that most apartments have less than 4 bedrooms and houses less than 5.  We filter the data accordingly. Additionally, note that short term rentals consider studio apartments to be 0 bed units while the long term data considers these as 1 bedroom. We convert the 0 bed short term units to 1 bed units. -->
 
-```{r bed_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!-- ```{r bed_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
- # Remove all with more than 4 beds
+<!--  # Remove missing and data errors -->
 
-  abb.data <- abb.data[abb.data$bedrooms < 5, ]
-  ltr.data <- ltr.data[ltr.data$bedrooms < 5, ]
+<!--   # Long term data -->
+<!--   ltr.data <- ltr.data[!is.na(ltr.data$bedrooms), ] -->
+<!--   ltr.data <- ltr.data[ltr.data$bedrooms <= 10, ] -->
 
- # Remove apartments with more than 3
-  
-  abba <- which(abb.data$bedrooms > 3 & abb.data$type =='Apartment')
-  ltra <- which(ltr.data$bedrooms > 3 & ltr.data$type =='Apartment')
+<!--   # Short term data -->
+<!--   abb.data <- abb.data[!is.na(abb.data$bedrooms), ] -->
+<!--   abb.data <- abb.data[abb.data$bedrooms <= 10, ] -->
 
-  if(length(abba) > 0) abb.data <- abb.data[-abba, ]
-  if(length(ltra) > 0) ltr.data <- ltr.data[-ltra, ]
+<!-- ``` -->
 
-  # Convert 0 Bed to 1 Bed  
-  abb.data$bedrooms[abb.data$bedrooms == 0] <- 1
+<!-- ```{r bed_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Bedrooms by Tenure & Property Type'} -->
 
-```
+<!--  # Build long term bar plot -->
 
-We then turn to bathrooms, starting by looking at the distribution of baths between short/long and apt/house. Here we see that nearly all properties have 3 or fewer bathrooms and we filter the data accordingly. A few short term properties state no baths, which is likely an error so we remove these observations from the data. Also, here we notice that the short term data gives bathrooms in halves, while the long term data presents baths in whole numbers.  We round the baths in the short term data up to whole integers. 
- 
-```{r bath_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!--    ltrbed <- ggplot(ltr.data, aes(x=bedrooms)) +  -->
+<!--     geom_bar(fill=ltr.col, color=ltr.col) + -->
+<!--     facet_wrap(~type) + -->
+<!--     scale_x_continuous(labels=1:10, breaks=1:10)+ -->
+<!--     xlab('') + -->
+<!--     ylab('# of Props\n') + -->
+<!--     labs(title = "Bedrooms in Long Term Rentals\n") +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
 
- # Remove missing data
-  
-  ltr.data <- ltr.data[!is.na(ltr.data$baths), ]
-  abb.data <- abb.data[!is.na(abb.data$baths), ]
+<!--  # Build short term bar plot -->
 
-```
+<!--   abbbed <- ggplot(abb.data, aes(x=bedrooms)) +  -->
+<!--     geom_bar(fill=str.col, color=str.col) + -->
+<!--     facet_wrap(~type) + -->
+<!--     scale_x_continuous(labels=0:10, breaks=0:10)+ -->
+<!--     xlab('') + -->
+<!--     ylab('# of Props\n') + -->
+<!--     labs(title = "Bedrooms in Short Term Rentals\n") +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
 
-```{r bath_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Bathrooms by Tenure & Property Type'}
+<!--  # Make the comparison plot   -->
 
- # Build long term plot
+<!--   ggMultiPlots(abbbed, ltrbed, cols=1) -->
 
-  ltbath <- ggplot(ltr.data, aes(x=baths)) + 
-    geom_bar(fill=ltr.col, color=ltr.col) +
-    facet_wrap(~type) +
-    scale_x_continuous(labels=1:8, breaks=1:8)+
-    xlab('') +
-    ylab('# of Props\n') +
-    labs(title = "Bathrooms in Long Term Rentals\n") + 
-    theme(plot.title = element_text(hjust = 0.5))
+<!-- ``` -->
 
- # Build short term plot 
+<!-- ```{r bed_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-  stbath <- ggplot(abb.data, aes(x=baths)) + 
-    geom_bar(fill=str.col, color=str.col) +
-    facet_wrap(~type) +
-    scale_x_continuous(labels=0:8, breaks=0:8)+
-    xlab('') +
-    ylab('# of Props\n') +
-    labs(title = "Bathrooms in Short Term Rentals\n") + 
-    theme(plot.title = element_text(hjust = 0.5))
- 
- # Make Plots  
-  
-  ggMultiPlots(stbath, ltbath, cols=1)
+<!--  # Remove all with more than 4 beds -->
 
-```
+<!--   abb.data <- abb.data[abb.data$bedrooms < 5, ] -->
+<!--   ltr.data <- ltr.data[ltr.data$bedrooms < 5, ] -->
 
-```{r bath_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!--  # Remove apartments with more than 3 -->
 
- # Filter by bath count
+<!--   abba <- which(abb.data$bedrooms > 3 & abb.data$type =='Apartment') -->
+<!--   ltra <- which(ltr.data$bedrooms > 3 & ltr.data$type =='Apartment') -->
 
-  # Short term data
-  abb.data <- abb.data[abb.data$baths < 4, ]
-  abb.data <- abb.data[abb.data$baths > 0, ]
+<!--   if(length(abba) > 0) abb.data <- abb.data[-abba, ] -->
+<!--   if(length(ltra) > 0) ltr.data <- ltr.data[-ltra, ] -->
 
-  # Long term data
-  ltr.data <- ltr.data[ltr.data$baths < 4, ]
-  
- # Round baths up  
+<!--   # Convert 0 Bed to 1 Bed   -->
+<!--   abb.data$bedrooms[abb.data$bedrooms == 0] <- 1 -->
 
-  abb.data$baths <- round(abb.data$baths + .01, 0)
+<!-- ``` -->
 
-```
+<!-- We then turn to bathrooms, starting by looking at the distribution of baths between short/long and apt/house. Here we see that nearly all properties have 3 or fewer bathrooms and we filter the data accordingly. A few short term properties state no baths, which is likely an error so we remove these observations from the data. Also, here we notice that the short term data gives bathrooms in halves, while the long term data presents baths in whole numbers.  We round the baths in the short term data up to whole integers.  -->
 
-In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short term rental) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two. 
+<!-- ```{r bath_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-```{r filtBB, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!--  # Remove missing data -->
 
- # Create combination variable
+<!--   ltr.data <- ltr.data[!is.na(ltr.data$baths), ] -->
+<!--   abb.data <- abb.data[!is.na(abb.data$baths), ] -->
 
-  ltr.data$bedbath <- paste0(ltr.data$bedrooms, '..', ltr.data$baths)
-  abb.data$bedbath <- paste0(abb.data$bedrooms, '..', abb.data$baths)
+<!-- ``` -->
 
-```
+<!-- ```{r bath_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Bathrooms by Tenure & Property Type'} -->
 
-```{r filtBB2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Bed/Bath Combo by Tenure & Property Type'}
+<!--  # Build long term plot -->
 
- # Make long term plot
+<!--   ltbath <- ggplot(ltr.data, aes(x=baths)) +  -->
+<!--     geom_bar(fill=ltr.col, color=ltr.col) + -->
+<!--     facet_wrap(~type) + -->
+<!--     scale_x_continuous(labels=1:8, breaks=1:8)+ -->
+<!--     xlab('') + -->
+<!--     ylab('# of Props\n') + -->
+<!--     labs(title = "Bathrooms in Long Term Rentals\n") +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
 
-  ltb <- ggplot(ltr.data, aes(x=bedbath)) + 
-    geom_bar(fill=ltr.col, color=ltr.col) +
-    xlab('') +
-    ylab('# of Props\n') +
-    labs(title = "Bed/Bath Combo in Long Term Rentals\n") + 
-    theme(plot.title = element_text(hjust = 0.5)) +
-    theme(axis.text.x = element_text(angle = 90, vjust=0.4)) +
-    facet_wrap(~type)
+<!--  # Build short term plot  -->
 
- # Make short term plots
+<!--   stbath <- ggplot(abb.data, aes(x=baths)) +  -->
+<!--     geom_bar(fill=str.col, color=str.col) + -->
+<!--     facet_wrap(~type) + -->
+<!--     scale_x_continuous(labels=0:8, breaks=0:8)+ -->
+<!--     xlab('') + -->
+<!--     ylab('# of Props\n') + -->
+<!--     labs(title = "Bathrooms in Short Term Rentals\n") +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
 
-  stb <- ggplot(abb.data, aes(x=bedbath)) +
-    geom_bar(fill=str.col, color=str.col) + 
-    xlab('') +
-    ylab('# of Props\n') +
-    labs(title = "Bed/Bath Combo in Short Term Rentals\n") + 
-    theme(plot.title = element_text(hjust = 0.5)) + 
-    theme(axis.text.x = element_text(angle = 90, vjust=0.4)) +
-    facet_wrap(~type)
+<!--  # Make Plots   -->
 
- # Plot  
-  
-  ggMultiPlots(ltb, stb, cols=1)
+<!--   ggMultiPlots(stbath, ltbath, cols=1) -->
 
-```
+<!-- ``` -->
 
-From this analysis we see that there are 6 combinations that make up most all properties:  1bed/1bath, 2/1, 2/2, 3/1, 3/2 and 4/2. We filter the data to these combinations.  
+<!-- ```{r bath_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-```{r filtBB3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!--  # Filter by bath count -->
 
- # Set level of acceptable combinations
+<!--   # Short term data -->
+<!--   abb.data <- abb.data[abb.data$baths < 4, ] -->
+<!--   abb.data <- abb.data[abb.data$baths > 0, ] -->
 
-  acc.bb <- c('1..1', '2..1', '2..2', '3..1', '3..2', '4..2')
+<!--   # Long term data -->
+<!--   ltr.data <- ltr.data[ltr.data$baths < 4, ] -->
 
- # Filter data
+<!--  # Round baths up   -->
 
-  ltr.data <- ltr.data[ltr.data$bedbath %in% acc.bb, ]
-  abb.data <- abb.data[abb.data$bedbath %in% acc.bb, ]
-  
-```
+<!--   abb.data$baths <- round(abb.data$baths + .01, 0) -->
 
-### Rates and Rental values
+<!-- ``` -->
 
-We now turn to filtering by the prices -- the nightly rates and weekly rental values. The long term rental data have a single price observation, the asking rent each time an change in the listing occurs, including the price at closing.  For the short term data, there are two indicators of nightly rate.  First, each property has a average nightly rate figure that takes the average of the rates for all booked nights over the October 2014 to August 2016 period. Second, there is a rate for each day in the daily observations. For the vast majority of properties, the daily rates change very little, but for a select few there is a wide variation in the daily rates, often somewhat randomly.  In cases where a small number of reservations have been made, the average nightly rate can deviate widely from usual rate due to outliers on the high end. To remedy this, we create a new property-level variable that is the median nightly rate of successful bookings over the September 1 2015 to August 31, 2016 period.  
+<!-- In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short term rental) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two.  -->
 
-We start by removing property level observations missing price data. Plotting the distribution of the rates and rents we see that most long term weekly rentals are greater than \$200 and less than \$1000 per week while most median nightly rates are greater than \$50 and less than \$500 per night. We filter the property level data accordingly.  We also filter the short term daily data to include only those observations with nightly rates between \$50 and \$500. 
+<!-- ```{r filtBB, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!--  # Create combination variable -->
 
-  ltr.data <- ltr.data[!is.na(ltr.data$event.price), ]
-  abb.data <- abb.data[!is.na(abb.data$nightly.rate), ]
-  
-```
+<!--   ltr.data$bedbath <- paste0(ltr.data$bedrooms, '..', ltr.data$baths) -->
+<!--   abb.data$bedbath <- paste0(abb.data$bedrooms, '..', abb.data$baths) -->
 
-```{r exch_rate_adj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!-- ``` -->
 
-  # Property level data
+<!-- ```{r filtBB2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Bed/Bath Combo by Tenure & Property Type'} -->
 
-  abb.data$average.daily.rate <- abb.data$average.daily.rate * exch.rate
-  abb.data$nightly.rate <- abb.data$nightly.rate * exch.rate
-  abb.data$weekly.rate <- abb.data$weekly.rate * exch.rate
-  abb.data$monthly.rate <- abb.data$monthly * exch.rate
-  
-  # Daily data
-  
-  daily.data$price <- daily.data$price * exch.rate
+<!--  # Make long term plot -->
 
-```
+<!--   ltb <- ggplot(ltr.data, aes(x=bedbath)) +  -->
+<!--     geom_bar(fill=ltr.col, color=ltr.col) + -->
+<!--     xlab('') + -->
+<!--     ylab('# of Props\n') + -->
+<!--     labs(title = "Bed/Bath Combo in Long Term Rentals\n") +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) + -->
+<!--     theme(axis.text.x = element_text(angle = 90, vjust=0.4)) + -->
+<!--     facet_wrap(~type) -->
 
-```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+<!--  # Make short term plots -->
 
-  # ltr Plot
-  
-  ltr.plot <- ggplot(ltr.data, aes(x=event.price)) + 
-    geom_density(fill=ltr.col, alpha=.8) +
-    ylab('Frequency') +
-    xlab('Weekly Rental') + 
-    ggtitle('Long Term Rentals') + 
-    scale_x_continuous(limits=c(0, 1500)) +
-    theme(axis.title.y=element_blank(),
-          axis.text.y=element_blank(),
-          axis.ticks.y=element_blank(), 
-          plot.title = element_text(hjust = 0.5))
+<!--   stb <- ggplot(abb.data, aes(x=bedbath)) + -->
+<!--     geom_bar(fill=str.col, color=str.col) +  -->
+<!--     xlab('') + -->
+<!--     ylab('# of Props\n') + -->
+<!--     labs(title = "Bed/Bath Combo in Short Term Rentals\n") +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) +  -->
+<!--     theme(axis.text.x = element_text(angle = 90, vjust=0.4)) + -->
+<!--     facet_wrap(~type) -->
 
+<!--  # Plot   -->
 
-  # Nightly Rate plot
-  rate.plot <- ggplot(abb.data, aes(x=nightly.rate)) + 
-    geom_density(fill=str.col, alpha=.8) + 
-    ylab('Frequency') +
-    xlab('Nightly Rate') +
-    ggtitle('Short Term Rentals') + 
-    scale_x_continuous(limits=c(0, 600)) +
-    theme(axis.title.y=element_blank(),
-          axis.text.y=element_blank(),
-          axis.ticks.y=element_blank(), 
-          plot.title = element_text(hjust = 0.5))
+<!--   ggMultiPlots(ltb, stb, cols=1) -->
 
-```
+<!-- ``` -->
 
-```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Rates and Rents by Tenure Type'}
+<!-- From this analysis we see that there are 6 combinations that make up most all properties:  1bed/1bath, 2/1, 2/2, 3/1, 3/2 and 4/2. We filter the data to these combinations.   -->
 
-  ggMultiPlots(ltr.plot, rate.plot, cols=2)
+<!-- ```{r filtBB3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-```
+<!--  # Set level of acceptable combinations -->
 
-```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!--   acc.bb <- c('1..1', '2..1', '2..2', '3..1', '3..2', '4..2') -->
 
- ## Filter the long term data
+<!--  # Filter data -->
 
-  ltr.data <- ltr.data[ltr.data$event.price >= 200 & 
-                         ltr.data$event.price <= 1000, ]
+<!--   ltr.data <- ltr.data[ltr.data$bedbath %in% acc.bb, ] -->
+<!--   abb.data <- abb.data[abb.data$bedbath %in% acc.bb, ] -->
 
- ## Filter the short term data
+<!-- ``` -->
 
-  abb.data <- abb.data[abb.data$nightly.rate >= 50 &
-                         abb.data$nightly.rate <= 500, ]
-  
-```
+<!-- ### Rates and Rental values -->
 
-### Location and Submarkets
+<!-- We now turn to filtering by the prices -- the nightly rates and weekly rental values. The long term rental data have a single price observation, the asking rent each time an change in the listing occurs, including the price at closing.  For the short term data, there are two indicators of nightly rate.  First, each property has a average nightly rate figure that takes the average of the rates for all booked nights over the October 2014 to August 2016 period. Second, there is a rate for each day in the daily observations. For the vast majority of properties, the daily rates change very little, but for a select few there is a wide variation in the daily rates, often somewhat randomly.  In cases where a small number of reservations have been made, the average nightly rate can deviate widely from usual rate due to outliers on the high end. To remedy this, we create a new property-level variable that is the median nightly rate of successful bookings over the September 1 2015 to August 31, 2016 period.   -->
 
-Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries.
+<!-- We start by removing property level observations missing price data. Plotting the distribution of the rates and rents we see that most long term weekly rentals are greater than \$200 and less than \$1000 per week while most median nightly rates are greater than \$50 and less than \$500 per night. We filter the property level data accordingly.  We also filter the short term daily data to include only those observations with nightly rates between \$50 and \$500.  -->
 
-```{r mappoints2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+<!-- ```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
- ## Build the map object
+<!--   ltr.data <- ltr.data[!is.na(ltr.data$event.price), ] -->
+<!--   abb.data <- abb.data[!is.na(abb.data$nightly.rate), ] -->
 
-  # Set colors
-  g.cols <- abb.col[c(2, 10, 9)]
+<!-- ``` -->
 
-  # Make map
-  loc.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group, fill=des), alpha=.8) + 
-    scale_fill_manual(values=c('gray10', 'gray40', 'gray70'),
-                      labels=c('Inner      ',
-                               'Middle      ',
-                               'Outer')) +
-    geom_path(data=subs, aes(x=long, y=lat, group=group), col='gray90', size=.1, alpha=.2) +
-    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
-    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
-    xlab('') + ylab('')+
-    theme(legend.position = 'bottom',
-          legend.title = element_blank(), 
-          plot.title = element_text(hjust = 0.5),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(),
-          panel.background = element_rect(fill = "white"),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks = element_blank(),
-          axis.title.x=element_blank(),
-          axis.title.y=element_blank(),
-          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
-    ggtitle("Melbourne Suburb Classifications")
+<!-- ```{r exch_rate_adj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-```
+<!--   # Property level data -->
 
-```{r plot_loc_map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.width=5.5, fig.cap='Melbourne Suburb Classifications'}
-
-  loc.map  
-
-```
-
-```{r load_afterSP, message=FALSE, warning=FALSE, cache=TRUE, comment=FALSE, echo=FALSE, results='hide'}  
-  data.path <- 'c:/dropbox/research/airBNB/data/'
-  load(paste0(data.path, '/analyzed/abb_afterSP.RData'))
-  abb.data <- after.SP$abb.data
-  ltr.data <- after.SP$ltr.data
-  daily.data <- after.SP$daily.data
-``` 
-
-It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beaches; and 2) Proximity to key tourist activities and events. Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analysing short and long term rentals in Melbourne:
-
-1. Rural (Outer suburbs, not Beach)
-2. Suburban (Middle suburbs, not Beach)
-3. City (Inner Suburbs, not Beach, not Core)
-4. City-Core (Select inner suburbs with tourist activities and near CBD)
-5. Beach (Properties within 500m of Port Phillip Bay east of Yarra River)
-
-We select the 18 suburbs below to represent the 'core' of the city.  The majority of tourist destinations and major events such as the Australian Open and the Grand Prix are located in these suburbs.  All are well serviced by public transportation and possess abundant amenties for tourists. 
+<!--   abb.data$average.daily.rate <- abb.data$average.daily.rate * exch.rate -->
+<!--   abb.data$nightly.rate <- abb.data$nightly.rate * exch.rate -->
+<!--   abb.data$weekly.rate <- abb.data$weekly.rate * exch.rate -->
+<!--   abb.data$monthly.rate <- abb.data$monthly * exch.rate -->
 
-```{r, results="asis", echo=FALSE}
-
- core.suburbs <- c('Albert Park', 'Carlton', 'Collingwood', 'Cremorne', 'Docklands',
-                   'East Melbourne', 'Fitzroy', 'Melbourne', 'Port Melbourne', 'Prahran',
-                   'Richmond', 'South Melbourne', 'South Yarra', 'Southbank', 'St Kilda',
-                   'St Kilda West', 'West Melbourne', 'Windsor')
-
- c.subs <- data.frame(A=core.suburbs[1:6],
-                      B=core.suburbs[7:12],
-                      C=core.suburbs[13:18])
- names(c.subs) <- NULL
- rownames(c.subs) <- NULL
- 
- print(xtable(c.subs, caption = 'List of Core Suburbs'),
-       include.rownames=F,
-       caption.placement="top",
-       hline.after=c(0,6))
- 
- 
-```
-
-We assign these designations by: 1) Adding suburb designations to the properties; 2) Assigning submarkets 1-4 based on suburb location; and 3) Indicating proximity to beach and labeling as 'Beach' submarket.  This process is repeated for both the short and long term data. Finally, we also remove any observations that fall outside of outer suburbs (the extent of the suburbs). The location of the short and long term rentals, colored by submarket, are shown below
- 
-Before assigning submarkets to the long term property we must remedy the fact that about 5% of the long term rental observations have missing latitude and longitude values.  Half of these do, however, have a lat/long value for the centroid of the street that the property faces.  To retain as many observations as possible in these intial steps for those properties that lack a specific lat/long value we apply the street centroid value.  For those without either we remove them from the dataset at this point. After making this correction we then assign one of the five submarket designations based on the process described above. 
-
-```{r abb.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
-
-  # Set submarket colors
-  
-  sm.col <- abb.col[c(1, 3, 6, 5, 2)]
-
-  # Make map
-
-  abb.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray80', fill='gray90') +
-    geom_point(data=abb.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.2,
-               alpha=.2) +
-    scale_color_manual(values=sm.col) +
-    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
-    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
-    theme(legend.position = 'bottom',
-          legend.title = element_blank(), 
-          plot.title = element_text(hjust = 0.5),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(),
-          panel.background = element_rect(fill = "white"),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks = element_blank(),
-          axis.title.x=element_blank(),
-          axis.title.y=element_blank(),
-          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
-    guides(colour = guide_legend(override.aes = list(size=3,
-                                                     alpha=1))) + 
-    ggtitle('AirBNB Location\nBy Submarket')
-  
-```
+<!--   # Daily data -->
 
-```{r ltr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+<!--   daily.data$price <- daily.data$price * exch.rate -->
 
-  # Make map
+<!-- ``` -->
 
-  ltr.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray80', fill='gray90') +
-    geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.1,
-               alpha=.1) +
-    scale_color_manual(values=sm.col) +
-    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
-    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
-    xlab('') + ylab('')+
-   theme(legend.position = 'bottom',
-          legend.title = element_blank(), 
-          plot.title = element_text(hjust = 0.5),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(),
-          panel.background = element_rect(fill = "white"),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks = element_blank(),
-          axis.title.x=element_blank(),
-          axis.title.y=element_blank(),
-          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
-    guides(colour = guide_legend(override.aes = list(size=3,
-                                                     alpha=1))) + 
-    ggtitle('Long Term Rental Location\nBy Submarket')
-  
-```
+<!-- ```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
 
-```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5.5, fig.height=9}
+<!--   # ltr Plot -->
 
-  ggMultiPlots(abb.map, ltr.map, cols=1)
+<!--   ltr.plot <- ggplot(ltr.data, aes(x=event.price)) +  -->
+<!--     geom_density(fill=ltr.col, alpha=.8) + -->
+<!--     ylab('Frequency') + -->
+<!--     xlab('Weekly Rental') +  -->
+<!--     ggtitle('Long Term Rentals') +  -->
+<!--     scale_x_continuous(limits=c(0, 1500)) + -->
+<!--     theme(axis.title.y=element_blank(), -->
+<!--           axis.text.y=element_blank(), -->
+<!--           axis.ticks.y=element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5)) -->
 
-```
-
-To better visualize the relative frequency of the submarkets in the two tenure types we have broken down the data by submarket by property type by tenure type. A number of interesting observations are illustrated here.  First, the vast majority of Airbnb units are apartments in city-core or city locations.  As expected and as shown by the map, the long term properties are more evenly spread across the metro region than the short term properties.  Long term houses are more peripheral than apartments, a result of urban development patterns and land economics. Beach properties are, relatively speaking, over-represented in the short term market, especially in apartments, while suburban and rural apartment, somewhat common in long term markets, are nearly absent in the Airbnb market.  Overall, the suburban and rural Airbnb market are quite thin, later results focusing on these market will need to be examined in light of this small sample size. 
-
-```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.width=9}
-
-  # Make Airbnb submarket map
-  
-  abbtype.map <- ggplot() +
-    geom_bar(data=abb.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
-    scale_fill_manual(values=sm.col) +
-    facet_wrap(~type) +
-    ylab('# of Properties\n') + xlab('')+
-    theme(legend.position = 'bottom',
-          legend.title = element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank(),
-          plot.title = element_text(hjust = 0.5)) +
-    ggtitle('AirBNB Property Type By Submarket')
-  
-  # Make Long term rental map
-
-  ltrtype.map <- ggplot() +
-    geom_bar(data=ltr.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
-    scale_fill_manual(values=sm.col) +
-    facet_wrap(~type) +
-    ylab('# of Properties\n') + xlab('')+
-    theme(legend.position = 'bottom',
-          legend.title = element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank(),
-          plot.title = element_text(hjust = 0.5)) +
-    ggtitle('Long Term Property Type By Submarket')
-  
-```
-
-```{r abbtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=3.5}
-
-  abbtype.map
-
-```
-
-```{r ltrtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=3.5}
-
-  ltrtype.map
-
-```
-
-### Actual Revenue 
-
-Our final data filtering considers the observed revenue of the properties. For the long-term rentals the observed revenue is the weekly rate multiplied by 52 minus the number of weeks the property was on the market.  In a number of extreme cases, time on market was extremely long and the total observed revenues very low.  To remove these outlying observations, we filter out any properties with less than $5,000 in revenue.  
 
-For the short term data, we first calculate the total number of bookings, the occupancy rate, blocked rate and proportion of the year over which the property was listed.  Using this data we sum up the total revenue from bookings. For properties that were not listed on the site for the entire year, we impute their annual revenue by dividing the actual revenue by the proportion of the year in which they were listed.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] Properties with no reserved bookings, and, therefore, no revenue, are removed. 
+<!--   # Nightly Rate plot -->
+<!--   rate.plot <- ggplot(abb.data, aes(x=nightly.rate)) +  -->
+<!--     geom_density(fill=str.col, alpha=.8) +  -->
+<!--     ylab('Frequency') + -->
+<!--     xlab('Nightly Rate') + -->
+<!--     ggtitle('Short Term Rentals') +  -->
+<!--     scale_x_continuous(limits=c(0, 600)) + -->
+<!--     theme(axis.title.y=element_blank(), -->
+<!--           axis.text.y=element_blank(), -->
+<!--           axis.ticks.y=element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5)) -->
 
-Looking at the distribution of the revenues from each tenure type, we see that those for the long-term rentals are for more consistent, with the vast majority randing between \$12,000 to \$30,000 per year.  Short term revenue range from neglible to highs of greater than \$80,000.  While this simple analysis does not control for locational and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not.  Also, the high number of very low yield Airbnb properties also suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing.  
+<!-- ``` -->
 
-```{r load_workspace2, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}  
+<!-- ```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Rates and Rents by Tenure Type'} -->
 
- load(paste0(data.path, '/analyzed/abb_results.RData'))  
+<!--   ggMultiPlots(ltr.plot, rate.plot, cols=2) -->
 
-```
+<!-- ``` -->
 
-```{r revdensity.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
+<!-- ```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-  abbr <- abb.data[,c('bedbath', 'revenue')]
-  abbr$tenure <- 'short-term'
-  ltrr <- ltr.data[,c('bedbath', 'revenue')]
-  ltrr$tenure <- 'long-term'
-  allr <- rbind(abbr, ltrr)
+<!--  ## Filter the long term data -->
 
-  ggplot(allr, aes(x=revenue, fill=tenure, color=tenure)) + 
-    geom_density(alpha=.5) +
-    scale_fill_manual(values=c(ltr.col, abb.col)) +
-    scale_color_manual(values=c(ltr.col, abb.col)) +
-    ggtitle('Annual Revenues by Tenure Type') + 
-    xlab('Annual Revenue') +
-    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
-                       labels=c('$0', '$20,000', '$40,000', '$60,000'))+
-    theme(legend.position='bottom',
-          legend.title = element_blank(), 
-          plot.title = element_text(hjust = 0.5),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.title.y=element_blank()) +
-    coord_cartesian(xlim=c(0, 70000))
+<!--   ltr.data <- ltr.data[ltr.data$event.price >= 200 &  -->
+<!--                          ltr.data$event.price <= 1000, ] -->
 
-```
+<!--  ## Filter the short term data -->
 
-### Summary of Data Cleaning
-
-We have applied nine separate filters to our two datasets.  In the name of transparency and to highlight the bounds of our research questions it is useful to review this filters. There are more than 20,000 properties that are or have been listed on the Airbnb portal in Melbourne during the 2014 to 2016 period.  Removing those not listed during the study period removes 1/3 of all properties.  Further removing by property type and listing type (not entire home) elimates another 50% of the remaining properties.  From these 6,600 properties structural characteristics, locational issues and outlying nightly rates remove another 800 from consideration.  Finally, 1,400 of these have never been booked and have \$0 revenue, requiring removal.  From over 20,000, we have 4,446 Airbnb properties that meet the requirements of our research question.  
-
-For the long term data, over half of the observations fall outside of our considered time frame,reducing the sample size down to around 130,000 from 290,000.  Further consideration regarding property types, structural characteristics, location, etc. remove another 10,000 observations, leaving 122,051 in the final dataset.   
-
-```{r, results="asis", echo=FALSE}
-
-cc <- clean.count[,c('operation', 'abb', 'ltr')]
-abb.count <- cumsum(c(cc$abb[1], -cc$abb[-1]))
-ltr.count <- cumsum(c(cc$ltr[1], -cc$ltr[-1]))
-abb.cut <- c(0, abb.count[-length(abb.count)] - abb.count[-1])
-abb.per <- c(0, abb.cut[-1] / abb.count[-length(abb.count)])
-ltr.cut <- c(0, ltr.count[-length(ltr.count)] - ltr.count[-1])
-ltr.per <- c(0, ltr.cut[-1] / ltr.count[-length(ltr.count)])
-clean.table <- data.frame(field=cc$operation,
-                          abbcount=abb.count,
-                          abbcut=abb.cut,
-                          abbper=abb.per,
-                          ltrcount=ltr.count,
-                          ltrcut=ltr.cut,
-                          ltrper=ltr.per)
-
-rownames(clean.table) <- NULL
-clean.table$field <- c('Initial Count', 'Time', 'Property Type',
-                       'Listing Type', 'Bedrooms', 'Baths', 'Bed/Bath Combo',
-                       'Rates & Rents', 'Location', 'Revenue')
-clean.table$abbper <- 100*round(clean.table$abbper, 2)
-clean.table$ltrper <- 100*round(clean.table$ltrper, 2)
-names(clean.table) <- c('Filter', 'Short Term', 'Cut', '% Cut',
-                        'Long Term', 'Cut', '% Cut')
-options(xtable.comment = FALSE)
-print(xtable(clean.table,
-       digits=0),
-       include.rownames=FALSE)
-
-```
-
-## Comparison
-
-Data prepared, we now turn to comparing returns between long and short term rental options.  As mentioned above, there are no direct matches between the datasets. In other words we have not direct observed a property which has been in a long-term rental followed by short-term or vice versa.  We will, instead, make the comparisons between the two by imputing likely short-term (long-term) rental revenues for the long-term (short-term) data and then comparing the observed revenues to the imputed revenues of the unobserved tenure type.  
-
-We make our imputations via hedonic price models, one for long-term rentals and one for short-term rentals.  We model the long-term market with the long-term data and then use this model to predict or impute the likely long-term rental for the short term properties.  We do the same for the long-term properties using a modeled derived from the short-term data.  
-
-For the long-term market, we use the following model specification:
-
-\begin{equation} 
-  \label{eq:test}
-ln(RentLT_{i}) = \beta_{1} BedBath_{i} + \gamma_{2} Suburb_{i} + \tau_{3} Time_{i} + \epsilon_{i} 
-\end{equation}
-
-where *$ ln(RentLT_{i})$* is the natural log of the weekly rent, BedBath is the bedroom/bathroom combination, *Suburb* is a fixed effect for the location of the property, *Time* is the month of rental and $\epsilon$ a random error term. 
-
-For the short-term market the specification is similar, minus the time correction.  We eliminate this control because the short term rates are based on the medium value over the entire period and not monthly. This specification is: 
-
-\begin{equation} 
-ln(RentST_{i}) = \beta_{1} BedBath_{i} + \gamma_{2} Suburb_{i} + \epsilon_{i} 
-\end{equation}
-
-where *$ ln(RentLT_{i})$* is the natural log of the weekly rent, BedBath is the bedroom/bathroom combination, *Suburb* is a fixed effect for the location of the property and $\epsilon$ a random error term. 
-
-### Costs
-
--- Assume long term costs are equivalent
-
-## Results
-
-We will begin our analysis by making a comparison of the short and long-term markets at a metro-level.  What we mean by this is that we will treat the entire region as the functional market and will impute rates and rents with a model using all data.  It is likely that different submarkets operate differently, we will explore this hypothesis after first analyzing the full metropolitan region.  
+<!--   abb.data <- abb.data[abb.data$nightly.rate >= 50 & -->
+<!--                          abb.data$nightly.rate <= 500, ] -->
 
-We begin by imputing the likely long-term rents for the short-term observations, and vice versa at a metro level. A comparison between the actual (observed) and imputed rates and rents shows that, in general, the long-term properties are composed of properties that have a higher nightly rate than the short term observations (left-panel).  This is likely due to the fact that there are more houses (compared to apartments) in the long-term data than in the short-term data. Interestingly, the observed (long-term) and imputed (short term) weekly rental values are somewhat similar, suggesting that the higher rent, city-core apartments push the distribution of the imputed short-term values upwards.
-
-For each of the observed values we also create a fitted value for that observation in the model.  This may help to reduce the influence of outlying observed values in our model.  To be clear, Each observation will now have three estimates of rates and rents.  For the short-term properties they will have: 1) an actual nightly rate; 2) an estimated nightly rate; and 3) an estimated long-term (weekly) rent.  The long-term properties will have: 1) an actual long-term (weekly) rent; 2) an estimated long-term (weekly) rent; and 3) an estimated nightly rate.  
-
-```{r pred.glob.imp, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
-
-  abbir <- abb.imp[,c('bedbath', 'imp.rent', 'med.rate')]
-  abbir$tenure.rate <- 'short-term (observed)'
-  abbir$tenure.rent <- 'short-term (imputed)'
-  
-  ltrir <- ltr.imp[,c('bedbath', 'event.price', 'imp.rate')]
-  ltrir$tenure.rate <- 'long-term (imputed)'
-  ltrir$tenure.rent <- 'long-term (observed)'
-  
-  names(abbir) <- names(ltrir) <- c('bedbath', 'rent', 'rate', 'tenure.rate', 'tenure.rent')
-  allir <- rbind(abbir, ltrir)
-
-```
-
-```{r imp.rate.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
-
-  irate.plot <- ggplot(allir, aes(x=rate, fill=tenure.rate, color=tenure.rate)) + 
-    geom_density(alpha=.5) +
-    scale_fill_manual(values=c(ltr.col, abb.col)) +
-    scale_color_manual(values=c(ltr.col, abb.col)) +
-    ggtitle('Nightly Rates by Tenure Type') + 
-    xlab('Nightly Rate') +
-    scale_x_continuous(breaks=c(seq(0,600, by=200)),
-                       labels=c('$0', '$200', '$400', '$600'))+
-    theme(legend.position='bottom',
-          legend.title = element_blank(), 
-          plot.title = element_text(hjust = 0.5),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.title.y=element_blank()) +
-    coord_cartesian(xlim=c(0, 625))
-
-```
-
-```{r imp.rent.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
-
-  irent.plot <- ggplot(allir, aes(x=rent, fill=tenure.rent, color=tenure.rent)) + 
-    geom_density(alpha=.5) +
-    scale_fill_manual(values=c(ltr.col, abb.col)) +
-    scale_color_manual(values=c(ltr.col, abb.col)) +
-    ggtitle('Weekly Rents by Tenure Type') + 
-    xlab('Weekly Rents') +
-    scale_x_continuous(breaks=c(seq(0,1000, by=200)),
-                       labels=c('$0', '$200', '$400', '$600', '$800', '$1,000'))+
-    theme(legend.position='bottom',
-          legend.title = element_blank(), 
-          plot.title = element_text(hjust = 0.5),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.title.y=element_blank()) +
-    coord_cartesian(xlim=c(150, 1000))
-
-```
-
-```{r imp.rr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=3.5}
- 
- ggMultiPlots(irate.plot, irent.plot, cols=2)
-
-```
-
-The question of whether or not the imputations are accurate remains.  The table belows shows some simple diagnostics from the two imputation models.  From this we see that the short-term model performs rather poorly, with a standard error of 34.6\% and over half of the residuals greater than 20\%.  The long term model, on the other hand, performs quite well, with a standard error under 32\% and less than 19\% of fitted errors greater than 20\%.  Given the small amount of independent variable available to the models, the long term market appear much more predictable than the short term market.  This could be due to omitted variables in the short term market or a greater level of variability in the price setting (which is done by individuals) as opposed to the long-term market in which most owners get help with leasing from an agency.  
-
-```{r, results="asis", echo=FALSE}
-
-abb.sum <- summary(imp.data$abb.mod)
-ltr.sum <- summary(imp.data$ltr.mod)
-
-abbs <- c(abb.sum$r.squared, abb.sum$adj.r.squared,
-          abb.sum$sigma, 
-          length(which(abs(abb.sum$residuals) > .2)) / length(abb.sum$residuals))
-ltrs <- c(ltr.sum$r.squared, ltr.sum$adj.r.squared,
-          ltr.sum$sigma, 
-          length(which(abs(ltr.sum$residuals) > .2)) / length(ltr.sum$residuals))
-
-summ.table <- data.frame(shortterm=round(abbs, 3),
-                         longterm=round(ltrs, 3))
-rownames(summ.table) <- c('r-squared', 'adj r-squared',
-                          'sigma', '% fit errors > 20%')
-names(summ.table) <- c('Short Term', 'Long Term')
-                   
-print(xtable(summ.table,
-       digits=3),
-       include.rownames=TRUE)
-
-
-```
-
-Next, to create an estimated short-term revenue for the long-term properties we have to create an estimate of the occupancy rate.  For the estimated long-term rentals we have to create an estimate of the search time (days on market).  To derive an occupancy rate, we use the weighted median value^[Weighted by the total number of days the property was offered on Airbnb over the year.] of the market, the entire metro region in this case, which is about 37%^[We attempted to use a logistic regression model to predict occupancy but were unsucessful to develop an appropriate approach.  Work continues toward this end.].  The range of occupancy varies widely from essentially 0 to 100%,with a standard deviation of 27%.
-
-For the long term search time, or days on market, we also use the median value of the observations. The median days on market is 24, with a standard deviation of 37. About 60\% of long term rental spent one month or less on the market and 85\% spent less than two months searching for a tenant. 
-
-Using these estimated occupancy rates and days on market, we have used equations 3 and 4 to produce estimates of long-term and short-term revenues for the short and long term observations, respectively. We do these for the observed and the estimated rates and rents for each tenure type. As we have imputed and actual observations for one of each dataset in the comparison, this creates 4 different comparisons, roughly broken down as follows:
-
-```{r, results="asis", echo=FALSE, fig.width=4,fig.height=4}
- 
-  explain.plot <- blank.plot +
-    geom_text(data=ann.df,
-              label=ann.df$lab,
-              size=2.8) +
-    geom_text(data=num.df,
-              label=num.df$count,
-              size=9.5) +
-    coord_cartesian(ylim=c(-.5,1)) +
-    ggtitle('Explanation of \n Revenue Comparisons') +
-    theme(legend.position='bottom',
-          legend.title = element_blank(), 
-          plot.title = element_text(hjust = 0.5))
-
-```
-
-```{r, results="asis", echo=FALSE}
-
-  one.df <- data.frame(x=rep(0, 4),
-                       y=rep(0, 4), 
-                       lab=c('31%', '87%', '54%', '79%'),
-                       est=c('Actual Rates & Rents', 'Actual Rates & Rents',
-                             'Imputed Rates & Rents', 'Imputed Rates & Rents'),
-                       data=c('Airbnb', 'Long-Term', 'Airbnb', 'Long-Term'))
-  
-  sizes <- c(.31, .87, .54, .79)
-
-  one.plot <- blank.plot +
-    geom_text(data=one.df,
-              label=one.df$lab,
-              size=18*sizes) +
-    ggtitle('% of Properties where \n Airbnb is more profitable') +
-    theme(legend.position='bottom',
-          legend.title = element_blank(), 
-          plot.title = element_text(hjust = 0.5))
-
-```
-
-In other word the left hand panels are comparison made on Airbnb properties, where the top is the actual Airbnb revenue and the bottom is the estimated (fitted) with the imputed rates and median-based occupancy rates.  In the right hand panels we have the comparison on the long-term properties, again with top being of the actual long term revenue and the bottom with the estimated (fitted) rents and median based days on market.  
-
-The plot below shows the percent of properties in which a short-term rental would bring in more revenue over the coures of the year, across these four scenarios.  The variation between these estimates is significant and troublesome.  However, given our difficulty in accurately estimating short term nightly rates (see Table X) and the fact that occupancy rates are highly variable for short-term rentals, these variation are not surprising.  As we have a difficult time estimating short-term market performance, both measures in the right hand column are immediately suspicious. Additionally, the estimates in the lower left also depend on estimate nightly rate, causing their accuracy to be questioned.  
-
-```{r 22r.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7.5,fig.height=3.5, fig.align='center'}
- 
- ggMultiPlots(explain.plot, one.plot, cols=2)
-
-```
-
-In short, only in the upper left hand panel are we using the actual nightly rates and the actual occupancy rates from the short term market.  We do estimate the long-term rates and days on market here, but as shown above, the models for those figures are much more robust. The plusses and minus of each comparison quadrant is shown below.  As a result of these issues, we consider only those comparisons in quadrant 1 to be legitimate and use these going forward.  
-
-```{r reason.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=4.5, fig.height=3.5, fig.align='center'}
- 
-  reason.plot <- blank.plot +
-    geom_rect(data = mrkt.table, aes(fill=good),
-              xmin = -Inf,xmax = Inf,
-              ymin = -Inf,ymax = Inf, alpha = 0.4) +
-    geom_text(data=reason.df,
-              label=reason.df$lab,
-              size=3) +
-    geom_text(data=num.df,
-              label=num.df$count,
-              size=9.5) +
-    coord_cartesian(ylim=c(-.5,1))
-
-  reason.plot
-
-```
-
-### Occupancy Rates
-
-Occupancy rates are one of the most important compoenent in determining the profitability of short-term rentals. Unfortunately, these are also the most difficult factor to estimate or impute. Below we plot (left-panel) the percentage of properties for which short-term rental is more profitable versus the occupancy rate.  We see that likelihood of short-term rental being a better option increases sharply with occupancy rate up until about 75\% occupancy.  For occupancy rates less than 50\%, long-term rental is more likely to be the better option.  The decrease in profitabilty after 75\% occupancy is likely due to: 1) small sample sizes in this tail of the data; and 2) that lowering overall nightly rates too low simply to boost occupancy can result in lower overall revenue.  
-
-As the distribution of occupancy rates is not uniform, the initial plot may be misleading as to the frequency of short-term rentals being more profitable than long term. In Figure X, we transform the x-axis to represent the quantile of the full distribution of occupancy rates. By doing so, we see that, in general, properties need to be in the upper 1/3 of occupancy rates across the entire market in order to have a equal likelihood of being more profitable as a short-term rental than as a more traditional long term one.   
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
-
-  rawocc.pplot <- makePrefPlot(abb.revs,
-                               x.field='occ.rate',
-                               y.field='abb.act',
-                                    smooth=TRUE,
-                               smooth.span=.75)
-  rawocc.pplot <- rawocc.pplot +
-    xlab('\nOccupancy Rate') +
-    ylab('\n% of Properties where \nAirbnb is more profitable') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    scale_y_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    scale_color_manual(values=sm.col) +
-    ggtitle('Tenure Profitability vs \n Occupancy Rate') +
-    theme(legend.position='none',
-          plot.title = element_text(hjust = 0.5)) + 
-    coord_cartesian(ylim=c(0,1)) +
-    geom_hline(aes(yintercept=.5))
-    
-
-```
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
-
-  dens.plot <- ggplot(abb.revs, aes(x=occ.rate)) +
-    geom_density(alpha=.3, fill=1) +
-    scale_color_manual(values=sm.col) +
-    scale_fill_manual(values=sm.col) +
-    scale_x_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-  
-    ylab('\nFrequency of Occurance') +
-    xlab('\nOccupancy Rate') +
-    ggtitle('Distribution of \n Occupancy Rates') +
-    theme(legend.position='none',
-          plot.title = element_text(hjust = 0.5),
-          axis.line=element_blank(),
-          axis.text.y=element_blank(),
-          axis.ticks.y=element_blank())
-```
+<!-- ``` -->
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5}
+<!-- ### Location and Submarkets -->
 
-  ggMultiPlots(rawocc.pplot, dens.plot, cols=2)
+<!-- Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries. -->
 
-```
+<!-- ```{r mappoints2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+<!--  ## Build the map object -->
 
-  
-  abb.revs$occ.qtl <- makeWtdQtl(abb.revs$occ.rate, 
-                                      return.type='rank') 
-  abb.revs$rate.qtl <- makeWtdQtl(abb.revs$med.rate, 
-                                  return.type='rank') 
-  
-  ## Make quartile location plot
-  
-  qtlocc.pplot <- makePrefPlot(abb.revs,
-                               x.field='occ.qtl',
-                               y.field='abb.act',
-                               smooth=TRUE,
-                               smooth.span=.55)
-  qtlocc.pplot <- qtlocc.pplot +
-    xlab('\nQuantile of Occupancy Rate') +
-    ylab('\n% of Properties where \n Airbnb is more profitable') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    scale_y_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    scale_color_manual(values=sm.col) +
-    theme(legend.position='none') + 
-    coord_cartesian(ylim=c(0,1))+
-    geom_hline(aes(yintercept=.5))
+<!--   # Set colors -->
+<!--   g.cols <- abb.col[c(2, 10, 9)] -->
 
-```
+<!--   # Make map -->
+<!--   loc.map <- ggplot() + -->
+<!--     geom_polygon(data=subs, aes(x=long, y=lat, group=group, fill=des), alpha=.8) +  -->
+<!--     scale_fill_manual(values=c('gray10', 'gray40', 'gray70'), -->
+<!--                       labels=c('Inner      ', -->
+<!--                                'Middle      ', -->
+<!--                                'Outer')) + -->
+<!--     geom_path(data=subs, aes(x=long, y=lat, group=group), col='gray90', size=.1, alpha=.2) + -->
+<!--     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) + -->
+<!--     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) + -->
+<!--     xlab('') + ylab('')+ -->
+<!--     theme(legend.position = 'bottom', -->
+<!--           legend.title = element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5), -->
+<!--           panel.grid.major = element_blank(),  -->
+<!--           panel.grid.minor = element_blank(), -->
+<!--           panel.background = element_rect(fill = "white"), -->
+<!--           axis.text.x = element_blank(), -->
+<!--           axis.text.y = element_blank(), -->
+<!--           axis.ticks = element_blank(), -->
+<!--           axis.title.x=element_blank(), -->
+<!--           axis.title.y=element_blank(), -->
+<!--           panel.border = element_rect(colour = "black", fill=NA, size=1)) + -->
+<!--     ggtitle("Melbourne Suburb Classifications") -->
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5, fig.height=3.5, fig.align='center'}
+<!-- ``` -->
 
-  qtlocc.pplot
+<!-- ```{r plot_loc_map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.width=5.5, fig.cap='Melbourne Suburb Classifications'} -->
 
-```
+<!--   loc.map   -->
 
-Along with occupancy rate, the other important consideration is the nightly rate.  High occupancy rates with low nightly rates may not be any better than lower occupancy rate with a higher nightly rate.  In Figure X (left panel) we plot nightly rates versus occupancy rates.  We then divide the area of the scatter plot into 400 equal areas (20 x 20) and color each based on which is more common in the area, short term or long term revenue.  The transparency is related to the total count of actual market properties falling into that area.  
+<!-- ``` -->
 
-A general trend is what is expected, higher rates and occupancies, ceteris paribus, means more profitability for short term rentals.  This relationship is not a perfectly linear because the long-term rental revenue varies greatly based on the characteristics of the property.  While the left panel of Figure X helps show the general pattern is doe leave many indeterminate areas.  In order to better delimit the situations where short-term rentals are more profitable we turn to a support vector machine (SVM) algorithm.
+<!-- ```{r load_afterSP, message=FALSE, warning=FALSE, cache=TRUE, comment=FALSE, echo=FALSE, results='hide'}   -->
+<!--   data.path <- 'c:/dropbox/research/airBNB/data/' -->
+<!--   load(paste0(data.path, '/analyzed/abb_afterSP.RData')) -->
+<!--   abb.data <- after.SP$abb.data -->
+<!--   ltr.data <- after.SP$ltr.data -->
+<!--   daily.data <- after.SP$daily.data -->
+<!-- ```  -->
 
-An SVM can be used as a classifier to delineate the boundaries between two (or more) classes of observations.  In this case, we delineate the boundary (right panel) between situations where long-term rentals are more profitable (red) and where short term are (green).  In order to avoid an overly broad straight line delineation we use a polynomial fitting technique. While this process does provide more flexible fit in the area of high data density, it also has the side effect of creating somewhat counter intuitive results in areas of low data (such as the far upper right corner.)  Overall, from the SVM model we see that there short-term prefernce begins at about 30\% occupancy rate, regardless of nightly rate.  As the occupancy rate increases, the required nighly rate decreases, down to near $100 once occupancies hit 65\% or greater.  
+<!-- It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beaches; and 2) Proximity to key tourist activities and events. Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analysing short and long term rentals in Melbourne: -->
 
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
+<!-- 1. Rural (Outer suburbs, not Beach) -->
+<!-- 2. Suburban (Middle suburbs, not Beach) -->
+<!-- 3. City (Inner Suburbs, not Beach, not Core) -->
+<!-- 4. City-Core (Select inner suburbs with tourist activities and near CBD) -->
+<!-- 5. Beach (Properties within 500m of Port Phillip Bay east of Yarra River) -->
 
- ggMultiPlots(rate.hm, rate.hm.svm, cols=2)
+<!-- We select the 18 suburbs below to represent the 'core' of the city.  The majority of tourist destinations and major events such as the Australian Open and the Grand Prix are located in these suburbs.  All are well serviced by public transportation and possess abundant amenties for tourists.  -->
 
-```
+<!-- ```{r, results="asis", echo=FALSE} -->
 
-Both the occupancy rates and the nightly rates are not uniformly distributed and therefore the plots in figure X may be misleading.  We convert both axis to quantiles and replot both figures.  Here we see a more even distibution of points across the figures.  Additionally, a more reasonable SVM breakdown occurs as well.  The right panel shows that , in order for the likelihood of a property to be more profitable in short-term rental to be above 50\% the lowest occupancy rate it can have is 40\%, if the nightly rate is in the top 95th percentile of the market.  For example, if we drop the nightly rate to the median, the occupancy rate need to be at the 60th percentile.  
-```{r, fig.width=8, fig.height=4, echo=FALSE}
+<!--  core.suburbs <- c('Albert Park', 'Carlton', 'Collingwood', 'Cremorne', 'Docklands', -->
+<!--                    'East Melbourne', 'Fitzroy', 'Melbourne', 'Port Melbourne', 'Prahran', -->
+<!--                    'Richmond', 'South Melbourne', 'South Yarra', 'Southbank', 'St Kilda', -->
+<!--                    'St Kilda West', 'West Melbourne', 'Windsor') -->
 
- ggMultiPlots(qtl.hm, qtl.hm.svm, cols=2)
+<!--  c.subs <- data.frame(A=core.suburbs[1:6], -->
+<!--                       B=core.suburbs[7:12], -->
+<!--                       C=core.suburbs[13:18]) -->
+<!--  names(c.subs) <- NULL -->
+<!--  rownames(c.subs) <- NULL -->
 
-```
+<!--  print(xtable(c.subs, caption = 'List of Core Suburbs'), -->
+<!--        include.rownames=F, -->
+<!--        caption.placement="top", -->
+<!--        hline.after=c(0,6)) -->
 
-Finally, we summarize the entire market by looking at three metrics:
 
-1. Actual: The percentage of properties in the market in which Airbnb generates more revenue
-2. Fitted: The percentage of properties (when plotted by occupancy rate and nightly rate) that fall in the SVM area considered profitable
-3. SVM Area: The percentage of the total area in the SVM plot that represents a situation where the short-term rental is more profitable.  
+<!-- ``` -->
 
-None of these metrics on their own is perfect.  The 'actual' measure responds directly to the sample of the current market and may not be as useful to a potential investor. The 'fitted' and 'svm' metric minimize some bias from the sample, but suffer from forcing all observations into a binary condition (there are no 'gray' areas) and the 'svm area' metric may be biases by large areas of the scatterplot that have few actual observations.  This latter issue is partially limited by plotting by quantile, but, nonetheless still exists.  
+<!-- We assign these designations by: 1) Adding suburb designations to the properties; 2) Assigning submarkets 1-4 based on suburb location; and 3) Indicating proximity to beach and labeling as 'Beach' submarket.  This process is repeated for both the short and long term data. Finally, we also remove any observations that fall outside of outer suburbs (the extent of the suburbs). The location of the short and long term rentals, colored by submarket, are shown below -->
 
-We calculate each for the raw rates as well as for the quantile situation.  These are show in Table X.  Overall, 31.4\% of the observed Airbnb properties raised more actual revenue from short term lending than the estimated long-term revenue that they would have gained.  Analyzing these by raw rates in the SVM, we find that a nearly identical 31.4\% fall within the contiguous area of short-term preference and this area takes up 40.6% of the total plotted area.  When scale the plots by quantile, we find that 37.2\% of all observations fall in the short-term preference area and that this area takes up 37.8\% of the total plotted area.  As the difference between the fitted and the svm area is considerably smaller in the quantile approach, there is less bias from outlying, empty areas.  
+<!-- Before assigning submarkets to the long term property we must remedy the fact that about 5% of the long term rental observations have missing latitude and longitude values.  Half of these do, however, have a lat/long value for the centroid of the street that the property faces.  To retain as many observations as possible in these intial steps for those properties that lack a specific lat/long value we apply the street centroid value.  For those without either we remove them from the dataset at this point. After making this correction we then assign one of the five submarket designations based on the process described above.  -->
 
-```{r, results="asis", echo=FALSE}
+<!-- ```{r abb.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-print(xtable(market.ratio,
-       digits=3),
-       include.rownames=FALSE)
+<!--   # Set submarket colors -->
 
+<!--   sm.col <- abb.col[c(1, 3, 6, 5, 2)] -->
 
-```
+<!--   # Make map -->
 
-### Submarkets
+<!--   abb.map <- ggplot() + -->
+<!--     geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray80', fill='gray90') + -->
+<!--     geom_point(data=abb.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.2, -->
+<!--                alpha=.2) + -->
+<!--     scale_color_manual(values=sm.col) + -->
+<!--     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) + -->
+<!--     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) + -->
+<!--     theme(legend.position = 'bottom', -->
+<!--           legend.title = element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5), -->
+<!--           panel.grid.major = element_blank(),  -->
+<!--           panel.grid.minor = element_blank(), -->
+<!--           panel.background = element_rect(fill = "white"), -->
+<!--           axis.text.x = element_blank(), -->
+<!--           axis.text.y = element_blank(), -->
+<!--           axis.ticks = element_blank(), -->
+<!--           axis.title.x=element_blank(), -->
+<!--           axis.title.y=element_blank(), -->
+<!--           panel.border = element_rect(colour = "black", fill=NA, size=1)) + -->
+<!--     guides(colour = guide_legend(override.aes = list(size=3, -->
+<!--                                                      alpha=1))) +  -->
+<!--     ggtitle('AirBNB Location\nBy Submarket') -->
 
-A major deficit in this analysis is that the potential rents, rates, days on market and occupancy rates are estimated globally.  As a result, there is the likelihood of significant bias within certain submarkets.  Below, we break down the results by type (apartment vs house), by geographic market (5 submarketd listed above) and by type and submarket.  We show only the summary tables and the quantile heat map plots.  Full results can be found on the ....ENTER SHINY WEBSITE....
+<!-- ``` -->
 
-#### Property Type
+<!-- ```{r ltr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
 
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
+<!--   # Make map -->
 
-ggMultiPlots(house$qtl.hm, house$qtl.hm.svm, cols=2)
+<!--   ltr.map <- ggplot() + -->
+<!--     geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray80', fill='gray90') + -->
+<!--     geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.1, -->
+<!--                alpha=.1) + -->
+<!--     scale_color_manual(values=sm.col) + -->
+<!--     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) + -->
+<!--     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) + -->
+<!--     xlab('') + ylab('')+ -->
+<!--    theme(legend.position = 'bottom', -->
+<!--           legend.title = element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5), -->
+<!--           panel.grid.major = element_blank(),  -->
+<!--           panel.grid.minor = element_blank(), -->
+<!--           panel.background = element_rect(fill = "white"), -->
+<!--           axis.text.x = element_blank(), -->
+<!--           axis.text.y = element_blank(), -->
+<!--           axis.ticks = element_blank(), -->
+<!--           axis.title.x=element_blank(), -->
+<!--           axis.title.y=element_blank(), -->
+<!--           panel.border = element_rect(colour = "black", fill=NA, size=1)) + -->
+<!--     guides(colour = guide_legend(override.aes = list(size=3, -->
+<!--                                                      alpha=1))) +  -->
+<!--     ggtitle('Long Term Rental Location\nBy Submarket') -->
 
-```
+<!-- ``` -->
 
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
+<!-- ```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5.5, fig.height=9} -->
 
-ggMultiPlots(apt$qtl.hm, apt$qtl.hm.svm, cols=2)
+<!--   ggMultiPlots(abb.map, ltr.map, cols=1) -->
 
-```
+<!-- ``` -->
 
-```{r, results="asis", echo=FALSE}
+<!-- To better visualize the relative frequency of the submarkets in the two tenure types we have broken down the data by submarket by property type by tenure type. A number of interesting observations are illustrated here.  First, the vast majority of Airbnb units are apartments in city-core or city locations.  As expected and as shown by the map, the long term properties are more evenly spread across the metro region than the short term properties.  Long term houses are more peripheral than apartments, a result of urban development patterns and land economics. Beach properties are, relatively speaking, over-represented in the short term market, especially in apartments, while suburban and rural apartment, somewhat common in long term markets, are nearly absent in the Airbnb market.  Overall, the suburban and rural Airbnb market are quite thin, later results focusing on these market will need to be examined in light of this small sample size.  -->
 
- type.table <- rbind(apt$mrkt.score, house$mrkt.score)
- type.table$property.type <- c('apartment', '', 'house', '')
- type.table <- type.table[,c(5,1:4)]
- print(xtable(type.table,
-       digits=3),
-       include.rownames=FALSE, hline.after=c(-1,0,2,4))
+<!-- ```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.width=9} -->
 
+<!--   # Make Airbnb submarket map -->
 
-```
+<!--   abbtype.map <- ggplot() + -->
+<!--     geom_bar(data=abb.data, aes(x=sub.mrkt, fill=sub.mrkt)) + -->
+<!--     scale_fill_manual(values=sm.col) + -->
+<!--     facet_wrap(~type) + -->
+<!--     ylab('# of Properties\n') + xlab('')+ -->
+<!--     theme(legend.position = 'bottom', -->
+<!--           legend.title = element_blank(), -->
+<!--           axis.text.x=element_blank(), -->
+<!--           axis.ticks.x=element_blank(), -->
+<!--           plot.title = element_text(hjust = 0.5)) + -->
+<!--     ggtitle('AirBNB Property Type By Submarket') -->
 
-#### Geographic Submarkets
+<!--   # Make Long term rental map -->
 
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
+<!--   ltrtype.map <- ggplot() + -->
+<!--     geom_bar(data=ltr.data, aes(x=sub.mrkt, fill=sub.mrkt)) + -->
+<!--     scale_fill_manual(values=sm.col) + -->
+<!--     facet_wrap(~type) + -->
+<!--     ylab('# of Properties\n') + xlab('')+ -->
+<!--     theme(legend.position = 'bottom', -->
+<!--           legend.title = element_blank(), -->
+<!--           axis.text.x=element_blank(), -->
+<!--           axis.ticks.x=element_blank(), -->
+<!--           plot.title = element_text(hjust = 0.5)) + -->
+<!--     ggtitle('Long Term Property Type By Submarket') -->
 
-names(sm.results)[[1]] <- 'core'
+<!-- ``` -->
 
-ggMultiPlots(sm.results$core$qtl.hm.svm,
-             sm.results$city$qtl.hm.svm, cols=2)
-```
+<!-- ```{r abbtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=3.5} -->
 
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'}
+<!--   abbtype.map -->
 
-ggMultiPlots(sm.results$suburban$qtl.hm.svm, 
-             sm.results$rural$qtl.hm.svm, cols=2)
+<!-- ``` -->
 
-```
+<!-- ```{r ltrtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=3.5} -->
 
-```{r, fig.width=4, fig.height=4, echo=FALSE, fig.align='center'}
+<!--   ltrtype.map -->
 
-             sm.results$beach$qtl.hm.svm
-             
-```
+<!-- ``` -->
 
-```{r, results="asis", echo=FALSE}
+<!-- ### Actual Revenue  -->
 
- sm.table <- rbind(sm.results$core$mrkt.score, 
-                     sm.results$city$mrkt.score, 
-                     sm.results$suburban$mrkt.score, 
-                     sm.results$rural$mrkt.score, 
-                     sm.results$beach$mrkt.score)
+<!-- Our final data filtering considers the observed revenue of the properties. For the long-term rentals the observed revenue is the weekly rate multiplied by 52 minus the number of weeks the property was on the market.  In a number of extreme cases, time on market was extremely long and the total observed revenues very low.  To remove these outlying observations, we filter out any properties with less than $5,000 in revenue.   -->
 
- sm.table$sub.market <- c('core', '', 'city', '', 'suburban', ''
-                            , 'rural', '', 'beach', '')
- sm.table <- sm.table[,c(5,1:4)]
- print(xtable(sm.table,
-       digits=3),
-       include.rownames=FALSE, hline.after=c(-1,0,2,4,6,8,10))
+<!-- For the short term data, we first calculate the total number of bookings, the occupancy rate, blocked rate and proportion of the year over which the property was listed.  Using this data we sum up the total revenue from bookings. For properties that were not listed on the site for the entire year, we impute their annual revenue by dividing the actual revenue by the proportion of the year in which they were listed.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] Properties with no reserved bookings, and, therefore, no revenue, are removed.  -->
 
+<!-- Looking at the distribution of the revenues from each tenure type, we see that those for the long-term rentals are for more consistent, with the vast majority randing between \$12,000 to \$30,000 per year.  Short term revenue range from neglible to highs of greater than \$80,000.  While this simple analysis does not control for locational and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not.  Also, the high number of very low yield Airbnb properties also suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing.   -->
 
-```
+<!-- ```{r load_workspace2, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}   -->
 
+<!--  load(paste0(data.path, '/analyzed/abb_results.RData'))   -->
 
+<!-- ``` -->
 
+<!-- ```{r revdensity.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5} -->
+
+<!--   abbr <- abb.data[,c('bedbath', 'revenue')] -->
+<!--   abbr$tenure <- 'short-term' -->
+<!--   ltrr <- ltr.data[,c('bedbath', 'revenue')] -->
+<!--   ltrr$tenure <- 'long-term' -->
+<!--   allr <- rbind(abbr, ltrr) -->
+
+<!--   ggplot(allr, aes(x=revenue, fill=tenure, color=tenure)) +  -->
+<!--     geom_density(alpha=.5) + -->
+<!--     scale_fill_manual(values=c(ltr.col, abb.col)) + -->
+<!--     scale_color_manual(values=c(ltr.col, abb.col)) + -->
+<!--     ggtitle('Annual Revenues by Tenure Type') +  -->
+<!--     xlab('Annual Revenue') + -->
+<!--     scale_x_continuous(breaks=c(seq(0,60000, by=20000)), -->
+<!--                        labels=c('$0', '$20,000', '$40,000', '$60,000'))+ -->
+<!--     theme(legend.position='bottom', -->
+<!--           legend.title = element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5), -->
+<!--           axis.text.y = element_blank(), -->
+<!--           axis.ticks.y = element_blank(), -->
+<!--           axis.title.y=element_blank()) + -->
+<!--     coord_cartesian(xlim=c(0, 70000)) -->
+
+<!-- ``` -->
+
+<!-- ### Summary of Data Cleaning -->
+
+<!-- We have applied nine separate filters to our two datasets.  In the name of transparency and to highlight the bounds of our research questions it is useful to review this filters. There are more than 20,000 properties that are or have been listed on the Airbnb portal in Melbourne during the 2014 to 2016 period.  Removing those not listed during the study period removes 1/3 of all properties.  Further removing by property type and listing type (not entire home) elimates another 50% of the remaining properties.  From these 6,600 properties structural characteristics, locational issues and outlying nightly rates remove another 800 from consideration.  Finally, 1,400 of these have never been booked and have \$0 revenue, requiring removal.  From over 20,000, we have 4,446 Airbnb properties that meet the requirements of our research question.   -->
+
+<!-- For the long term data, over half of the observations fall outside of our considered time frame,reducing the sample size down to around 130,000 from 290,000.  Further consideration regarding property types, structural characteristics, location, etc. remove another 10,000 observations, leaving 122,051 in the final dataset.    -->
+
+<!-- ```{r, results="asis", echo=FALSE} -->
+
+<!-- cc <- clean.count[,c('operation', 'abb', 'ltr')] -->
+<!-- abb.count <- cumsum(c(cc$abb[1], -cc$abb[-1])) -->
+<!-- ltr.count <- cumsum(c(cc$ltr[1], -cc$ltr[-1])) -->
+<!-- abb.cut <- c(0, abb.count[-length(abb.count)] - abb.count[-1]) -->
+<!-- abb.per <- c(0, abb.cut[-1] / abb.count[-length(abb.count)]) -->
+<!-- ltr.cut <- c(0, ltr.count[-length(ltr.count)] - ltr.count[-1]) -->
+<!-- ltr.per <- c(0, ltr.cut[-1] / ltr.count[-length(ltr.count)]) -->
+<!-- clean.table <- data.frame(field=cc$operation, -->
+<!--                           abbcount=abb.count, -->
+<!--                           abbcut=abb.cut, -->
+<!--                           abbper=abb.per, -->
+<!--                           ltrcount=ltr.count, -->
+<!--                           ltrcut=ltr.cut, -->
+<!--                           ltrper=ltr.per) -->
+
+<!-- rownames(clean.table) <- NULL -->
+<!-- clean.table$field <- c('Initial Count', 'Time', 'Property Type', -->
+<!--                        'Listing Type', 'Bedrooms', 'Baths', 'Bed/Bath Combo', -->
+<!--                        'Rates & Rents', 'Location', 'Revenue') -->
+<!-- clean.table$abbper <- 100*round(clean.table$abbper, 2) -->
+<!-- clean.table$ltrper <- 100*round(clean.table$ltrper, 2) -->
+<!-- names(clean.table) <- c('Filter', 'Short Term', 'Cut', '% Cut', -->
+<!--                         'Long Term', 'Cut', '% Cut') -->
+<!-- options(xtable.comment = FALSE) -->
+<!-- print(xtable(clean.table, -->
+<!--        digits=0), -->
+<!--        include.rownames=FALSE) -->
+
+<!-- ``` -->
+
+<!-- ## Comparison -->
+
+<!-- Data prepared, we now turn to comparing returns between long and short term rental options.  As mentioned above, there are no direct matches between the datasets. In other words we have not direct observed a property which has been in a long-term rental followed by short-term or vice versa.  We will, instead, make the comparisons between the two by imputing likely short-term (long-term) rental revenues for the long-term (short-term) data and then comparing the observed revenues to the imputed revenues of the unobserved tenure type.   -->
+
+<!-- We make our imputations via hedonic price models, one for long-term rentals and one for short-term rentals.  We model the long-term market with the long-term data and then use this model to predict or impute the likely long-term rental for the short term properties.  We do the same for the long-term properties using a modeled derived from the short-term data.   -->
+
+<!-- For the long-term market, we use the following model specification: -->
+
+<!-- \begin{equation}  -->
+<!--   \label{eq:test} -->
+<!-- ln(RentLT_{i}) = \beta_{1} BedBath_{i} + \gamma_{2} Suburb_{i} + \tau_{3} Time_{i} + \epsilon_{i}  -->
+<!-- \end{equation} -->
+
+<!-- where *$ ln(RentLT_{i})$* is the natural log of the weekly rent, BedBath is the bedroom/bathroom combination, *Suburb* is a fixed effect for the location of the property, *Time* is the month of rental and $\epsilon$ a random error term.  -->
+
+<!-- For the short-term market the specification is similar, minus the time correction.  We eliminate this control because the short term rates are based on the medium value over the entire period and not monthly. This specification is:  -->
+
+<!-- \begin{equation}  -->
+<!-- ln(RentST_{i}) = \beta_{1} BedBath_{i} + \gamma_{2} Suburb_{i} + \epsilon_{i}  -->
+<!-- \end{equation} -->
+
+<!-- where *$ ln(RentLT_{i})$* is the natural log of the weekly rent, BedBath is the bedroom/bathroom combination, *Suburb* is a fixed effect for the location of the property and $\epsilon$ a random error term.  -->
+
+<!-- ### Costs -->
+
+<!-- -- Assume long term costs are equivalent -->
+
+<!-- ## Results -->
+
+<!-- We will begin our analysis by making a comparison of the short and long-term markets at a metro-level.  What we mean by this is that we will treat the entire region as the functional market and will impute rates and rents with a model using all data.  It is likely that different submarkets operate differently, we will explore this hypothesis after first analyzing the full metropolitan region.   -->
+
+<!-- We begin by imputing the likely long-term rents for the short-term observations, and vice versa at a metro level. A comparison between the actual (observed) and imputed rates and rents shows that, in general, the long-term properties are composed of properties that have a higher nightly rate than the short term observations (left-panel).  This is likely due to the fact that there are more houses (compared to apartments) in the long-term data than in the short-term data. Interestingly, the observed (long-term) and imputed (short term) weekly rental values are somewhat similar, suggesting that the higher rent, city-core apartments push the distribution of the imputed short-term values upwards. -->
+
+<!-- For each of the observed values we also create a fitted value for that observation in the model.  This may help to reduce the influence of outlying observed values in our model.  To be clear, Each observation will now have three estimates of rates and rents.  For the short-term properties they will have: 1) an actual nightly rate; 2) an estimated nightly rate; and 3) an estimated long-term (weekly) rent.  The long-term properties will have: 1) an actual long-term (weekly) rent; 2) an estimated long-term (weekly) rent; and 3) an estimated nightly rate.   -->
+
+<!-- ```{r pred.glob.imp, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5} -->
+
+<!--   abbir <- abb.imp[,c('bedbath', 'imp.rent', 'med.rate')] -->
+<!--   abbir$tenure.rate <- 'short-term (observed)' -->
+<!--   abbir$tenure.rent <- 'short-term (imputed)' -->
+
+<!--   ltrir <- ltr.imp[,c('bedbath', 'event.price', 'imp.rate')] -->
+<!--   ltrir$tenure.rate <- 'long-term (imputed)' -->
+<!--   ltrir$tenure.rent <- 'long-term (observed)' -->
+
+<!--   names(abbir) <- names(ltrir) <- c('bedbath', 'rent', 'rate', 'tenure.rate', 'tenure.rent') -->
+<!--   allir <- rbind(abbir, ltrir) -->
+
+<!-- ``` -->
+
+<!-- ```{r imp.rate.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5} -->
+
+<!--   irate.plot <- ggplot(allir, aes(x=rate, fill=tenure.rate, color=tenure.rate)) +  -->
+<!--     geom_density(alpha=.5) + -->
+<!--     scale_fill_manual(values=c(ltr.col, abb.col)) + -->
+<!--     scale_color_manual(values=c(ltr.col, abb.col)) + -->
+<!--     ggtitle('Nightly Rates by Tenure Type') +  -->
+<!--     xlab('Nightly Rate') + -->
+<!--     scale_x_continuous(breaks=c(seq(0,600, by=200)), -->
+<!--                        labels=c('$0', '$200', '$400', '$600'))+ -->
+<!--     theme(legend.position='bottom', -->
+<!--           legend.title = element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5), -->
+<!--           axis.text.y = element_blank(), -->
+<!--           axis.ticks.y = element_blank(), -->
+<!--           axis.title.y=element_blank()) + -->
+<!--     coord_cartesian(xlim=c(0, 625)) -->
+
+<!-- ``` -->
+
+<!-- ```{r imp.rent.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5} -->
+
+<!--   irent.plot <- ggplot(allir, aes(x=rent, fill=tenure.rent, color=tenure.rent)) +  -->
+<!--     geom_density(alpha=.5) + -->
+<!--     scale_fill_manual(values=c(ltr.col, abb.col)) + -->
+<!--     scale_color_manual(values=c(ltr.col, abb.col)) + -->
+<!--     ggtitle('Weekly Rents by Tenure Type') +  -->
+<!--     xlab('Weekly Rents') + -->
+<!--     scale_x_continuous(breaks=c(seq(0,1000, by=200)), -->
+<!--                        labels=c('$0', '$200', '$400', '$600', '$800', '$1,000'))+ -->
+<!--     theme(legend.position='bottom', -->
+<!--           legend.title = element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5), -->
+<!--           axis.text.y = element_blank(), -->
+<!--           axis.ticks.y = element_blank(), -->
+<!--           axis.title.y=element_blank()) + -->
+<!--     coord_cartesian(xlim=c(150, 1000)) -->
+
+<!-- ``` -->
+
+<!-- ```{r imp.rr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=3.5} -->
+
+<!--  ggMultiPlots(irate.plot, irent.plot, cols=2) -->
+
+<!-- ``` -->
+
+<!-- The question of whether or not the imputations are accurate remains.  The table belows shows some simple diagnostics from the two imputation models.  From this we see that the short-term model performs rather poorly, with a standard error of 34.6\% and over half of the residuals greater than 20\%.  The long term model, on the other hand, performs quite well, with a standard error under 32\% and less than 19\% of fitted errors greater than 20\%.  Given the small amount of independent variable available to the models, the long term market appear much more predictable than the short term market.  This could be due to omitted variables in the short term market or a greater level of variability in the price setting (which is done by individuals) as opposed to the long-term market in which most owners get help with leasing from an agency.   -->
+
+<!-- ```{r, results="asis", echo=FALSE} -->
+
+<!-- abb.sum <- summary(imp.data$abb.mod) -->
+<!-- ltr.sum <- summary(imp.data$ltr.mod) -->
+
+<!-- abbs <- c(abb.sum$r.squared, abb.sum$adj.r.squared, -->
+<!--           abb.sum$sigma,  -->
+<!--           length(which(abs(abb.sum$residuals) > .2)) / length(abb.sum$residuals)) -->
+<!-- ltrs <- c(ltr.sum$r.squared, ltr.sum$adj.r.squared, -->
+<!--           ltr.sum$sigma,  -->
+<!--           length(which(abs(ltr.sum$residuals) > .2)) / length(ltr.sum$residuals)) -->
+
+<!-- summ.table <- data.frame(shortterm=round(abbs, 3), -->
+<!--                          longterm=round(ltrs, 3)) -->
+<!-- rownames(summ.table) <- c('r-squared', 'adj r-squared', -->
+<!--                           'sigma', '% fit errors > 20%') -->
+<!-- names(summ.table) <- c('Short Term', 'Long Term') -->
+
+<!-- print(xtable(summ.table, -->
+<!--        digits=3), -->
+<!--        include.rownames=TRUE) -->
+
+
+<!-- ``` -->
+
+<!-- Next, to create an estimated short-term revenue for the long-term properties we have to create an estimate of the occupancy rate.  For the estimated long-term rentals we have to create an estimate of the search time (days on market).  To derive an occupancy rate, we use the weighted median value^[Weighted by the total number of days the property was offered on Airbnb over the year.] of the market, the entire metro region in this case, which is about 37%^[We attempted to use a logistic regression model to predict occupancy but were unsucessful to develop an appropriate approach.  Work continues toward this end.].  The range of occupancy varies widely from essentially 0 to 100%,with a standard deviation of 27%. -->
+
+<!-- For the long term search time, or days on market, we also use the median value of the observations. The median days on market is 24, with a standard deviation of 37. About 60\% of long term rental spent one month or less on the market and 85\% spent less than two months searching for a tenant.  -->
+
+<!-- Using these estimated occupancy rates and days on market, we have used equations 3 and 4 to produce estimates of long-term and short-term revenues for the short and long term observations, respectively. We do these for the observed and the estimated rates and rents for each tenure type. As we have imputed and actual observations for one of each dataset in the comparison, this creates 4 different comparisons, roughly broken down as follows: -->
+
+<!-- ```{r, results="asis", echo=FALSE, fig.width=4,fig.height=4} -->
+
+<!--   explain.plot <- blank.plot + -->
+<!--     geom_text(data=ann.df, -->
+<!--               label=ann.df$lab, -->
+<!--               size=2.8) + -->
+<!--     geom_text(data=num.df, -->
+<!--               label=num.df$count, -->
+<!--               size=9.5) + -->
+<!--     coord_cartesian(ylim=c(-.5,1)) + -->
+<!--     ggtitle('Explanation of \n Revenue Comparisons') + -->
+<!--     theme(legend.position='bottom', -->
+<!--           legend.title = element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5)) -->
+
+<!-- ``` -->
+
+<!-- ```{r, results="asis", echo=FALSE} -->
+
+<!--   one.df <- data.frame(x=rep(0, 4), -->
+<!--                        y=rep(0, 4),  -->
+<!--                        lab=c('31%', '87%', '54%', '79%'), -->
+<!--                        est=c('Actual Rates & Rents', 'Actual Rates & Rents', -->
+<!--                              'Imputed Rates & Rents', 'Imputed Rates & Rents'), -->
+<!--                        data=c('Airbnb', 'Long-Term', 'Airbnb', 'Long-Term')) -->
+
+<!--   sizes <- c(.31, .87, .54, .79) -->
+
+<!--   one.plot <- blank.plot + -->
+<!--     geom_text(data=one.df, -->
+<!--               label=one.df$lab, -->
+<!--               size=18*sizes) + -->
+<!--     ggtitle('% of Properties where \n Airbnb is more profitable') + -->
+<!--     theme(legend.position='bottom', -->
+<!--           legend.title = element_blank(),  -->
+<!--           plot.title = element_text(hjust = 0.5)) -->
+
+<!-- ``` -->
+
+<!-- In other word the left hand panels are comparison made on Airbnb properties, where the top is the actual Airbnb revenue and the bottom is the estimated (fitted) with the imputed rates and median-based occupancy rates.  In the right hand panels we have the comparison on the long-term properties, again with top being of the actual long term revenue and the bottom with the estimated (fitted) rents and median based days on market.   -->
+
+<!-- The plot below shows the percent of properties in which a short-term rental would bring in more revenue over the coures of the year, across these four scenarios.  The variation between these estimates is significant and troublesome.  However, given our difficulty in accurately estimating short term nightly rates (see Table X) and the fact that occupancy rates are highly variable for short-term rentals, these variation are not surprising.  As we have a difficult time estimating short-term market performance, both measures in the right hand column are immediately suspicious. Additionally, the estimates in the lower left also depend on estimate nightly rate, causing their accuracy to be questioned.   -->
+
+<!-- ```{r 22r.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7.5,fig.height=3.5, fig.align='center'} -->
+
+<!--  ggMultiPlots(explain.plot, one.plot, cols=2) -->
+
+<!-- ``` -->
+
+<!-- In short, only in the upper left hand panel are we using the actual nightly rates and the actual occupancy rates from the short term market.  We do estimate the long-term rates and days on market here, but as shown above, the models for those figures are much more robust. The plusses and minus of each comparison quadrant is shown below.  As a result of these issues, we consider only those comparisons in quadrant 1 to be legitimate and use these going forward.   -->
+
+<!-- ```{r reason.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=4.5, fig.height=3.5, fig.align='center'} -->
+
+<!--   reason.plot <- blank.plot + -->
+<!--     geom_rect(data = mrkt.table, aes(fill=good), -->
+<!--               xmin = -Inf,xmax = Inf, -->
+<!--               ymin = -Inf,ymax = Inf, alpha = 0.4) + -->
+<!--     geom_text(data=reason.df, -->
+<!--               label=reason.df$lab, -->
+<!--               size=3) + -->
+<!--     geom_text(data=num.df, -->
+<!--               label=num.df$count, -->
+<!--               size=9.5) + -->
+<!--     coord_cartesian(ylim=c(-.5,1)) -->
+
+<!--   reason.plot -->
+
+<!-- ``` -->
+
+<!-- ### Occupancy Rates -->
+
+<!-- Occupancy rates are one of the most important compoenent in determining the profitability of short-term rentals. Unfortunately, these are also the most difficult factor to estimate or impute. Below we plot (left-panel) the percentage of properties for which short-term rental is more profitable versus the occupancy rate.  We see that likelihood of short-term rental being a better option increases sharply with occupancy rate up until about 75\% occupancy.  For occupancy rates less than 50\%, long-term rental is more likely to be the better option.  The decrease in profitabilty after 75\% occupancy is likely due to: 1) small sample sizes in this tail of the data; and 2) that lowering overall nightly rates too low simply to boost occupancy can result in lower overall revenue.   -->
+
+<!-- As the distribution of occupancy rates is not uniform, the initial plot may be misleading as to the frequency of short-term rentals being more profitable than long term. In Figure X, we transform the x-axis to represent the quantile of the full distribution of occupancy rates. By doing so, we see that, in general, properties need to be in the upper 1/3 of occupancy rates across the entire market in order to have a equal likelihood of being more profitable as a short-term rental than as a more traditional long term one.    -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
+
+<!--   rawocc.pplot <- makePrefPlot(abb.revs, -->
+<!--                                x.field='occ.rate', -->
+<!--                                y.field='abb.act', -->
+<!--                                     smooth=TRUE, -->
+<!--                                smooth.span=.75) -->
+<!--   rawocc.pplot <- rawocc.pplot + -->
+<!--     xlab('\nOccupancy Rate') + -->
+<!--     ylab('\n% of Properties where \nAirbnb is more profitable') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     scale_color_manual(values=sm.col) + -->
+<!--     ggtitle('Tenure Profitability vs \n Occupancy Rate') + -->
+<!--     theme(legend.position='none', -->
+<!--           plot.title = element_text(hjust = 0.5)) +  -->
+<!--     coord_cartesian(ylim=c(0,1)) + -->
+<!--     geom_hline(aes(yintercept=.5)) -->
+
+
+<!-- ``` -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
+
+<!--   dens.plot <- ggplot(abb.revs, aes(x=occ.rate)) + -->
+<!--     geom_density(alpha=.3, fill=1) + -->
+<!--     scale_color_manual(values=sm.col) + -->
+<!--     scale_fill_manual(values=sm.col) + -->
+<!--     scale_x_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+
+<!--     ylab('\nFrequency of Occurance') + -->
+<!--     xlab('\nOccupancy Rate') + -->
+<!--     ggtitle('Distribution of \n Occupancy Rates') + -->
+<!--     theme(legend.position='none', -->
+<!--           plot.title = element_text(hjust = 0.5), -->
+<!--           axis.line=element_blank(), -->
+<!--           axis.text.y=element_blank(), -->
+<!--           axis.ticks.y=element_blank()) -->
+<!-- ``` -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5} -->
+
+<!--   ggMultiPlots(rawocc.pplot, dens.plot, cols=2) -->
+
+<!-- ``` -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
+
+
+<!--   abb.revs$occ.qtl <- makeWtdQtl(abb.revs$occ.rate,  -->
+<!--                                       return.type='rank')  -->
+<!--   abb.revs$rate.qtl <- makeWtdQtl(abb.revs$med.rate,  -->
+<!--                                   return.type='rank')  -->
+
+<!--   ## Make quartile location plot -->
+
+<!--   qtlocc.pplot <- makePrefPlot(abb.revs, -->
+<!--                                x.field='occ.qtl', -->
+<!--                                y.field='abb.act', -->
+<!--                                smooth=TRUE, -->
+<!--                                smooth.span=.55) -->
+<!--   qtlocc.pplot <- qtlocc.pplot + -->
+<!--     xlab('\nQuantile of Occupancy Rate') + -->
+<!--     ylab('\n% of Properties where \n Airbnb is more profitable') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0', '25th', '50th', '75th', '100th')) + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     scale_color_manual(values=sm.col) + -->
+<!--     theme(legend.position='none') +  -->
+<!--     coord_cartesian(ylim=c(0,1))+ -->
+<!--     geom_hline(aes(yintercept=.5)) -->
+
+<!-- ``` -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5, fig.height=3.5, fig.align='center'} -->
+
+<!--   qtlocc.pplot -->
+
+<!-- ``` -->
+
+<!-- Along with occupancy rate, the other important consideration is the nightly rate.  High occupancy rates with low nightly rates may not be any better than lower occupancy rate with a higher nightly rate.  In Figure X (left panel) we plot nightly rates versus occupancy rates.  We then divide the area of the scatter plot into 400 equal areas (20 x 20) and color each based on which is more common in the area, short term or long term revenue.  The transparency is related to the total count of actual market properties falling into that area.   -->
+
+<!-- A general trend is what is expected, higher rates and occupancies, ceteris paribus, means more profitability for short term rentals.  This relationship is not a perfectly linear because the long-term rental revenue varies greatly based on the characteristics of the property.  While the left panel of Figure X helps show the general pattern is doe leave many indeterminate areas.  In order to better delimit the situations where short-term rentals are more profitable we turn to a support vector machine (SVM) algorithm. -->
+
+<!-- An SVM can be used as a classifier to delineate the boundaries between two (or more) classes of observations.  In this case, we delineate the boundary (right panel) between situations where long-term rentals are more profitable (red) and where short term are (green).  In order to avoid an overly broad straight line delineation we use a polynomial fitting technique. While this process does provide more flexible fit in the area of high data density, it also has the side effect of creating somewhat counter intuitive results in areas of low data (such as the far upper right corner.)  Overall, from the SVM model we see that there short-term prefernce begins at about 30\% occupancy rate, regardless of nightly rate.  As the occupancy rate increases, the required nighly rate decreases, down to near $100 once occupancies hit 65\% or greater.   -->
+
+<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'} -->
+
+<!--  ggMultiPlots(rate.hm, rate.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- Both the occupancy rates and the nightly rates are not uniformly distributed and therefore the plots in figure X may be misleading.  We convert both axis to quantiles and replot both figures.  Here we see a more even distibution of points across the figures.  Additionally, a more reasonable SVM breakdown occurs as well.  The right panel shows that , in order for the likelihood of a property to be more profitable in short-term rental to be above 50\% the lowest occupancy rate it can have is 40\%, if the nightly rate is in the top 95th percentile of the market.  For example, if we drop the nightly rate to the median, the occupancy rate need to be at the 60th percentile.   -->
+<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE} -->
+
+<!--  ggMultiPlots(qtl.hm, qtl.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- Finally, we summarize the entire market by looking at three metrics: -->
+
+<!-- 1. Actual: The percentage of properties in the market in which Airbnb generates more revenue -->
+<!-- 2. Fitted: The percentage of properties (when plotted by occupancy rate and nightly rate) that fall in the SVM area considered profitable -->
+<!-- 3. SVM Area: The percentage of the total area in the SVM plot that represents a situation where the short-term rental is more profitable.   -->
+
+<!-- None of these metrics on their own is perfect.  The 'actual' measure responds directly to the sample of the current market and may not be as useful to a potential investor. The 'fitted' and 'svm' metric minimize some bias from the sample, but suffer from forcing all observations into a binary condition (there are no 'gray' areas) and the 'svm area' metric may be biases by large areas of the scatterplot that have few actual observations.  This latter issue is partially limited by plotting by quantile, but, nonetheless still exists.   -->
+
+<!-- We calculate each for the raw rates as well as for the quantile situation.  These are show in Table X.  Overall, 31.4\% of the observed Airbnb properties raised more actual revenue from short term lending than the estimated long-term revenue that they would have gained.  Analyzing these by raw rates in the SVM, we find that a nearly identical 31.4\% fall within the contiguous area of short-term preference and this area takes up 40.6% of the total plotted area.  When scale the plots by quantile, we find that 37.2\% of all observations fall in the short-term preference area and that this area takes up 37.8\% of the total plotted area.  As the difference between the fitted and the svm area is considerably smaller in the quantile approach, there is less bias from outlying, empty areas.   -->
+
+<!-- ```{r, results="asis", echo=FALSE} -->
+
+<!-- print(xtable(market.ratio, -->
+<!--        digits=3), -->
+<!--        include.rownames=FALSE) -->
+
+
+<!-- ``` -->
+
+<!-- ### Submarkets -->
+
+<!-- A major deficit in this analysis is that the potential rents, rates, days on market and occupancy rates are estimated globally.  As a result, there is the likelihood of significant bias within certain submarkets.  Below, we break down the results by type (apartment vs house), by geographic market (5 submarketd listed above) and by type and submarket.  We show only the summary tables and the quantile heat map plots.  Full results can be found on the ....ENTER SHINY WEBSITE.... -->
+
+<!-- #### Property Type -->
+
+<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'} -->
+
+<!-- ggMultiPlots(house$qtl.hm, house$qtl.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'} -->
+
+<!-- ggMultiPlots(apt$qtl.hm, apt$qtl.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- ```{r, results="asis", echo=FALSE} -->
+
+<!--  type.table <- rbind(apt$mrkt.score, house$mrkt.score) -->
+<!--  type.table$property.type <- c('apartment', '', 'house', '') -->
+<!--  type.table <- type.table[,c(5,1:4)] -->
+<!--  print(xtable(type.table, -->
+<!--        digits=3), -->
+<!--        include.rownames=FALSE, hline.after=c(-1,0,2,4)) -->
+
+
+<!-- ``` -->
+
+<!-- #### Geographic Submarkets -->
+
+<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'} -->
+
+<!-- names(sm.results)[[1]] <- 'core' -->
+
+<!-- ggMultiPlots(sm.results$core$qtl.hm.svm, -->
+<!--              sm.results$city$qtl.hm.svm, cols=2) -->
+<!-- ``` -->
+
+<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center'} -->
+
+<!-- ggMultiPlots(sm.results$suburban$qtl.hm.svm,  -->
+<!--              sm.results$rural$qtl.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- ```{r, fig.width=4, fig.height=4, echo=FALSE, fig.align='center'} -->
+
+<!--              sm.results$beach$qtl.hm.svm -->
+
+<!-- ``` -->
+
+<!-- ```{r, results="asis", echo=FALSE} -->
+
+<!--  sm.table <- rbind(sm.results$core$mrkt.score,  -->
+<!--                      sm.results$city$mrkt.score,  -->
+<!--                      sm.results$suburban$mrkt.score,  -->
+<!--                      sm.results$rural$mrkt.score,  -->
+<!--                      sm.results$beach$mrkt.score) -->
+
+<!--  sm.table$sub.market <- c('core', '', 'city', '', 'suburban', '' -->
+<!--                             , 'rural', '', 'beach', '') -->
+<!--  sm.table <- sm.table[,c(5,1:4)] -->
+<!--  print(xtable(sm.table, -->
+<!--        digits=3), -->
+<!--        include.rownames=FALSE, hline.after=c(-1,0,2,4,6,8,10)) -->
+
+
+<!-- ``` -->
+
+
+
+## References
 
 
 <!-- ### Submarkets -->
