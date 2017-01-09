@@ -542,6 +542,44 @@
   }
   names(smt.results) <- as.character(smt.levels)
   
+### Build logit models on this -----------------------------------------------------------
+  
+ ## Create combined data
+  
+  smt.data <- rbind.fill(lapply(smt.results, function(x) x$abb))
+  
+  # Fix cancel.policy issue
+  ss60 <- which(smt.data$cancel.policy == 'Super Strict 60 Days')
+  smt.data$cancel.policy[ss60] <- 'Strict'
+  cpmiss <- which(smt.data$cancel.policy == '')
+  smt.data <- smt.data[-cpmiss, ]
+  
+ ## Build models  
+  
+  mod.str <- glm(abb.act~as.factor(bedbath)+type,
+                 family=binomial(link='logit'),
+                 data=smt.data)
+  
+  mod.sm <- glm(abb.act~as.factor(bedbath)+type+sub.mrkt,
+                 family=binomial(link='logit'),
+                 data=smt.data)
+
+  mod.host <- glm(abb.act~as.factor(bedbath)+type+
+                    sub.mrkt+
+                    max.guests+min.stay+
+                    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                  family=binomial(link='logit'),
+                  data=smt.data)
+  
+  
+  mod.sub <- glm(abb.act~as.factor(bedbath)+type+suburb,
+                 family=binomial(link='logit'),
+                 data=smt.data)
+  
+  
+  #So p = 49/200 =  .245. The odds are .245/(1-.245) = .3245 
+  #and the log of the odds (logit) is log(.3245) = -1.12546.  
+  
 ### Save workspace -----------------------------------------------------------------------
   
   save.image("C:/Dropbox/Research/airBNB/data/analyzed/abb_results.RData")
