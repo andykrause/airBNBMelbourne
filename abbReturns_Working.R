@@ -23,6 +23,7 @@
   library(stringr)
   library(RColorBrewer)
   library(Hmisc)
+  library(ROCR)
 
  ## Set path location
 
@@ -186,8 +187,8 @@
   
   num.df <- data.frame(x=rep(0, 4),
                        y=rep(.8, 4),
-                       est=as.factor(c('Actual Rates & Rents', 'Imputed Rates & Rents',
-                             'Actual Rates & Rents', 'Imputed Rates & Rents')),
+                       est=as.factor(c('Actual Rates & Rents', 'Imp. Rates & Rents',
+                             'Actual Rates & Rents', 'Imp. Rates & Rents')),
                        data=as.factor(c('Airbnb', 'Airbnb', 'Long-Term', 'Long-Term')),
                        count=c(1,3,2,4))
   
@@ -556,35 +557,129 @@
   
  ## Build models  
   
-  mod.str <- glm(abb.act~as.factor(bedbath)+type,
+  # Structural Only model
+  mod.str <- glm(abb.act~type+as.factor(bedbath),
                  family=binomial(link='logit'),
                  data=smt.data)
   
-  mod.sm <- glm(abb.act~as.factor(bedbath)+type+sub.mrkt,
+  # +Submarket model
+  mod.sm <- glm(abb.act~type+as.factor(bedbath)+
+                  sub.mrkt,
                  family=binomial(link='logit'),
                  data=smt.data)
 
-  mod.host <- glm(abb.act~as.factor(bedbath)+type+
+  # +Host model
+  mod.host <- glm(abb.act~type+as.factor(bedbath)+
                     sub.mrkt+
-                    max.guests+min.stay+
+                    I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                   family=binomial(link='logit'),
                   data=smt.data)
   
-  
-  mod.sub <- glm(abb.act~as.factor(bedbath)+type+suburb,
+  # Suburb model
+  mod.sub <- glm(abb.act~type+as.factor(bedbath)+
+                   suburb,
                  family=binomial(link='logit'),
                  data=smt.data)
   
+  # Suburb Host model
+  mod.subh <- glm(abb.act~type+as.factor(bedbath)+
+                  suburb+
+                  max.guests+min.stay+
+                  I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                  family=binomial(link='logit'),
+                  data=smt.data)
   
-  #So p = 49/200 =  .245. The odds are .245/(1-.245) = .3245 
-  #and the log of the odds (logit) is log(.3245) = -1.12546.  
+ ## Extract Coef
   
+  str.ct <- summary(mod.str)$coef
+  sm.ct <- summary(mod.sm)$coef
+  host.ct <- summary(mod.host)$coef
+
+  # Assign SS
+  f.l <- nrow(host.ct)
+  assignSS <- function(x){
+    
+    y<-rep('   ', length(x))
+    y[x<.1] <- '*  '
+    y[x<.05] <- '** '
+    y[x<.01] <- '***'
+    
+    y
+  }
+  
+  # Build coefs with SS
+  str.coef <- sprintf("%.3f" ,str.ct[,1])
+  str.sig <- assignSS(str.ct[,4])
+  str.coef <- c(paste0(str.coef, str.sig), rep(' ', f.l - nrow(str.ct)))
+  
+  sm.coef <- sprintf("%.3f" ,sm.ct[,1])
+  sm.sig <- assignSS(sm.ct[,4])
+  sm.coef <- c(paste0(sm.coef, sm.sig), rep(' ', f.l - nrow(sm.ct)))
+  
+  host.coef <- sprintf("%.3f" ,host.ct[,1])
+  host.sig <- assignSS(host.ct[,4])
+  host.coef <- c(paste0(host.coef, host.sig), rep(' ', f.l - nrow(host.ct)))
+  
+  # Combine into table
+  mod.table <- data.frame(Variable=rownames(host.ct),
+                          Str.Model=str.coef,
+                          Sm.Model=sm.coef,
+                          Host.Model=host.coef)
+  
+  # Fix variable names
+  mod.table$Variable <- c('Intercept', 'House', '1Bed/1Bath','2Bed/1Bath',
+                          '3Bed/1Bath', '3Bed/2Bath', '4Bed/2Bath', 'City',
+                          'Suburban','Rural', 'Beach', 'Guests/Bedroom',
+                          'Min. Stay', 'Flexible Cancel', 'Strict Cancel')
+  
+  
+ ## Create model diagnostics  
+  
+  # Custom function
+  logDx <- function(log.model, data, resp.var){
+    
+    pred <- prediction(predict(log.model, data, type='response'), resp.var)
+    auc <- performance(pred, measure='auc')
+    ll <- logLik(log.model)
+    AIC <- AIC(log.model)
+    
+    return(list(AIC=AIC,
+                logLik=ll,
+                auc=auc))
+  }
+  
+  # Extract diagnostics
+  str.dx <- logDx(mod.str, smt.data, smt.data$abb.act)
+  sm.dx <- logDx(mod.sm, smt.data, smt.data$abb.act)
+  host.dx <- logDx(mod.host, smt.data, smt.data$abb.act)
+  
+  # Create diagnostic table
+  diag.table <- data.frame(Variable=c('', 'Diagnostics', 'AIC', 'LogLik', 'AUC'),
+                           Str.Model=c('', '', round(str.dx$AIC,0), 
+                                       round(str.dx$logLik, 0),
+                                       round(as.numeric(str.dx$auc@y.values), 3)),
+                           Sm.Model=c('', '', round(sm.dx$AIC,0), 
+                                      round(sm.dx$logLik, 0),
+                                      round(as.numeric(sm.dx$auc@y.values), 3)),
+                           Host.Model=c('', '', round(host.dx$AIC,0), 
+                                        round(host.dx$logLik, 0),
+                                        round(as.numeric(host.dx$auc@y.values), 3)))
+ 
+ ## Combine into full table of coef and diags
+  
+ full.table <- rbind(mod.table, diag.table)
+
 ### Save workspace -----------------------------------------------------------------------
   
   save.image("C:/Dropbox/Research/airBNB/data/analyzed/abb_results.RData")
 
-
+# 
+#  
+#  smt.data$GperBed <- smt.data$max.guests/smt.data$bedrooms
+#  smt.data$Strict <- ifelse(smt.data$cancel.policy=='Strict', 1, 0)
+#  smt.data$Flexible <- ifelse(smt.data$cancel.policy=='Flexible', 1, 0)
+ 
   
   
   
