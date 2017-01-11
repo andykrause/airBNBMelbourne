@@ -474,12 +474,10 @@ As the chart below show, the **Other** category only makes up a very small perce
 ```{r write_beforeproptypeobj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
 before.PT <- list(abb.data=abb.data,
-                  daily.data=daily.data,
-                  ltr.data=ltr.data,
-                  listing.data=listing.data)
+                  ltr.data=ltr.data)
 
 
-save(before.PT, file="C:/Dropbox/Research/airBNB/data/analyzed/abb_beforePT.RData")
+save(before.PT, subs, file="C:/Dropbox/Research/airBNB/data/analyzed/abb_beforePT.RData")
 
 
 ```
@@ -1118,9 +1116,7 @@ Having fixed the missing lat/long issue, we then assign the suburb, SA1, city-co
 ```{r write_afterspobj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
 after.SP <- list(abb.data=abb.data,
-                  daily.data=daily.data,
-                  ltr.data=ltr.data,
-                  listing.data=listing.data)
+                 ltr.data=ltr.data)
 
 
 save(after.SP, file="C:/Dropbox/Research/airBNB/data/analyzed/abb_afterSP.RData")

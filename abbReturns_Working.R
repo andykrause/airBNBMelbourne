@@ -77,6 +77,10 @@
   abb.imp <- imp.data$abb
   ltr.imp <- imp.data$ltr
   
+  # Extract models
+  abb.sum <- summary(imp.data$abb.mod)
+  ltr.sum <- summary(imp.data$ltr.mod)
+  
  # Within type imputation revenues
   
   imp.revs <- revenueEngine(abb.imp, 
@@ -674,13 +678,9 @@
   
   save.image("C:/Dropbox/Research/airBNB/data/analyzed/abb_results.RData")
 
-# 
-#  
-#  smt.data$GperBed <- smt.data$max.guests/smt.data$bedrooms
-#  smt.data$Strict <- ifelse(smt.data$cancel.policy=='Strict', 1, 0)
-#  smt.data$Flexible <- ifelse(smt.data$cancel.policy=='Flexible', 1, 0)
+  save(abb.revs, ltr.revs, clean.count, blank.plot,
+       rate.hm, rate.hm.svm, qtl.hm, qtl.hm.svm, market.ratio, 
+       house, apt, sm.results, full.table, smt.results, bb.results,
+       abb.sum, ltr.sum, ann.df, mrkt.table, num.df, reason.df,
+       file="C:/Dropbox/Research/airBNB/data/analyzed/abb_objs.RData")
  
-  
-  
-  
-  
