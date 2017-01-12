@@ -113,6 +113,7 @@ Focusing specifically on the short-term rental market, @cassidy2007tourist sugge
 A set of recent work has looked into the impact of short-term markets on housing prices and affordability. These working papers examine the influence of Airbnb on existing housing prices in New York [@sheppard2016airbnb], Los Angeles [@lee2016airbnb] and Boston [@merante2016home]. Though very broad analyses, all suggest that Airbnb has had a positive impact on local home prices and/or a negative impact on affordability. Other work examines the impact of short term rentals on the hotel market, with @gutierrez2016airbnb finding that Airbnb and hotels have similar location patterns in Barcelona and @zervas2014rise showing an inverse relationship between Airbnb listings and hotel revenues.
 
 A critical theme that arises out of the extant literature is that fundamentals of the markets for primary dwellings (owner-occupied and long-term rentals) may differ from those of vacation homes (or, by association, short term rentals). Or, in other words, the factors that influence prices and rents in the two are not equivalent. @cho2003impacts find that the second home market is more sensitive to proximity to environmental amenities than the owner occupied market. In Switzerland, @soguel2008impact test to see if second homes pay a higher premium for ski resort access.  Their results fail to show a statistically significant difference in the impact of ski resorts between markets, but do find that other property characteristics have heterogenous effects between the two.  
+
 Though issues of second homes were primarily treated as a rural phenomenom for decades  [@gallent2007second], a wave of ``new urban tourism'' [@fuller2014stop] has re-focused some of the problems of short term rentals on large, urban environments. With this move to urban areas, issues such as nuisance, property rights and regulation have naturally arisen.  As a result, the short-term rental market has garnered significant interest in the public policy and legal sphere as of late. As many second homes are not permitted for or regulated as commercial entities, STRs can have serious effects on neighbors in the way of externalies such as noise and congestion [@frost2006commentary].  While strict regulation is often proposed, doing so may constititute regulatory takings [@jefferson2015can].  Other, rights-based, regulatory approaches have been suggested [@miller2014transferable].  Many of the key legal decisions regarding short term rentals, particulary though Airbnb, are still in progress and much remains to be settled in this area in terms of the regulatory and legal environment in which STRs are allowed to operate. 
 
 Overall, the extant literature on short-term rentals is limited, but growing.  Of the three types of research -- pricing, impacts on housing market and legalities/externalities -- none specifically address the decision faced by an owner who is trying to decide between a long- or short-term leasing strategy. The closest analog in the literature is a piece by @larsen2009purchase examining the choice between purchasing a time-share or simply paying for hotel rooms.  Theoretically, the literature shows that in most cases there is a demonstratable difference between first and second home market dynamics due to the use differences of the occupants.  We hypothesize that this same thinking can be extended to the difference between short-term occupants (tourists) and long-term rental occupants (workers and retirees) and, as a result, there should be differences in the market which make certain housing products and locations preferable (more profitable) under a short-term versus long-term tenure. 
@@ -1195,34 +1196,91 @@ ggMultiPlots(apt$qtl.hm, apt$qtl.hm.svm, cols=2)
 
 #### Geographic Submarkets
 
-1. Need to explain this.
+We break the data down further by geographic submarket and property type and compare the results (quantile) in Table 5.  In the Actual (observed) revenues, the probabilty of short-term preference is highest in the core area of the city and lowest in the city, beach and suburban areas.  Interestingly, the rural area has a higher probably than all other but the core.  This is likely explained by the fact that there are few rural properties and those that are show some clustering near rural tourists activities like the Yarra Valley wine region (Figure 7). 
 
-```{r, results="asis", echo=FALSE, fig.cap='Preference Analysis: By Submarket'}
- names(sm.results)[[1]] <- 'core'
+In the core and the city, apartments offer a higher probability than homes, the reverse in true in the suburban and rural areas. In the lower density areas it appears that tourists may prefer larger and more spacious dwellings and are willing to pay a premium for them, compared to long-term renters who may experience long commutes from these fringe locations.
 
- sm.table <- rbind(sm.results$core$mrkt.score,
-                     sm.results$city$mrkt.score,
-                     sm.results$suburban$mrkt.score,
-                     sm.results$rural$mrkt.score,
-                     sm.results$beach$mrkt.score)
+Looking at the 'fitted' and 'svm area' figures we see a trend that these svm figures are higher than the actual observed for the core apartment and lower for nearly all of the rest of the categories.  This findings shows that for all but the core apartments, those properties that are more profitable as short-term cluster tightly in the area (the combination of nightly rate and occupancy rate) that are preferable for a short-term strategy. In other words, there is well defined combination or situation in which these properties can be more profitable than in a long-term lease.  The reverse is true of the city core apartments. Here, the area of the plots occupied by short term preference is larger than the total proporation, suggesting that a wide variety of combinations of nightly rates and occupancy rates will result in a short term preference.
 
- sm.table$sub.market <- c('core', '', 'city', '', 'suburban', ''
-                            , 'rural', '', 'beach', '')
- sm.table <- sm.table[,c(5,1:4)]
- print(xtable(sm.table,
-       digits=3),
-       include.rownames=FALSE, hline.after=c(-1,0,2,4,6,8,10))
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Quantile Market Summary; Property Type by Submarket'}
+
+sm.ms <- rbind.fill(lapply(sm.results, function(x) x$mrkt.score[2,]))
+sm.ms.apt <- rbind.fill(lapply(smt.results[1:5], function(x) x$mrkt.score[2,]))
+sm.ms.house <- rbind.fill(lapply(smt.results[6:10], function(x) x$mrkt.score[2,]))
+
+smt.table <- data.frame(sub.market=c('sub-market','beach', 'city', 'core', 'rural',
+                                     'suburban', 'all'),
+                        actual.all=c('all', round(sm.ms$actual[c(5,2,1,4,3)],2),
+                                     round(market.ratio[2,2],2)),
+                        actual.apt=c('apt', round(sm.ms.apt$actual, 2),
+                                     round(type.table[2,3],2)),
+                        actual.house=c('house', round(sm.ms.house$actual, 2),
+                                       round(type.table[4,3],2)),
+                        fitted.all=c('all',round(sm.ms$fitted[c(5,2,1,4,3)],2),
+                                     round(market.ratio[2,3],2)),
+                        fitted.apt=c('apt', round(sm.ms.apt$fitted,2),
+                                     round(type.table[2,4],2)),
+                        fitted.house=c('house', round(sm.ms.house$fitted,2),
+                                       round(type.table[4,4],2)),
+                        svmarea.all=c('all', round(sm.ms$svm[c(5,2,1,4,3)],2),
+                                      round(market.ratio[2,4],2)),
+                        svmarea.apt=c('apt', round(sm.ms.apt$svm,2),
+                                      round(type.table[2,5],2)),
+                        svmarea.house=c('house', round(sm.ms.house$svm,2),
+                                        round(type.table[4,5],2)))
+
+smt.table <- smt.table[c(1, 4, 3, 2, 6, 5, 7),]
+names(smt.table) <- c('', '', 'actual', '', '', 'fitted', '', '',
+                      'svm area', '')
+smt.full <- xtable(smt.table)
+align(smt.full) <- 'll|rrr|rrr|rrr'
+print(smt.full, 
+       include.rownames=FALSE, 
+       hline.after=c(-1,0,1,6,7,7))
 
 
 ```
 
-Logistic Regression
+## Explaining Preference
 
-1. Logistic regression to explain what is correlated with short-term preference
-2. 3 Model approach, increasing complexity
-3. Need to explain log odds, interpretation, etc. 
+The analyses above show that, overall, just less than 1 out of every 3 Airbnb'd properties was actually  more profitable as a short-term rental then it would have been if rented long-term over the course of the year.  This proportion, however, varied by location and property type.  While illustrative, the above do not fully control for property characteristics or owner actions -- which are a key component of short-term rental success.  To better understand which factors are related to a higher likelihood of short-term preference, we develop a set of logistic regression models below.
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE}
+We specify three, increasingly complex, logistic regression models.  Model 1 takes the form of:
+
+\begin{equation}
+ln(\frac{STPref}{1-STPref}) = \beta_{0} + \beta_{1} PType + \beta_{2} BedBath + \epsilon
+\end{equation}
+
+where $StPref$ is the probability of short-term preference, $\frac{STPref}{1-STPref}$ is the log-likelihood of short-term prefernce, $PType$ is the property type (apt or house), $BedBath$ is the bedroom and bathroom combination of the property and $\epsilon$ is an error term.
+
+For model 2 we add the five geographic submarkets, $SubMrkt$ to better control for geographic variation in the probabilities. 
+
+\begin{equation}
+ln(\frac{STPref}{1-STPref}) = \beta_{0} + \beta_{1} PType + \beta_{2} BedBath + \beta_{3} SubMrkt + \epsilon
+\end{equation}
+
+Finally, in Model three we add three variables describing policies set by the Airbnb hosts:
+
+\begin{equation}
+ln(\frac{STPref}{1-STPref}) = \beta_{0} + \beta_{1} PType + \beta_{2} BedBath + \beta_{3} SubMrkt +
+\beta_3 GPR + \beta_{4} MinStay + \beta_5 CancelPolicy +  \epsilon
+\end{equation}
+
+where $GPR$ is the total number of guests allowed per bedroom^[Hosts set the total number of guests.  We have normalized this by bedroom to avoid co-linearity in our model with the bedroom variables.], $MinStay$ is the minimum number of nights that a stay may have and $CancelPolicy$ is the difficulty with which a booking may be cancelled.  We have grouped the cancellation policies into three groups, Flexible (24 hour notice), Moderate (5 day notice) and Strict (50\% refund, 7, 30 or 60 day notice required).
+
+The results of all three models are shown in Table 6. For $PType$ apartments are the reference category,  for $BedBath$, 2Bed/2Bath is the reference category, for $Submrkt$ the Core is the reference category and for $CancelPolicy$ moderate is the reference category.  As the additional variables are added, the model fit diagnostics steadily increase, suggesting that the increased complexity of the models adds to the quality of the fit.  
+
+In Model 1, we see that when controlling for structural characteristics, Houses have a significantly lower probability of being more profitable in the short-term than apartments.  Small 1Bed/1Bath properties have a lower probability of being preferable in the short term than the reference class (2Bed/2Bath), while larger 3Bed/2Bath and 4Bed/2Bath have much higher probability of short term preference.
+
+Adding the submarket variables (Model 2) shows that all areas have a much lower probability of short-term prefernce when compared to the core (the reference category) when controlling for structural characteristics.  These findings mirror those found above in Table 9.  The coefficients for the structural characteristics change little from Model 1 to Model 2, speaking the robustness of those estimates.  
+
+Finally, in Model 3 we add in host behavior or policies. Allowing a greater number of guests per bedroom results in a higher probability of short-term preference.  This variable may be operating a proxy for additional sleeping spaces which allow for a higher nightly rate, ceteris paribus, to be charged.  The greater the minimum stay, the lower the probability of short-term preference.  Longer minimum stay may equate to lower occupancy rates as one or two night travelers are exempted from the property.  Owners with longer minimum stays may be looking to minimize costs such as cleaning and administration.  Flexible cancellation policies result in a lower probability of short-term preference, while a Strict policy has a weak, but positive relationship with short-term preference.  Strict policies do help maintain revenues, but may also scare off some potential guests.  Strict cancellation may be a luxury for the best and highly desired properties on the market and, within out model, may be acting as a proxy for some unobserved measure of quality or demand.  
+
+
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference'}
+ 
+ names(full.table) <- c('Variable', 'Model 1', "Model 2", "Model 3")
  x.full <- xtable(full.table)
  align(x.full) <- 'lllll'
 
