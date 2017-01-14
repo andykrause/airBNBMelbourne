@@ -141,7 +141,7 @@
   
   
   # 
-  
+  mrkt.table$est[c(1:5, 11:15)] <- 'Imp. Rates & Rents'
   mrkt.table$x <- 0
   mrkt.table$y <- 0
   mrkt.table$good <- c(rep('bad', 5), rep('good', 5), rep('bad', 10))
