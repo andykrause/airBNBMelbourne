@@ -1,0 +1,27 @@
+---
+title: "Should I Airbnb my Property?:  \n Executive Summary"
+author: "Andy Krause and Gideon Aschwanden"
+date: "January 16, 2017"
+output: pdf_document
+---
+
+This research sets out to test under which conditions, if any, a short-term leasing strategy (Airbnb) generates more revenue than a traditional long-term approach.  Our data and analysis focus on the Melbourne metropolitan region.  To make comparisons between short and long-term markets we analyze observed and estimated revenues for a particular scenario where a property owner purchases a property on September 1 2015 and makes a decision between long or short-term rental for the next 12 months.  
+
+Our exploratory analysis shows that the univariate distribution of actual short-term revenues (from Airbnb) is much more variable than observed long term revenue.  Most Airbnb'd properties makes less but some make more, much more. To form a better comparison of revenues between like properties, we impute likely long-term revenues for the short-term properties using a model based on the long-term rental market observations. Over the entire market, we find that 31\% of the Airbnb properties did collect more revenue than they would likely do so with a long-term leasing strategy.  The probability of preference for a short-term strategy, however, is not equal for all types of properties.  More specifically, we find that short-term preference is higher in:
+
+1. Apartments versus homes
+2. Larger properties versus smaller properties
+3. Properties in the city core (central 18 suburbs)
+4. Rural areas as opposed to suburban (but not versus city properties)
+
+We also find the following host behaviors or policies to result in higher probability of short-term preference:
+
+1. More allowed guests per bedroom
+2. Shorter minimum stays
+3. More strict cancellation policies
+
+Overall, we find that, indeed, some properties may generate more revenue under a short-term approach than in a long-term strategy. The probability of acheiving short-term preference is highest for large apartments in the city core with low minimum stays, strict cancellation policies and a high number of guests per bedroom. However, even within the core city apartment market an owner must achieve a nightly rate and an overall occupancy rate both above the median in order to reach an equal probability of short-term preference.  In other words, there is solid competition in this market and short-term preference depends on proper pricing and high occupancy.  
+
+It is no surprise, given these results, that inner city apartment make up a large proportion of the Airbnb market in Melbourne.  The market appears aware, to some extent, of the profitability of this property type under a short-term approach. 
+
+
