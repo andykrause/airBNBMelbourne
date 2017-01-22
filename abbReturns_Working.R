@@ -681,6 +681,85 @@
   save(abb.revs, ltr.revs, clean.count, blank.plot,
        rate.hm, rate.hm.svm, qtl.hm, qtl.hm.svm, market.ratio, 
        house, apt, sm.results, full.table, smt.results, bb.results,
-       abb.sum, ltr.sum, ann.df, mrkt.table, num.df, reason.df,
+       abb.sum, ltr.sum, ann.df, mrkt.table, num.df, reason.df, subs,
        file="C:/Dropbox/Research/airBNB/data/analyzed/abb_objs.RData")
  
+  
+  suburbs.shp <- readShapePoly(paste0(data.path, 'geographic/melbSuburbs.shp'),
+                               proj4string=CRS("+init=epsg:4283"),
+                               delete_null_obj=TRUE)
+  
+  ssubs <- table(abb.revs$suburb)
+  s.subs <- subs[subs$id %in% names(ssubs),]
+  s.suburbs <- suburbs.shp[suburbs.shp@data$NAME_2006 %in% names(ssubs),]
+  sssubs <- fortify(s.suburbs)
+  
+  
+  xmin <- min(s.subs$long)
+  xmax <- max(s.subs$long)
+  ymin <- min(s.subs$lat)
+  ymax <- max(s.subs$lat)
+  
+  xrange <- xmax-xmin
+  yrange <- ymax-ymin
+  
+  scale <- mean(xrange, yrange)/100
+  
+  est.data <- abb.revs
+  est.points <- createGridPoints(s.suburbs, scale, T)
+  
+  mod.spec <- abb.act~type+as.factor(bedbath)+
+    I(max.guests/bedrooms)+min.stay+
+    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict')
+  k <- 400
+  
+  ww <- gwl(est.data, est.points, mod.spec, 200)
+  getCoef <- function(x, coef){
+    y <- x[rownames(x) == coef,]
+    as.numeric(y[1])
+  }
+  
+  coef.names <- rownames(ww[[1]])
+  
+  coef.list <- list()
+  coef.df <- data.frame(lat=est.points@coords[,2],
+                        long=est.points@coords[,1])
+  
+  for(cn in 1:length(coef.names)){
+    coef.list[[cn]] <- lapply(ww, getCoef, coef=coef.names[cn])
+    coef.df[,ncol(coef.df)+1] <- unlist(coef.list[[cn]])
+  }
+  
+  colnames(coef.df)[3:13] <- c('intercept', 'house', 'bb11', 'bb21', 'bb31',
+                               'bb32', 'bb42', 'guest', 'minstay', 'flex', 'strict')
+  
+  # Make surfaces
+  
+  surf.list <- list()
+  
+  for(sl in 1:13){
+    
+    to.cut <- which(is.na(coef.df[,sl]))
+    if(length(to.cut) > 0){
+      surf.points <- est.points[-to.cut,]
+      surf.value <- coef.df[-to.cut, sl]
+    } else {
+      surf.points <- est.points
+      surf.value <- coef.df[ , sl]
+    }
+    
+   surf.list[[sl]] <- point2Surface(surf.points, 
+                                   surf.value,
+                                   .01, 
+                                   1.5)
+      
+  }
+  
+  
+  
+  
+  ggplot() + 
+    geom_path(data=sssubs, aes(x=long, y=lat, group=group)) +
+    geom_point(data=coef.df, aes(x=long, y=lat, color=bb42), size=3) 
+
+  
