@@ -781,7 +781,7 @@
        rate.hm, rate.hm.svm, qtl.hm, qtl.hm.svm, market.ratio, 
        house, apt, sm.results, full.table, smt.results, bb.results,
        abb.sum, ltr.sum, ann.df, mrkt.table, num.df, reason.df, subs,
-       suburbs.shp, s.suburbs, surf.list, coef.df,
+       suburbs.shp, s.suburbs, coef.df,
        file="C:/Dropbox/Research/airBNB/data/analyzed/abb_objs.RData")
  
 
