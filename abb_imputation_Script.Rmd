@@ -1,0 +1,153 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+### Impute missing daily observations
+
+Unfortunately, the data from AirDNA is missing observations.  According to conversations with AirDNA staff only certain Melbourne area properties were monitored for daily status conditions starting on October 1, 2014.  Over the next year, all properties were slowly brought on line.  From October 1, 2015 to October 1, 2016 observations are believed to be complete. To fill in the missing observations, we will impute the status of the missing dates based on the available data. Some properties will have a month or less of imputation, some a full year or so. 
+
+&nbsp;
+
+#### Filter 'Other' Properties
+
+AirBNB units are classified into a property type. There are 19 different property types within the Melbourne data.  The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that the Igloo, at the very least, is not a completely true representation of the property type]. For the sake of this analysis, we will collapse these twenty types into three types:
+
+1. **House**:  Includes properties labeled 'House' or 'Townhouse'
+2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium'
+3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt. 
+
+The analyses that follow removes the **Other** category (3% of total) and only considers the **House** and **Apartment** unit types
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+
+prop.data$type <- 'Other'
+prop.data$type[prop.data$property.type == 'Apartment' | 
+                  prop.data$property.type == 'Condominium' ] <- 'Apartment'
+prop.data$type[prop.data$property.type == 'House' | 
+                  prop.data$property.type == 'Townhouse' ] <- 'House'
+
+#prop.data <- prop.data[prop.data$type != 'Other', ]
+
+```
+
+&nbsp;
+
+#### Prepping for Imputation
+
+We begin the imputation process by creating a new variable indicating if the property itself was created before the data collection process began.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+
+  prop.data$created.class <- ifelse(prop.data$created.date < '2014-10-01', 
+                                  'pre', 'post')
+
+```
+
+Most properties (`r round(100*table(prop.data$created.class)[1]/nrow(prop.data),2)`%) were created (first offered on www.airbnb.com) after October 1, 2014.  We then add a field indicating whether or not the property needs to be imputed.  
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+
+prop.data$impute <- 'no'
+prop.data$impute[prop.data$created.class == 'pre' & 
+                   prop.data$min.date > '2014-10-01'] <- 'pre'
+prop.data$impute[prop.data$created.class == 'post' & 
+                   prop.data$min.date > prop.data$created.date] <- 'post'
+
+```
+
+About (`r round(100*(1-(table(prop.data$impute)[1]/nrow(prop.data))), 0)`%) of all properties need some measure of imputation.   
+
+&nbsp;
+
+#### Imputation Process
+
+In imputing the properties will use a multiple step process that considers the property's performance during the observed periods, the overall market during the non-observed periods and the type of the property itself.  More specifically, we follow the steps below:
+
+1. Split all properties into *j* number of AirBNB submarkets
+
+For each *j* submarket: 
+
+2. Calculate the average daily occupancy rate for each *j* submarket
+
+For each individual property (*i*) in submarket *j*:
+
+3. Calculate which days are observed and which are missing
+4. Calculate the % of reserved, available and blocked days for the observed dates
+5. Create an adjustment factor that notes the ratio of the submarket *j* reserved rate during the property's observed dates to those of the property's un-observed dates
+6. Using the adjustment in #5, we then determine what percentage of the un-observed days should be alloted to each status type (reserved, available and blocked).  Blocked are based on the % of blocked days in the observed period.  Reserved are based on the observed occupancy rate during the observed dates multiplied by the overall expected occupancy rate during the unobserved days for the entire submarket as compared with the observed days. The available days are the remainder. This process creates a count of each status equal to the number of unobserved days.
+7. The three status types are then assigned to the unobserved days.  First, blocked days are randomly assigned. Then the reserved days are randomly assigned to the remaining non-blocked days in a weighted fashion where the overall submarket's occupancy rate on a given day influences the probability of the impute status being reserved. The available days are the balance of the unobserved days. Note that we do not attempt to simulate actual bookings which are often multiple days.  The intent of the imputation is to correct capture the overall market and submarket trends, not to accurately re-create actual booking histories of any of the unobserved periods for this sample of properties. 
+8. Prices for reserved rooms are taken to be the average nightly rate of that particular property over the observed period. 
+
+We begin this process by creating submarkets.  For each of the properties we determine the submarket to be a combination of the structure type (House vs Apartment) and the listing type (Entire vs Private Room vs Shared Room).  This creates six submarkets. These are assigned to the property and the daily data.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+
+  prop.data$lp.type <- paste0(substr(prop.data$type, 1, 1), '.', 
+                               substr(prop.data$listing.type, 1, 1))
+
+
+  daily.data$lp.type <- prop.data$lp.type[match(daily.data$property.id,
+                                                  prop.data$property.id)]
+
+```
+
+We then split the property and daily data into submarkets.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+ 
+ o.prop <- prop.data[prop.data$type == 'Other', ]
+ o.daily <- daily.data[daily.data$property.id %in% o.prop$property.id, ]
+ 
+ prop.data <- prop.data[prop.data$type != 'Other', ]
+ daily.data <- daily.data[daily.data$property.id %in% prop.data$property.id, ]
+
+ subm.prop <- split(prop.data, prop.data$lp.type)
+ subm.daily <- split(daily.data, daily.data$lp.type)
+
+```
+
+And then we calculate daily occupancy rates for each submarket.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+
+  subm.rates <- lapply(subm.daily, abbCalcDateRates)
+
+
+```
+
+We take these three sets of submarket data (properties, daily and occupancy rates) and use a custom function (**abbImputeDaily()**) to impute the missing days. The results of each of these submarkets are then collapse into a single data.frame.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+
+ ## Create blank capture list
+
+  subm.list <- list()
+
+ ## Loop through submarkets
+
+  for(j in 1:length(subm.prop)){
+    subm.list[[j]] <- abbImputeDaily(prop.df=subm.prop[[j]],
+                                     daily.df=subm.daily[[j]],
+                                     rates.df=subm.rates[[j]])
+  }
+
+ ## Collapse into a data.frame
+
+  imp.daily <- rbind.fill(subm.list)
+
+```
+
+After imputing the missing dates we join them to the observed daily data.  The imputed data can be recognized by the label 'imputed' in the booked.date field. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+
+ ## Combine all together
+
+  all.daily <- rbind(daily.data, imp.daily, o.daily)
+
+ ## 
+
+  prop.data <- rbind(prop.data, o.prop)
+
+```
