@@ -29,7 +29,10 @@
     
   }
   
+  # Set Raw path
   raw.path <- paste0(data.path, '/raw/')
+  
+  # Load the raw rent data
   rent16 <- read.csv(paste0(raw.path, 'rentData.csv'), header=T)
 
  ## Remove observations without sufficient keys
@@ -46,36 +49,37 @@
   
  ## Fix Dates  
   
-  r16$lastdate <- apmFixDates(r16$LastAdvertisedEventDate)
-  r16$eventdate <- apmFixDates(r16$EventDate)
-  r16$eventyear <- as.numeric(substr(r16$eventdate, 1, 4))
+  r16$last.adv.date <- apmFixDates(r16$LastAdvertisedEventDate)
+  r16$first.adv.date <- apmFixDates(r16$FirstAdvertisedEventDate)
+  r16$event.date <- apmFixDates(r16$EventDate)
+  r16$event.year <- as.numeric(substr(r16$event.date, 1, 4))
   
  ## Remove those not occuring in 2015 or later
   
-  r16 <- r16[r16$eventyear >= 2014, ]
+  r16 <- r16[r16$event.year > 2014, ]
   
  ## Add an identifier that signifies last record in a set of advertisements (of record)  
     
-  r16 <- r16[order(r16$eventdate, decreasing=T), ]
+  r16 <- r16[order(r16$event.date, decreasing=T), ]
   r16 <- r16[order(r16$id.key), ]
-  r16$AID <- paste0(r16$id.key, '..', r16$lastdate)
+  r16$AID <- paste0(r16$id.key, '..', r16$last.adv.date)
   r16$of.record <- ifelse(duplicated(r16$AID), 0 ,1)
   
  ## Split into property data and listing data
   
-  prop.data <- r16[r16$of.record == 1,]
-  list.data <- r16[, c('id.key', 'EventID', 'ActivityID', 'AddressID', 'of.record',
-                       'eventdate', 'EventPrice', 'FirstAdvertisedEventDate',
-                       'FirstAdvertisedEventPrice', 'LastAdvertisedEventDate',
-                       'LastAdvertisedEventPrice', 'EventTypeCode')]
+  ltr.data <- r16[r16$of.record == 1,]
+  listing.data <- r16[, c('id.key', 'EventID', 'ActivityID', 'AddressID', 'of.record',
+                          'event.date', 'EventPrice', 'first.adv.date',
+                          'FirstAdvertisedEventPrice', 'last.adv.date',
+                          'LastAdvertisedEventPrice', 'EventTypeCode')]
   
   ## Remove extra fields from property data
   
-  prop.data <- prop.data[, c('id.key', 'GeographicalID', 'EventID', 'AddressID', 
+  ltr.data <- ltr.data[, c('id.key', 'GeographicalID', 'EventID', 'AddressID', 
                              'ActivityID', 'FlatNumber', 'StreetNumber', 'StreetName',
                              'StreetType', 'Suburb', 'Postcode', 'Property_Latitude', 
                              'Property_Longitude', 'Street_Centroid_Latitude',
-                             'Street_Centroid_Longitude', 'EventDate', 'EventPrice',
+                             'Street_Centroid_Longitude', 'event.date', 'EventPrice',
                              'PropertyType', 'AreaSize', 'Bedrooms', 'Baths',
                              'Parking', 'HasStudy', 'HasCourtyard', 'HasBalcony',
                              'HasAirConditioning', 'HasGarage')]
@@ -83,16 +87,16 @@
  ## Add days on Market
   
   # Fix id.key
-  list.data$id.key <- as.character(list.data$id.key)
+  listing.data$id.key <- as.character(listing.data$id.key)
   
   # Calculate all maximums
-  list.max <- as.data.frame(tapply(list.data$eventdate, 
-                                   list.data$id.key, 
+  list.max <- as.data.frame(tapply(listing.data$event.date, 
+                                   listing.data$id.key, 
                                    max))
   
   # Calculate all minimums
-  list.min <- as.data.frame(tapply(list.data$eventdate, 
-                                   list.data$id.key, 
+  list.min <- as.data.frame(tapply(listing.data$event.date, 
+                                   listing.data$id.key, 
                                    min))
   
   # Calc the DOM and convert to a data.frame
@@ -102,12 +106,16 @@
   names(dom.df)[2] <- 'dom'
   
   # Add to property data
-  prop.data$DOM <- dom.df$dom[match(prop.data$id.key, dom.df$id.key)]
+  ltr.data$DOM <- dom.df$dom[match(ltr.data$id.key, dom.df$id.key)]
+  
+  # Convert all names to lower case
+  names(ltr.data) <- tolower(names(ltr.data))
+  names(listing.data) <- tolower(names(listing.data))
   
  ## Write out data
   
-  data.path <- 'c:/dropbox/research/airBNB/data/prepared/'
-  write.csv(prop.data, paste0(data.path, 'ltpropdata.csv'), row.names=FALSE)
-  write.csv(list.data, paste0(data.path, 'ltlistdata.csv'), row.names=FALSE)
+  export.path <- paste0(data.path, '/prepared/')
+  save(ltr.data, file=paste0(data.path, 'ltpropdata.RData'))
+  save(listing.data, file=paste0(data.path, 'ltlistdata.RData'))
   
  

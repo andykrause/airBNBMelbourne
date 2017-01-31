@@ -1,60 +1,33 @@
 ##########################################################################################
 #                                                                                        #    
-#  Functions for working with APM and AirDNA data                                        #
+#  Custom functions for working with APM and AirDNA data in the ABB Project              #
 #                                                                                        #
 ##########################################################################################
-
-### Analyze the daily data for each property ---------------------------------------------
-
-abbAnalyzeDaily <- function(daily.df){
-  
- ## Calculate minimum and maximum dates in the range  
-  
-  min <- min(daily.df$date)
-  max <- max(daily.df$date)
-  
- ## Calculate the Total days, and count each status  
-  
-  total.days <- nrow(daily.df)
-  blocked <- length(which(daily.df$status == 'B'))
-  available <- length(which(daily.df$status == 'A'))
-  reserved <- length(which(daily.df$status == 'R'))
-  
- ## Return as a data.frame  
-  
-  return(data.frame(property.id = unique(daily.df$property.id),
-                    min.date = min,
-                    max.date = max,
-                    total.days = total.days,
-                    blocked.days = blocked,
-                    available.days = available,
-                    reserved.days = reserved))
-}
 
 ### Calculate the occupancy rates for each date in a range -------------------------------
 
 abbCalcDateRates <- function(daily.df){
   
- ## Create table of counts by status
+  ## Create table of counts by status
   
   status.table <- table(daily.df$date, daily.df$status)
   
- ## Convert to a data.frame  
+  ## Convert to a data.frame  
   
   status.df <- data.frame(Avail=status.table[,1],
                           Resv=status.table[,2],
                           Block=status.table[,3],
                           lp.type=daily.df$lp.type[1])
   
- ## Add date   
+  ## Add date   
   
   status.df$date <- as.Date(rownames(status.df))
   
- ## Add reserved rate (occupancy rate)  
+  ## Add reserved rate (occupancy rate)  
   
   status.df$occ.rate <- status.df$Resv / (status.df$Resv + status.df$Avail)
   
- ## Return values  
+  ## Return values  
   
   return(status.df)
   
@@ -70,17 +43,17 @@ abbImputeDaily <- function(prop.df,
   # daily.df: data.frame of existing AirBNB daily observations
   # rates.df: data.frame of daily rate data (from abbCalcDateRates() function)
   
- ## Isolate those needing imputation  
+  ## Isolate those needing imputation  
   
   # Isolate
   imp.df <- prop.df[prop.df$impute != 'no',]
-
+  
   # Compute property specific rates
   imp.df$avail.rate <- imp.df$available.days/imp.df$total.days
   imp.df$block.rate <- imp.df$blocked.days/imp.df$total.days
   imp.df$resv.rate <- imp.df$reserved.days/imp.df$total.days
   
- ## Loop through each property and impute  
+  ## Loop through each property and impute  
   
   # Create capture list
   imp.list <- list()
@@ -106,7 +79,7 @@ abbImputeDaily <- function(prop.df,
     i.resrate <- i.imp$resv.rate * resv.adj
     i.blockrate <- i.imp$block.rate
     i.availrate <- 1 - i.blockrate - i.resrate
-
+    
     # Create an day-wise adjustment figure for each day
     miss.adj <- miss.rates$occ.rate / mean(miss.rates$occ.rate)
     
@@ -118,7 +91,7 @@ abbImputeDaily <- function(prop.df,
       block.count <- block.count + avail.count
       avail.count <- 0
     }
-  
+    
     # Select a random # of blocked dates
     blocked <- sample(1:length(miss.days), block.count)
     
@@ -169,11 +142,11 @@ abbImputeDaily <- function(prop.df,
     imp.list[[i.i]] <- new.daily
   }
   
- ## Convert to a data.frame
+  ## Convert to a data.frame
   
   imp.daily <- rbind.fill(imp.list)
   
- ## Return Values  
+  ## Return Values  
   
   return(imp.daily)
   
@@ -185,20 +158,124 @@ apmFixDates <- function(x.date){
   
   # x.date:  date vector
   
- ## Convert to character (from factor or numberic)
+  ## Convert to character (from factor or numberic)
   
   temp.date <- as.character(x.date)
-
- ## Remove Time suffixes  
+  
+  ## Remove Time suffixes  
   
   temp.date <- str_replace_all(temp.date, ' 0:00', '')
   
- ## Standardize all years to 2000s  
+  ## Standardize all years to 2000s  
   
   temp.date <- str_replace_all(temp.date, '/20', '/')
   
- ## Return values as date format  
+  ## Return values as date format  
   
   return(as.Date(temp.date, "%d/%m/%y"))   
 }
+
+### Calculate the booking status ---------------------------------------------------------
+
+abbCalcBookStr <- function(id, 
+                           book.data){
+  
+  id.book.data <- book.data[book.data$property.id == id, ]
+  id.data <- id.book.data$status
+  
+  if(length(id.data) > 1){
+    
+    # Find min and max date
+    id.min <- min(id.book.data$date)
+    id.max <- max(id.book.data$date)
+    
+    # Divide by status and collapse
+    status.string <- id.data[1]
+    
+    for(ss in 2:length(id.data)){
+      
+      if(id.data[ss] == id.data[[ss - 1]]){
+        status.string <- paste0(status.string, id.data[[ss]])
+      } else {
+        status.string <- paste0(status.string, '.' ,id.data[[ss]])
+      }
+    }
+    
+    # Collapse into list objects
+    ss.list <- as.list(strsplit(status.string, '[.]')[[1]])
+    
+    # Grab the first status of each
+    sg.obj <- substr(ss.list[[1]], 1, 1)
+    for(sg in 1:length(ss.list)){
+      sg.obj[sg] <- substr(ss.list[[sg]], 1, 1)  
+    }
+    
+    # Find location of three types
+    id.B <- which(unlist(sg.obj) == 'B')
+    id.R <- which(unlist(sg.obj) == 'R')
+    id.A <- which(unlist(sg.obj) == 'A')
+    
+    # Extract
+    if(length(id.R) > 0){
+      r.list <- ss.list[id.R]
+    }
+    if(length(id.A) > 0){
+      a.list <- ss.list[id.A]
+      avails <- unlist(lapply(a.list, nchar))
+      avail.rate <- sum(avails) / length(id.data)
+      
+    } else {
+      
+      avail.rate <- 0
+      
+    }
+    
+    if(length(id.B) > 0){
+      b.list <- ss.list[id.B] 
+      
+      # Count longest and blocked times
+      blocks <- unlist(lapply(b.list, nchar))
+      
+      block.rate <- sum(blocks) / length(id.data)
+      longest.block <- max(blocks)
+      med.block <- median(blocks)
+      nbr.block <- length(id.B)
+      
+    } else {
+      
+      block.rate <- 0
+      longest.block <- 0
+      med.block <- 0
+      nbr.block <- 0
+      
+    }
+    
+    total.days <- length(id.data)  
+    
+  } else {
+    
+    block.rate <- NA
+    longest.block <- NA
+    med.block <- NA
+    nbr.block <- NA
+    total.days <- NA
+    id.min <- NA
+    id.max <- NA
+    avail.rate <- NA
+
+  }  
+  
+  ## Return Values
+  
+  return(data.frame(id=id,
+                    min.date=id.min,
+                    max.date=id.max,
+                    total.days=total.days,
+                    block.rate=block.rate,
+                    avail.rate=avail.rate,
+                    longest.block=longest.block,
+                    nbr.block=nbr.block,
+                    med.block=med.block))
+}
+
 

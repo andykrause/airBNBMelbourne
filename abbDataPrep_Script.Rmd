@@ -1,150 +1,242 @@
 ---
-title: "AirBNB Data Preparation and Imputation"
-output: html_notebook
+title: "Data Preparation, Integration and Cleaning"
+output:
+  html_document: default
+  html_notebook: default
 ---
 
 ### Introduction
 
-This file details the initial data preparation that we have applied to the AirBNB nightly data from www.AirDNA.co as well as to the long-term rental data from Australia Property Monitors (APM). This is not a 'data cleaning' exercise as we are not removing data points based on observed values.
+This file details the initial data preparation and cleaning that we have applied to the AirBNB nightly data from www.AirDNA.co as well as to the long-term rental data from Australia Property Monitors (APM).  Both datasets have had some initial pre-processing done, the details of which are found in **abb_str_PreProcess.R** and **abb_ltr_PreProcess.R**. 
 
 &nbsp;
 &nbsp;
 
-### Setup
+### Preliminary Commands
 
-We begin by loading the necessary libraries, set the path to the data and loading a set of custom data munging functions. 
+&nbsp;
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE}
+We begin with a number of preliminary commands.  First we load all of the necessary R libraries for this analysis. 
 
- ## Load libraries
- 
+```{r load_libraries, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+
   library(spdep)
   library(maptools)
   library(gstat)
   library(ggplot2)
+  library(geosphere)
   library(ggmap)
   library(xtable)
   library(chron)
-  library(RColorBrewer)
   library(plyr)
+  library(sp)
+  library(rgeos)
+  library(reshape2)
   library(stringr)
+  library(RColorBrewer)
+  library(Hmisc)
 
- ## Set location
+```
+
+We then set the paths to the data and the code, conditional on which of the authors is running the analysis.
+
+```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
   # Get computer names
+
   comp.name <- Sys.info()['nodename']
 
   # Assign path based on computer name
-  if(comp.name == '7020D-121777-W' | 
-      comp.name == 'DESKTOP-1D7JO4J'){
   
-      data.path <- 'c:/dropbox/research/airBNB/data/'
+  if(comp.name == '7020D-121777-W' | comp.name == 'DESKTOP-1D7JO4J'){
+  
+    data.path <- 'c:/dropbox/research/airBNB/data/'
+    code.path <- 'c:/code/'
 
   } else {
-    
-      data.path <- 'other path'
   
+    data.path <- 'alternate data path'
+    code.path <- 'alternate data path'
+    
   }
 
- ## Load sources
+```
+ 
+Next, we source the necessary custom code files for the analysis.  
+  
+```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
-  source("c:/code/research/airbnbMelbourne/dataPrep_Functions.R")
+ # Current Project files
+
+  source(paste0(code.path, "research/AirBNBMelbourne/abb_Functions.R"))
+
+ # Other custom files
+
+  source(paste0('https://raw.githubusercontent.com/andykrause/dataVizTools',
+                '/master/ggPlotTools.R'))
+  source(paste0('https://raw.githubusercontent.com/andykrause/datamgmttools',
+                '/master/dataMungeTools.R'))
+  source(paste0('https://raw.githubusercontent.com/andykrause/spatialTools',
+                '/master/spatialLogitModels.R'))
+  source(paste0('https://raw.githubusercontent.com/andykrause/spatialTools',
+                '/master/point2surface_Tools.R'))
 
 ```
 
-&nbsp;
-&nbsp;
+We then set the constants used in this study:
 
-## Short Term (Airbnb) Data
+1. **Exchange rate**: The Airbnb rates are provided in US dollars.  We convert these to Australian dollars based on the average exchange rate over the Sep 1 2015 to Aug 30 2015 period, or about 1.32 Australian dollars to 1 US dollar.
 
-We begin the data preparation with the Airbnb data.
+```{r set_constants, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
-### Load data
-
-Next we load the raw property level and nightly level AirBNB reservation data received from AirDNA.  
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
-
- ## Property Information
-
-  prop.data <- read.csv(paste0(data.path, '/raw/melbproperties.csv'), header=T)
-
-  ## Daily rental information
-
-  daily.data  <- read.csv(paste0(data.path, '/raw/melbDaily.csv'), header=T)
+  exch.rate <- 1.32  
 
 ```
 
+## Loading data
+
 &nbsp;
-&nbsp;
 
-### Data Transformations
+Next we load in the raw data.  The short-term rental (Airbnb) data is found in two separate files, one providing information on the property itself and one providing a daily record of bookings.  
+```{r load_str_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-To make future coding easier, we convert all field names to lower case.
+  # Property Information
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+  str.data <- read.csv(paste0(data.path, '/prepared/propdata.csv'), header=T)
 
-  names(prop.data) <- tolower(names(prop.data))
-  names(daily.data) <- tolower(names(daily.data))
+  # Daily ltral information
+
+  daily.data  <- read.csv(paste0(data.path, '/prepared/dailydata.csv'), header=T)
 
 ```
 
-We also then convert date values into correct R formatted dates. We also create a year created variable for the property data. 
+We then load the long term rental data.  This includes property level data (including the final lease rate) and listing-level data containing information on all changes to listing prices and dates, etc. 
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+```{r load_ltr_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- ## Daily data
+ # Property level long term ltral information
 
-  daily.data$date <- as.Date(daily.data$date)
+  ltr.data <- read.csv(paste0(data.path, '/prepared/ltpropdata.csv'), header=T)
 
- ## Property level data
+ # Long term ltral listing information
 
-  prop.data$created.date <- as.Date(prop.data$created.date)
-  prop.data$created.year <- as.numeric(substr(prop.data$created.date, 1, 4))
+  listing.data <- read.csv(paste0(data.path, '/prepared/ltlistdata.csv'), header=T)
+
+```
+
+And, finally, we load three GIS shapefiles.  The first two denote suburb and Statistical Area 1 (sa1) boundaries in the Melbourne area. We also load a shapefile that contains the location of the beach areas along Port Phillip Bay.^[Only those east of the mouth of Yarra River as those to the west are primarily industrial land.]  After we load each we convert the names of the data fields to lower case for easier use in future coding. 
+
+```{r load_sp_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Suburb shapefile
+
+  suburbs.shp <- readShapePoly(paste0(data.path, 'geographic/melbSuburbs.shp'),
+                               proj4string=CRS("+init=epsg:4283"),
+                               delete_null_obj=TRUE)
+  names(suburbs.shp@data) <- tolower(names(suburbs.shp@data))
+  
+  # SA1 shapefile
+
+  sa1s.shp <- readShapePoly(paste0(data.path, 'geographic/sa1s.shp'),
+                            proj4string=CRS("+init=epsg:4283"),
+                            delete_null_obj=TRUE)
+  names(sa1s.shp@data) <- tolower(names(sa1s.shp@data))
+  
+  # Beach file
+
+  beach.shp <- readShapePoly(paste0(data.path, 'geographic/portPhillipBeach.shp'),
+                             proj4string=CRS("+init=epsg:4283"),
+                             delete_null_obj=TRUE)
+  names(beach.shp@data) <- tolower(names(beach.shp@data))
   
 ```
 
+## Data Preparation
+
 &nbsp;
+
+In this section we remove, convert and/or transform a number of data fields.  We also remove observations if they are missing critical data or fall outside of the scope of our research question. 
+
 &nbsp;
 
-### Add Summary Information
+### Trim and Standardize Fields
 
-We now add summary information regarding the number of bookings, number of free and blocked nights to the property level data.  This information will assist in future imputation exercises and other analyses. 
+The data contain many fields that are either not fully observed and/or are not relevant to our research question.  Additionally, the field naming conventions differ between the two datasets. We first remove unnecessary or unobserved fields and then employ a systematic field naming functions across all datasets.
 
-We start by splitting the daily date into a list where each object is a data.frame of daily observations for a particular property. 
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+We start by trimming the property-level short term data.  No fields need to be removed from the daily data. 
   
-  daily.prop <- split(daily.data, daily.data$property.id)
+```{r trim_st, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str.keep.flds <- c('property.id', 'host.id', 'listing.title', 'property.type',
+                     'listing.type', 'created.date', 'latitude', 'longitude',
+                     'last.scraped.date', 'average.daily.rate', 'overall.rating',
+                     'max.guests', 'cancellation.policy', 'cleaning.fee',
+                     'published.nightly.rate', 'published.weekly.rate', 
+                     'published.monthly.rate', 'minimum.stay',
+                     'bedrooms', 'bathrooms', 'min.date', 'max.date', 'total.days',
+                     'blocked.days', 'available.days', 'created.year') 
+  
+  str.data <- str.data[, str.keep.flds]
 
 ```
 
-Next, we apply the **abbAnalyzeDaily()** function to each data.frame of daily observations. This process produces a list of results, by property.id.  These lists are then collapsed into a single data.frame.
+We then limit the fields of the long-term property-specific data
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+```{r trim_lt, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  daily.summ.list <- lapply(daily.prop, abbAnalyzeDaily)
-  daily.summ <- rbind.fill(daily.summ.list)
+  ltr.keep.flds <- c('id.key', 'geographicalid', 'eventid', 'addressid', 'activityid',
+                      'flatnumber', 'streetnumber', 'streetname', 'streettype', 
+                      'suburb', 'postcode', 'property_latitude',
+                      'property_longitude', 'street_centroid_latitude',
+                      'street_centroid_longitude', 'eventdate', 'eventprice',
+                      'propertytype', 'areasize', 'bedrooms', 'baths', 'parking',
+                      'hasstudy', 'hascourtyard', 'hasbalcony', 'hasairconditioning',
+                      'hasgarage', 'dom') 
+  
+
+  ltr.data <- ltr.data[,ltr.keep.flds]
+  
+```
+
+Next we standardize the field names.  Here we follow the short-term data convention of placing a period between words in the name.  We also shorten a number of the fields to make future coding easier.  
+
+For the short term data, it already uses the *word-.-word* convention.  Here our renaming is done to shorten certain field names. No changes are made to the names of the Airbnb daily data. 
+
+```{r rename_st, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+  
+  names(str.data) <- c('property.id', 'host.id', 'listing.title', 'property.type',
+                       'listing.type', 'created.date', 'latitude', 'longitude',
+                       'last.scraped.date', 'average.daily.rate', 'overall.rating',
+                       'max.guests', 'cancel.policy', 'cleaning.fee',
+                       'nightly.rate', 'weekly.rate', 'monthly.rate', 'min.stay',
+                       'bedrooms', 'baths', 'min.date', 'max.date', 'total.days',
+                       'blocked.days', 'available.days', 'created.year')
 
 ```
 
-Finally, we add the summarized data to the existing property-level information.
+Periods are inserted between relevant words for the ltral data. 
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
+```{r rename_lt, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+  
+  names(ltr.data) <- c('id.key', 'geographical.id', 
+                        'event.id', 'address.id', 'activity.id',
+                        'flat.number', 'street.number', 'street.name', 'street.type',
+                        'suburb', 'postcode', 'latitude', 'longitude',
+                        'street.latitude', 'street.longitude', 'event.date',
+                        'event.price', 'property.type', 'area.size', 'bedrooms',
+                        'baths', 'parking', 'has.study', 'has.courtyard',
+                        'has.balcony', 'has.aircond', 'has.garage', 'dom')
 
-  prop.data <- merge(prop.data, daily.summ, by='property.id')
+  names(listing.data) <- c('id.key', 'event.id', 'activity.id', 'address.id', 
+                           'of.record', 'event.date', 'event.price', 'first.adv.date', 
+                           'first.adv.price', 'last.adv.date', 'last.adv.price',
+                           'event.type')
 
 ```
 
 &nbsp;
-&nbsp;
 
-Finally, we write the amended daily and property data to .csv files for future analysis. 
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, cache=TRUE}
 
- write.csv(all.daily, paste0(data.path, 'prepared/dailydata.csv'), row.names=FALSE)
 
- write.csv(prop.data, paste0(data.path, 'prepared/propdata.csv'), row.names=FALSE)
 
-```
