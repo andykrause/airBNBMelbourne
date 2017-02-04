@@ -6,14 +6,7 @@
 
  ## Load libraries
 
-  library(spdep)
-  library(maptools)
-  library(gstat)
-  library(ggplot2)
-  library(ggmap)
-  library(xtable)
   library(chron)
-  library(RColorBrewer)
   library(plyr)
   library(stringr)
 
@@ -73,10 +66,12 @@
   
   # Add summary data to property data
   
-  str.data <- merge(str.data, daily.summ, by='property.id')
+  str.data <- merge(str.data, daily.summ, 
+                    by.x='property.id',
+                    by.y='id')
 
  ## Write out data  
 
-  save(str.data, file=paste0(data.path, 'stpropdata.RData'))
-  save(daily.data, file=paste0(data.path, 'stdailydata.RData'))
+  save(str.data, file=paste0(data.path, 'prepared/stpropdata.RData'))
+  save(daily.data, file=paste0(data.path, 'prepared/stdailydata.RData'))
   

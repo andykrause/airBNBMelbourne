@@ -1,8 +1,9 @@
 ---
 title: "Data Preparation, Integration and Cleaning"
 output:
-  html_document: default
+  pdf_document: default
   html_notebook: default
+  html_document: default
 ---
 
 ### Introduction
@@ -52,11 +53,13 @@ We then set the paths to the data and the code, conditional on which of the auth
   
     data.path <- 'c:/dropbox/research/airBNB/data/'
     code.path <- 'c:/code/'
+    fig.path <- 'c:/dropbox/research/airBNB/figures/'
 
   } else {
   
     data.path <- 'alternate data path'
     code.path <- 'alternate data path'
+    fig.path <- 'alternate data path'
     
   }
 
@@ -93,6 +96,27 @@ We then set the constants used in this study:
 
 ```
 
+Finally, we set the color to be used in the analysis.  We use AirBnb's official palette of 10 colors.
+
+```{r set_colors, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
+
+ # Set all colors
+
+  abb.colors.names=c('rausch', 'hackberry', 'kazan', 'babu', 'lima', 'beach',
+                     'ebisu', 'tirol', 'foggy', 'hof')
+  abb.col <- c(rgb(250,88,99, maxColorValue=255), rgb(139,14,82, maxColorValue=255),
+               rgb(0,117,140, maxColorValue=255), rgb(4,211,191, maxColorValue=255), 
+               rgb(77,226,110, maxColorValue=255), rgb(252,179,14, maxColorValue=255),
+               rgb(249,177,139, maxColorValue=255), rgb(191,166,100, maxColorValue=255),
+               rgb(156,161,155, maxColorValue=255), rgb(86,94,97, maxColorValue=255))
+
+  # Set specific colors
+  
+  str.col <- abb.col[1]
+  ltr.col <- abb.col[3]
+  
+```
+
 ## Loading data
 
 &nbsp;
@@ -102,11 +126,11 @@ Next we load in the raw data.  The short-term rental (Airbnb) data is found in t
 
   # Property Information
 
-  str.data <- read.csv(paste0(data.path, '/prepared/propdata.csv'), header=T)
+  load(paste0(data.path, 'prepared/stpropdata.RData'))
 
-  # Daily ltral information
+  # Daily rental information
 
-  daily.data  <- read.csv(paste0(data.path, '/prepared/dailydata.csv'), header=T)
+  load(paste0(data.path, 'prepared/stdailydata.RData'))
 
 ```
 
@@ -116,11 +140,11 @@ We then load the long term rental data.  This includes property level data (incl
 
  # Property level long term ltral information
 
-  ltr.data <- read.csv(paste0(data.path, '/prepared/ltpropdata.csv'), header=T)
+  load(paste0(data.path, 'prepared/ltpropdata.RData'))
 
  # Long term ltral listing information
 
-  listing.data <- read.csv(paste0(data.path, '/prepared/ltlistdata.csv'), header=T)
+  load(paste0(data.path, 'prepared/ltlistdata.RData'))
 
 ```
 
@@ -155,7 +179,7 @@ And, finally, we load three GIS shapefiles.  The first two denote suburb and Sta
 
 &nbsp;
 
-In this section we remove, convert and/or transform a number of data fields.  We also remove observations if they are missing critical data or fall outside of the scope of our research question. 
+In this section we remove, convert and/or transform a number of data fields. We also remove observations if they are missing critical data or fall outside of the scope of our research question. 
 
 &nbsp;
 
@@ -169,12 +193,13 @@ We start by trimming the property-level short term data.  No fields need to be r
 
   str.keep.flds <- c('property.id', 'host.id', 'listing.title', 'property.type',
                      'listing.type', 'created.date', 'latitude', 'longitude',
-                     'last.scraped.date', 'average.daily.rate', 'overall.rating',
+                     'average.daily.rate', 'overall.rating',
                      'max.guests', 'cancellation.policy', 'cleaning.fee',
                      'published.nightly.rate', 'published.weekly.rate', 
                      'published.monthly.rate', 'minimum.stay',
                      'bedrooms', 'bathrooms', 'min.date', 'max.date', 'total.days',
-                     'blocked.days', 'available.days', 'created.year') 
+                     'block.rate', 'avail.rate', 'longest.block', 'nbr.block', 
+                     'med.block', 'created.year') 
   
   str.data <- str.data[, str.keep.flds]
 
@@ -188,13 +213,13 @@ We then limit the fields of the long-term property-specific data
                       'flatnumber', 'streetnumber', 'streetname', 'streettype', 
                       'suburb', 'postcode', 'property_latitude',
                       'property_longitude', 'street_centroid_latitude',
-                      'street_centroid_longitude', 'eventdate', 'eventprice',
+                      'street_centroid_longitude', 'event.date', 'eventprice',
                       'propertytype', 'areasize', 'bedrooms', 'baths', 'parking',
                       'hasstudy', 'hascourtyard', 'hasbalcony', 'hasairconditioning',
                       'hasgarage', 'dom') 
   
 
-  ltr.data <- ltr.data[,ltr.keep.flds]
+  ltr.data <- ltr.data[ ,ltr.keep.flds]
   
 ```
 
@@ -206,11 +231,12 @@ For the short term data, it already uses the *word-.-word* convention.  Here our
   
   names(str.data) <- c('property.id', 'host.id', 'listing.title', 'property.type',
                        'listing.type', 'created.date', 'latitude', 'longitude',
-                       'last.scraped.date', 'average.daily.rate', 'overall.rating',
+                       'average.daily.rate', 'overall.rating',
                        'max.guests', 'cancel.policy', 'cleaning.fee',
                        'nightly.rate', 'weekly.rate', 'monthly.rate', 'min.stay',
                        'bedrooms', 'baths', 'min.date', 'max.date', 'total.days',
-                       'blocked.days', 'available.days', 'created.year')
+                       'block.rate', 'avail.rate', 'longest.block', 'nbr.block', 
+                       'med.block', 'created.year')
 
 ```
 
@@ -236,7 +262,991 @@ Periods are inserted between relevant words for the ltral data.
 
 &nbsp;
 
+### Trim by Time
+
+Next we trim the observations by time.  Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term rental versus an AirBNB, short term rental approach to generating income.  To determine the likely long term rental rate for any given property, we will use the observed rental transactions from the market from September 1, 2014 to August 31, 2015.  Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.  Another reason for using these two period of data is that the AirBNB data has missing daily values prior to September 1, 2015.  While we have imputed these missing daily observations, we hold the actual observed values to be of greater accuracy and have designed the initial simulated example to take advantage of the full observed set. 
+
+Before we begin the filter process, we initial the data cleaning counter -- a small function that keeps track of how many observations we remove.  
+
+```{r initialCC, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  setCleanCount()
+
+```
+
+We then clip by time.  For the short-term data we will consider any Airbnb property that had at least 6 months worth of listing time on the portal during the 12-month study period
+
+```{r clip_time, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+ 
+ # Limit short term data
+  
+  str.data <- str.data[(str.data$max.date - str.data$min.date) >= 178, ]
+  str.data <- str.data[str.data$max.date >= '2016-03-01' &
+                         str.data$min.date <= '2016-03-01', ]
+  daily.data <- daily.data[daily.data$date >= '2015-09-01', ]
+
+ # Limit long term data  
+  
+  ltr.data <- ltr.data[ltr.data$event.date >= '2014-09-01' & 
+                            ltr.data$event.date <= '2015-08-31', ]
+  listing.data <- listing.data[listing.data$id.key %in% ltr.data$id.key, ]
+  
+ # Count cleaning
+  
+  countCleaning('time')
+  
+```
+
+Next we add a monthly variable to the data for use in future modeling exercises. 
+
+```{r add_month, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Short term data
+
+  str.data$str.month <- 1
+  daily.data$str.month <- as.numeric(as.factor(substr(daily.data$date, 1, 7)))
+
+  # Long term data
+
+  ltr.data$ltr.month <- as.numeric(as.factor(substr(ltr.data$event.date, 1, 7)))
+  listing.data$ltr.month <- as.numeric(as.factor(substr(
+    listing.data$event.date, 1, 7))) - 8
+  
+```
+
+### Standardize Property Types
+
+&nbsp;
+
+AirBNB units are classified into 19 different property type.  The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that the Igloo, at the very least, is not a completely true representation of the property type]. For the sake of this analysis, we will collapse these twenty types into three types:
+  
+1. **House**:  Includes properties labeled 'House' or 'Townhouse'
+2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium'
+3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt. 
+
+Within the long-term rental data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories:
+  
+1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse'
+2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio'
+3. **Other**: Includes properties labeled as 'Semi' and 'Villa'
+
+Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the AirBNB data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure).  Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context. 
+
+We then create a new variable in each dataset and give each one of the three categories discussed above.
+
+```{r fix_type, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Short Term data  
+
+  str.data$type <- 'Other'
+  str.data$type[str.data$property.type %in% c('Apartment', 'Condominium')] <- 'Apartment'
+  str.data$type[str.data$property.type %in% c('House', 'Townhouse')] <- 'House'
+
+ # Long Term data  
+
+  ltr.data$type <- 'Other'
+  ltr.data$type[ltr.data$property.type %in% c('Duplex', 'House',
+                                           'Terrace', 'Townhouse')] <- 'House'
+  ltr.data$type[ltr.data$property.type %in% c('Studio', 'Unit')] <- 'Apartment'
+
+```
+
+As the chart below show, the **Other** category only makes up a very small percentage of the properties in both the short and long term market, especially in the long-term market.  Additionally, a good portion of the **Others** in the Airbnb data are Bed & Breakfast units, a use which doesn't fit with our research question.  As a result, we remove the 'Others' from both the Airbnb and the long term rental data. 
+
+```{r plot_type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
+
+  # Create Airbnb plot
+
+  str.types <- ggplot(str.data, aes(x=type)) + 
+    geom_bar(color=str.col, fill=str.col) +
+    xlab('\nProperty Type\n') + 
+    ggtitle('\nShort Term Rentals\n')  +
+    ylab('# of Properties\n') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+
+  # Create long term rental plot
+
+  ltr.types <- ggplot(ltr.data, aes(x=type)) + 
+    geom_bar(color=ltr.col, fill=ltr.col) +
+    xlab('\nProperty Type\n') + 
+    ggtitle('\nLong Term Rentals\n')  +
+    ylab('# of Properties\n') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+
+  # Output plots
+  png(file=paste0(fig.path, 'dataclean_proptype.png'), width = 480, height = 280, 
+      bg='transparent')
+    ggMultiPlots(str.types, ltr.types, cols=2)
+  dev.off()
+  
+```
+
+```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
+
+  str.data <- subset(str.data, type != 'Other')
+  ltr.data <- subset(ltr.data, type != 'Other')
+  
+  # Count Cleaning
+  countCleaning('property.type')
+
+```
+
+Next, for the short term rentals properties can be listed as one of three types relating to the extent of the property which is able to be booked:
+
+1. **Entire Home/Apt**: The entire home or apartment is available
+2. **Private Room**: One room within a house or apartment is available
+3. **Shared Room**: A bed within a room shared by another occupant(s) is available
+
+As long-term rentals do not offer **Private Room** or **Shared Room** options^[Our dataset does not include rooming houses, purpose built student accomodations and other types of rental which may offer private or shared room options] and our purpose here is a comparison of long and short term returnw, we remove all short term properties that do not lease the entire home/apt. Unfortunately, this filter does remove about 40% of the short term data, however, given the research question it is unavoidable. 
+
+```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
+
+  # Fix data types and names
+  str.data$listing.type <- as.character(str.data$listing.type)
+  str.data$listing.type[str.data$listing.type == 'Entire home/apt'] <- 'Entire home'
+
+  # Make Plot
+  png(file=paste0(fig.path, 'dataclean_listtype.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    ggplot(str.data, aes(x=listing.type)) + 
+      geom_bar(color=str.col, fill=str.col) +
+      xlab('\nListing Type\n') + 
+      ggtitle('\nShort Term Rentals by Listing Type\n')  +
+      ylab('# of Properties\n') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+  
+  dev.off()
+  
+```
+
+```{r keep_entire_home, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str.data <- str.data[str.data$listing.type == 'Entire home', ]
+  
+  # Count cleaning 
+  countCleaning('listing.type')
+  
+```
+
+## Structural Characteristics
+
+&nbsp;
+
+In this section we transform and filter based on the structural characteristics of the properties. 
+
+### Fix Boolean Variables
+
+Before beginning, we fix a few of the boolean variables in the long term data that are stored in a non-compatible format.
+
+```{r fix_lt_bools, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ltr.data$has.study <- ifelse(ltr.data$has.study == 'True', 1, 0)
+  ltr.data$has.courtyard <- ifelse(ltr.data$has.courtyard == 'True', 1, 0)
+  ltr.data$has.aircon <- ifelse(ltr.data$has.aircon == 'True', 1, 0)
+  ltr.data$has.balcony <- ifelse(ltr.data$has.balcony == 'True', 1, 0)
+  ltr.data$has.garage <- ifelse(ltr.data$has.garage == 'True', 1, 0)
+
+```
+
+&nbsp;
+
+### Bedrooms
+
+We start by looking at bedrooms. We begin by removing all properties that are missing bedrooms information or have a likely data error in this fields (more than 14 bedrooms). We then plot the distribution of diffeltr bedrooms counts.  From this point onwards we bifurcate our analysis between houses and apartments as the markets (prices, rates, and properties) differ between the two property types. 
+
+```{r bed_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Remove missing and data errors
+
+  # Long term data
+  ltr.data <- ltr.data[!is.na(ltr.data$bedrooms), ]
+  ltr.data <- ltr.data[ltr.data$bedrooms <= 10, ]
+
+  # Short term data
+  str.data <- str.data[!is.na(str.data$bedrooms), ]
+  str.data <- str.data[str.data$bedrooms <= 10, ]
+
+```
+
+```{r bed_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
+
+ # Build long term bar plot
+
+   ltrbed <- ggplot(ltr.data, aes(x=bedrooms)) + 
+    geom_bar(fill=ltr.col, color=ltr.col) +
+    facet_wrap(~type,scales='free_y') +
+    scale_x_continuous(labels=1:10, breaks=1:10)+
+    xlab('\nBedrooms\n') +
+    scale_y_continuous(labels=c(0,10000,20000), 
+                       breaks=c(0,10000,20000))+
+    ylab('') +
+    ggtitle('Bedrooms in Long Term Rentals') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+ 
+ # Build short term bar plot
+
+  strbed <- ggplot(str.data, aes(x=bedrooms)) + 
+    geom_bar(fill=str.col, color=str.col) +
+    facet_wrap(~type,scales='free_y') +
+    scale_x_continuous(labels=0:10, breaks=0:10) +
+    xlab('\nBedrooms\n') +
+    ylab('') +
+    ggtitle('Bedrooms in Short Term Rentals') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+ 
+  # Make Plot
+  png(file=paste0(fig.path, 'dataclean_bedcount.png'), width = 480, height = 280, 
+      bg='transparent')
+    ggMultiPlots(strbed, ltrbed, cols=1)
+  dev.off()
+    
+```
+
+For both short and long term rentals we see that most apartments have less than 4 bedrooms and houses less than 5.  We filter the data accordingly. Additionally, note that short term rentals consider studio apartments to be 0 bed units while the long term data considers these as 1 bedroom. We convert the 0 bed short term units to 1 bed units.   
+
+```{r bed_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Remove all with more than 4 beds
+
+  str.data <- str.data[str.data$bedrooms < 5, ]
+  ltr.data <- ltr.data[ltr.data$bedrooms < 5, ]
+
+ # Remove apartments with more than 3
+  
+  str.id <- which(str.data$bedrooms > 3 & str.data$type =='Apartment')
+  ltr.id <- which(ltr.data$bedrooms > 3 & ltr.data$type =='Apartment')
+
+  if(length(str.id) > 0) str.data <- str.data[-str.id, ]
+  if(length(ltr.id) > 0) ltr.data <- ltr.data[-ltr.id, ]
+
+  # Convert 0 Bed to 1 Bed  
+  str.data$bedrooms[str.data$bedrooms == 0] <- 1
+  
+  # Count Data Cleaning
+  countCleaning('bedrooms')
+
+```
+
+### Bathrooms
+
+We then turn to bathrooms, starting by looking at the distribution of baths between short/long and apt/house.  
+
+```{r bath_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Remove missing data
+  
+  ltr.data <- ltr.data[!is.na(ltr.data$baths), ]
+  str.data <- str.data[!is.na(str.data$baths), ]
+
+```
+
+```{r bath_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
+
+ # Build long term plot
+
+  ltbath <- ggplot(ltr.data, aes(x=baths)) + 
+    geom_bar(fill=ltr.col, color=ltr.col) +
+    facet_wrap(~type) +
+    scale_x_continuous(labels=1:8, breaks=1:8)+
+    xlab('\nBathrooms\n') +
+    ylab('') + 
+    ggtitle('Bathrooms in Long Term Rentals') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+
+ # Build short term plot 
+
+  stbath <- ggplot(str.data, aes(x=baths)) + 
+    geom_bar(fill=str.col, color=str.col) +
+    facet_wrap(~type, scales='free_y') +
+    scale_x_continuous(labels=0:8, breaks=0:8)+
+    xlab('\nBathrooms\n') +
+    ylab('') + 
+    ggtitle('Bathrooms in Short Term ltrals') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+ 
+ # Make Plots  
+  png(file=paste0(fig.path, 'dataclean_bathount.png'), width = 480, height = 280, 
+      bg='transparent')
+  
+    ggMultiPlots(stbath, ltbath, cols=1)
+    
+  dev.off()
+    
+```
+
+Here we see that nearly all properties have 3 or fewer bathrooms and we filter the data accordingly. A few short term properties state no baths, which is likely an error so we remove these as well. Also, here we notice that the short term data gives bathrooms in halves, while the long term data presents baths in whole numbers.  We round the baths up to whole integers. 
+
+```{r bath_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Filter by bath count
+
+  # Short term data
+  str.data <- str.data[str.data$baths < 4, ]
+  str.data <- str.data[str.data$baths > 0, ]
+
+  # Long term data
+  ltr.data <- ltr.data[ltr.data$baths < 4, ]
+  
+ # Round baths up  
+
+  str.data$baths <- round(str.data$baths + .01, 0)
+
+  # Count cleaning
+  countCleaning('baths')
+  
+```
+
+### Bed/Bath Combination
+
+In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short term ltral) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two. 
+
+```{r filtBB, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Create combination variable
+
+  ltr.data$bedbath <- paste0(ltr.data$bedrooms, '..', ltr.data$baths)
+  str.data$bedbath <- paste0(str.data$bedrooms, '..', str.data$baths)
+
+```
+
+```{r filtBB2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
+
+ # Make long term plot
+
+  ltbb <- ggplot(ltr.data, aes(x=bedbath)) + 
+    geom_bar(fill=ltr.col, color=ltr.col) +
+    xlab('\nBed/Bath Combo\n') +
+    ylab('Number of Properties\n') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    ggtitle('Long Term Rentals') + 
+    facet_wrap(~type, scales='free_y')+
+    theme(plot.title = element_text(hjust = 0.5))
+
+ # Make short term plots
+
+  stbb <- ggplot(str.data, aes(x=bedbath)) +
+    geom_bar(fill=str.col, color=str.col) + 
+    xlab('\nBed/Bath Combo\n') +
+    ylab('Number of Properties\n') +
+    ggtitle('Short Term Rentals') + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    facet_wrap(~type, scales='free_y')+
+    theme(plot.title = element_text(hjust = 0.5))
+
+ # Make Plots  
+  png(file=paste0(fig.path, 'dataclean_bedbath.png'), width = 480, height = 280, 
+      bg='transparent')
+  
+    ggMultiPlots(ltbb, stbb, cols=1)
+
+  dev.off()  
+    
+```
+
+From this analysis we see that there are 6 combinations that make up most all properties:  1bed/1bath, 2/1, 2/2, 3/1, 3/2 and 4/2. We filter the data to these combinations.  
+
+```{r filtBB3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Set level of acceptable combinations
+
+  acc.bb <- c('1..1', '2..1', '2..2', '3..1', '3..2', '4..2')
+
+ # Filter data
+
+  ltr.data <- ltr.data[ltr.data$bedbath %in% acc.bb, ]
+  str.data <- str.data[str.data$bedbath %in% acc.bb, ]
+
+ # Count Cleaning
+  
+  countCleaning('bedbath')
+
+```
+
+Finally, we re-order the factor levels on the bed/bath combinations to make a 2-bed, 2-bath house or apartment the control case in future statistical models.  We additionally create a product variable that splits the bed/bath by apartment and house.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Re-order factors
+
+  str.data$bedbath <- factor(str.data$bedbath, 
+                              levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
+  ltr.data$bedbath <- factor(ltr.data$bedbath, 
+                               levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
+
+  # Add product as a variable
+  
+  str.data$product <- paste0(substr(str.data$type, 1, 1), str.data$bedbath)
+  ltr.data$product <- paste0(substr(ltr.data$type, 1, 1), ltr.data$bedbath)
+
+```
 
 
+## Rates and Rental values
+
+We now turn to filtering by the prices -- the nightly rates and weekly rental values.  We start by removing observations missing price data. 
+
+```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ltr.data <- ltr.data[!is.na(ltr.data$event.price), ]
+  str.data <- str.data[!is.na(str.data$nightly.rate), ]
+  
+```
+
+Next, we convert the Airbnb values to Australian dollars from US dollars using the exchange rate specified above (1.32).
+
+```{r exch_rate_adj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Property level data
+
+  str.data$average.daily.rate <- str.data$average.daily.rate * exch.rate
+  str.data$nightly.rate <- str.data$nightly.rate * exch.rate
+  str.data$weekly.rate <- str.data$weekly.rate * exch.rate
+  str.data$monthly.rate <- str.data$monthly * exch.rate
+  
+  # Daily data
+  
+  daily.data$price <- daily.data$price * exch.rate
+
+```
+
+```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+  # ltr Plot
+  
+  ltr.plot <- ggplot(ltr.data, aes(x=event.price)) + 
+    geom_density(fill=ltr.col, alpha=.8) +
+    ylab('') +
+    xlab('Weekly Rental') + 
+    ggtitle('Long Term Rentals') + 
+    scale_x_continuous(limits=c(0, 1500)) +
+    theme(axis.title.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5))
 
 
+  # Nightly Rate plot
+  rate.plot <- ggplot(str.data, aes(x=nightly.rate)) + 
+    geom_density(fill=str.col, alpha=.8) + 
+    ylab('') +
+    xlab('Nightly Rate') +
+    ggtitle('Short Term Rentals') + 
+    scale_x_continuous(limits=c(0, 600)) +
+    theme(axis.title.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+  png(file=paste0(fig.path, 'dataclean_rates.png'), width = 480, height = 280, 
+      bg='transparent')
+    
+    ggMultiPlots(ltr.plot, rate.plot, cols=2)
+  
+  dev.off()
+  
+```
+
+From these density plots we see that most long-term Rentals are greater than $200 and less than $1000 per week while most nightly rates are greater than $50 and less than $500 per night. We filter the data accordingly. 
+
+```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Filter the long term data
+
+  ltr.data <- ltr.data[ltr.data$event.price >= 200 & 
+                         ltr.data$event.price <= 1000, ]
+
+ ## Filter the short term data
+
+  str.data <- str.data[str.data$nightly.rate >= 50 &
+                         str.data$nightly.rate <= 500, ]
+
+  # Count Cleaning
+  countCleaning('rates.rents')
+  
+```
+
+### Locations and Submarkets
+
+Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer).
+
+```{r mappoints, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Convert shapefile to ggplot-able object
+  
+  # Fix lat/long
+ 
+  # Limit to extent of data
+  sub.table <- table(ltr.data$suburb)
+  sub.table <- sub.table[sub.table != 0]
+  
+  # Clip to only those with a ltral observation
+  study.suburbs <- suburbs.shp[suburbs.shp@data$name_2006 %in% names(sub.table),]
+  
+  # Convert to an outer bound with holes
+  ss.bound <- gUnaryUnion(study.suburbs)
+  
+  # Remove holes from the shapefile
+  ssb <- slot(ss.bound, "polygons") 
+  holes <- lapply(ssb, function(x) sapply(slot(x, "Polygons"), 
+                                          slot, "hole"))
+  res <- lapply(1:length(ssb), function(i) slot(ssb[[i]], "Polygons")[!holes[[i]]]) 
+  IDs <- row.names(ss.bound) 
+  ssb.fill <- SpatialPolygons(lapply(1:length(res), function(i) 
+   Polygons(res[[i]], ID=IDs[i])), proj4string=CRS(proj4string(ss.bound))) 
+  
+  # Identify which suburbs all in area covered by outer bound
+  ss.in <- gIntersects(suburbs.shp, ssb.fill, byid=T)
+  study.suburbs <- suburbs.shp[which(ss.in), ]
+  
+  # Convert into an outer boundary with no holes
+  ss.bound.out <- gUnaryUnion(study.suburbs)
+  ssb.out <- slot(ss.bound.out, "polygons") 
+  holes <- lapply(ssb.out, function(x) sapply(slot(x, "Polygons"), 
+                                          slot, "hole"))
+  res.out <- lapply(1:length(ssb.out), 
+                    function(i) slot(ssb.out[[i]], "Polygons")[!holes[[i]]]) 
+  IDs <- row.names(ss.bound.out) 
+  ssb.fill.out <- SpatialPolygons(lapply(1:length(res.out), 
+                                         function(i) Polygons(res.out[[i]], 
+                                                              ID=IDs[i])),
+                                              proj4string=CRS(proj4string(ss.bound))) 
+  
+  # Convert into a ggplot-able format
+  subs <- fortify(study.suburbs, region='name_2006')
+
+  # Add suburb category
+  subs$des <- suburbs.shp@data$suburbdesi[
+    match(subs$id, suburbs.shp@data$name_2006)]
+
+```
+
+```{r mappoints2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+ ## Build the map object
+
+  # Set colors
+  g.cols <- abb.col[c(2, 10, 9)]
+
+  # Make map
+  loc.map <- ggplot() +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group, fill=des), alpha=.8) + 
+    scale_fill_manual(values=g.cols, labels=c('Inner      ',
+                                              'Middle      ',
+                                              'Outer')) +
+    geom_path(data=subs, aes(x=long, y=lat, group=group), col='gray40') +
+    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
+    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
+    xlab('') + ylab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank()) +
+    ggtitle("Melbourne Suburb Classifications")+
+    theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r plot_loc_map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=6}
+  png(file=paste0(fig.path, 'locationmap.png'), width = 480, height = 390, 
+      bg='transparent')
+  
+    loc.map
+    
+  dev.off()
+  
+  loc.map
+    
+```
+
+It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beach; and 2) Proximity to key tourist activities and events.  Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analysing short and long term ltrals in Melboure:
+
+1. Rural (Outer suburbs, not Beach)
+2. Suburban (Middle suburbs, not Beach)
+3. City (Inner Suburbs, not Beach, not Core)
+4. City-Core (Select inner suburbs with tourist activities and near CBD)
+5. Beach (Properties within 500m of Port Phillip Bay east of Yarra River)
+
+We assign these designations by: 1) Adding suburb designations to the properties; 2) Assigning submarkets 1-4 based on suburb location; and 3) Indicating proximity to beach and labeling as 'Beach' submarket.  This process is repeated for both the short and long term data.  We also add the Statistical Area 1 code for each property for use in additional spatial modeling later on. Finally, we also remove any observations that fall outside of outer suburbs (the extent of the suburbs). 
+
+We select the 18 suburbs below to represent the 'core' of the city.  The majority of tourist destinations and major events such as the Australian Open and the Grand Prix are located in these suburbs.  All are well serviced by public transportation and possess abundant amenties for tourists. 
+
+```{r core_suburbs, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ core.suburbs <- c('Albert Park', 'Carlton', 'Collingwood', 'Cremorne', 'Docklands',
+                   'East Melbourne', 'Fitzroy', 'Melbourne', 'Port Melbourne', 'Prahran',
+                   'Richmond', 'South Melbourne', 'South Yarra', 'Southbank', 'St Kilda',
+                   'St Kilda West', 'West Melbourne', 'Windsor')
+
+```
+
+We then apply a 500 meter buffer to the beach along Port Phillip Bay. 
+
+```{r beachbuffer, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Determine centroid of study area
+ 
+  latMid <- median(str.data$latitude)
+  longMid <- median(str.data$longitude)
+
+ # Calculate Degress to Meters conversion 
+ 
+  m.lat = 111132.954 - 559.822 * cos(2 * latMid) + 1.175 * cos(4 * latMid)
+  m.long = 111132.954 * cos (latMid)
+  m.conv <- mean(m.lat, m.long)
+ 
+ # Create the beach buffer  
+  
+  beach.buffer <- gBuffer(beach.shp, byid=FALSE, width=500/m.conv)
+
+```
+
+Next we assign the suburb, SA1, city-core and beach designations to observations in the Airbnb dataset.  
+
+```{r add_st_space, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Short term data  
+
+  # Convert to point shapefile
+  str.prop.shp <- SpatialPointsDataFrame(cbind(str.data$longitude,
+                                               str.data$latitude),
+                                         str.data,
+                                         proj4string=CRS("+init=epsg:4283")) 
+
+  # Add suburb name 
+  spJoin <- over(str.prop.shp, suburbs.shp)
+  str.data$suburb <- as.character(spJoin$name_2006)
+  str.data$suburb[is.na(str.data$suburb)] <- 'missing'
+
+  # Add suburb designation
+  str.data$sub.class <- as.character(spJoin$suburbdesi)
+  str.data$sub.class[is.na(str.data$sub.class)] <- 'missing'
+  
+  # Add SA1 designation
+  spJoin <- over(str.prop.shp, sa1s.shp)
+  str.data$sa1 <- spJoin$sa1_main11
+ 
+  ## Add Beach Designation
+  spJoin <- over(str.prop.shp, beach.buffer)
+  str.data$beach <- ifelse(is.na(spJoin), 0 ,1)
+  
+  # Remove those missing a suburb classification (out of area)
+  str.data <- str.data[str.data$sub.class != 'missing', ]
+  str.data <- str.data[str.data$sa1 != 'missing', ]
+
+```
+
+```{r convert_st_subm, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Add the submarket designations
+
+  # Add individual classes
+  str.data$sub.mrkt <- 'rural'
+  str.data$sub.mrkt[str.data$sub.class == 'Middle'] <- 'suburban'
+  str.data$sub.mrkt[str.data$sub.class == 'Inner'] <- 'city'
+  str.data$sub.mrkt[str.data$suburb %in% core.suburbs] <- 'city-core'
+  str.data$sub.mrkt[str.data$beach == 1] <- 'beach'
+  
+  # Order the factors properly
+  str.data$sub.mrkt <- factor(str.data$sub.mrkt, 
+                              levels=c('city-core', 'city', 'suburban', 
+                                        'rural', 'beach'))
+  
+```
+
+Before we do the same for the long term data, we must remedy the fact that about 5% of the long term rental observations have missing latitude and longitude values.  Half of these do, however, have a lat/long value for the centroid of the street that the property faces.  To retain as many observations as possible in these intial steps for those properties that lack a specific lat/long value we apply the street centroid value.  For those without either (3% of the total) we remove them from the dataset at this point. 
+
+```{r fix_ltt_geo, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Label those missing lat/long  
+
+  miss.LL <- which(is.na(ltr.data$latitude))  
+
+ # Create a field to indicate the approximate matches  
+
+  ltr.data$miss.LL <- 0
+  ltr.data$miss.LL[miss.LL] <- 1
+
+ # Apply approximate match    
+
+  ltr.data$latitude[miss.LL] <- ltr.data$street.latitude[miss.LL]
+  ltr.data$longitude[miss.LL] <- ltr.data$street.longitude[miss.LL]
+
+ # Remove those still missing latitude data   
+
+  ltr.data <- ltr.data[!is.na(ltr.data$latitude), ]
+
+```
+
+Having fixed the missing lat/long issue, we then assign the suburb, SA1, city-core and beach designations to observations in the long term rental dataset.  
+
+```{r add_lt_space, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Long term data  
+
+  # Convert to point shapefile
+
+  ltr.prop.shp <- SpatialPointsDataFrame(cbind(ltr.data$longitude,
+                                               ltr.data$latitude),
+                                         ltr.data,
+                                         proj4string=CRS("+init=epsg:4283")) 
+
+  # Add suburb name 
+  
+  spJoin <- over(ltr.prop.shp, suburbs.shp)
+  ltr.data$suburb <- as.character(spJoin$name_2006)
+  ltr.data$suburb[is.na(ltr.data$suburb)] <- 'missing'
+
+  # Add suburb designation
+  
+  ltr.data$sub.class <- as.character(spJoin$suburbdesi)
+  ltr.data$sub.class[is.na(ltr.data$sub.class)] <- 'missing'
+  
+  # Add SA1 designation
+  
+  spJoin <- over(ltr.prop.shp, sa1s.shp)
+  ltr.data$sa1 <- spJoin$sa1_main11
+ 
+  ## Add Beach Designation
+  
+  spJoin <- over(ltr.prop.shp, beach.buffer)
+  ltr.data$beach <- ifelse(is.na(spJoin), 0 ,1)
+  
+  # Remove those missing a suburb classification (out of area)
+  
+  ltr.data <- ltr.data[ltr.data$sub.class != 'missing', ]
+  ltr.data <- ltr.data[ltr.data$sa1 != 'missing', ]
+
+```
+
+```{r convert_lt_subm, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Add the submarket designations
+
+  # Add individual classes
+  ltr.data$sub.mrkt <- 'rural'
+  ltr.data$sub.mrkt[ltr.data$sub.class == 'Middle'] <- 'suburban'
+  ltr.data$sub.mrkt[ltr.data$sub.class == 'Inner'] <- 'city'
+  ltr.data$sub.mrkt[ltr.data$suburb %in% core.suburbs] <- 'city-core'
+  ltr.data$sub.mrkt[ltr.data$beach == 1] <- 'beach'
+  
+  # Order the factors properly
+  ltr.data$sub.mrkt <- factor(ltr.data$sub.mrkt, 
+                              levels=c('city-core', 'city', 'suburban', 
+                                        'rural', 'beach'))
+  
+  # Count Cleaning
+  countCleaning('location')
+  
+```
+
+The location of the short and long term rentals, colored by submarket, are shown below
+
+```{r locationmaps.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Set submarket colors
+  
+  sm.col <- abb.col[c(1, 3, 6, 5, 2)]
+
+  # Make map
+
+  str.map <- ggplot() +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
+    geom_point(data=str.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.2,
+               alpha=.2) +
+    scale_color_manual(values=sm.col) +
+    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
+    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
+    xlab('') + ylab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank()) +
+    guides(colour = guide_legend(override.aes = list(size=3,
+                                                     alpha=1))) + 
+    ggtitle('AirBNB Location\nBy Submarket')+
+    theme(plot.title = element_text(hjust = 0.5))
+  
+```
+
+```{r ltr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Make map
+
+  ltr.map <- ggplot() +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
+    geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.1,
+               alpha=.1) +
+    scale_color_manual(values=sm.col) +
+    scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
+    scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
+    xlab('') + ylab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank()) +
+    guides(colour = guide_legend(override.aes = list(size=3,
+                                                     alpha=1))) + 
+    ggtitle('Long Term Rental Location\nBy Submarket')+
+    theme(plot.title = element_text(hjust = 0.5))
+  
+```
+
+```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.width=9}
+  
+  png(file=paste0(fig.path, 'str_locmap.png'), width = 680, height = 590, 
+      bg='transparent')
+     str.map
+  dev.off()
+  
+  png(file=paste0(fig.path, 'ltr_locmap.png'), width = 680, height = 590, 
+      bg='transparent')
+     ltr.map
+  dev.off()
+
+  ggMultiPlots(str.map, ltr.map, cols=2)
+
+```
+
+The chart below break down the relative frequency of short and long term rental properties across the five submarkets. 
+
+```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.width=9}
+
+  # Make Airbnb submarket map
+  
+  strtype.map <- ggplot() +
+    geom_bar(data=str.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
+    scale_fill_manual(values=sm.col) +
+    facet_wrap(~type) +
+    ylab('# of Properties\n') + xlab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle('Short Term Property Type\nBy Submarket')+
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  # Make Long term rental map
+
+  ltrtype.map <- ggplot() +
+    geom_bar(data=ltr.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
+    scale_fill_manual(values=sm.col) +
+    facet_wrap(~type) +
+    ylab('# of Properties\n') + xlab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle('Long Term Property Type\nBy Submarket')+
+    theme(plot.title = element_text(hjust = 0.5))
+  
+```
+
+```{r loctype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.width=9}
+
+  png(file=paste0(fig.path, 'submplot.png'), width = 680, height = 590, 
+      bg='transparent')
+    ggMultiPlots(strtype.map, ltrtype.map, cols=2)
+  dev.off()
+    
+  ggMultiPlots(strtype.map, ltrtype.map, cols=2)
+  
+```
+
+Finally, we convert the suburb names from factors to character, which will help with the imputation exercises later on. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Convert suburbs from factor to character
+  str.data$suburb <- as.character(str.data$suburb)
+  ltr.data$suburb <- as.character(ltr.data$suburb)
+  
+```
+
+&nbsp;
+
+## Filter Transaction Data
+
+The previous exercises filtered the property-level data.  We now filter the transaction level datasets so that they only include those property that remain in the filtered property-level datasets
+
+```{r filttransdata, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Short term data
+  
+  daily.data <- daily.data[daily.data$property.id %in% str.data$property.id,]
+
+ ## Long term list data
+  
+  listing.data <- listing.data[listing.data$activity.id %in% ltr.data$activity.id,]
+
+```
+
+## Summarize Daily Data
+
+As we have limited the time period of analysis from the expanse of the raw data, we must now re calculate the daily summary information. 
+
+```{r redo.daily.summ, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Calculate the new daily summaries
+
+ daily.summ.list <- lapply(as.list(str.data$property.id), abbCalcBookStr,
+                            book.data=daily.data)
+ daily.summ <- rbind.fill(daily.summ.list)
+ daily.summ$min.date <- daily.summ$max.date <- NULL  
+
+ # Remove existing 
+ cut.fields <- which(names(str.data) %in% c('total.days', 'block.rate', 'avail.rate',
+                                     'longest.block', 'nbr.block', 'med.block'))
+ str.data <- str.data[ ,-cut.fields]
+
+ # Add summary data to property data
+ str.data <- merge(str.data, 
+                   daily.summ, 
+                   by.x='property.id',
+                   by.y='id')
+
+
+```
+
+Compute a full value of that total listing count
+
+```{r and.bookings, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Compute bookings count
+
+  str.data$bookings <- round(str.data$total.days * (1 - (str.data$block.rate + str.data$avail.rate)), 0)
+ 
+ # Remove those with 0 
+
+  str.data <- str.data[str.data$bookings > 0, ]
+
+```
+
+### Median rate
+
+Next we extract all of the daily reservation data that fits our criteria -- reserved and not over $500 per night^[Note that there are some outlying daily observations that do not agree with the property level Airbnb summary data from the data source.  We do this step to remove those]. From this information we calculate the median nightly reservation price for each property and append it to the property level data. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Get all of the reservations
+  resv.daily <- daily.data[daily.data$status == 'R' &
+                              daily.data$price < 500, ]
+  
+  # Calculate the property specific median nightly rate
+  med.daily <- tapply2DF(resv.daily$price, resv.daily$property.id, median)
+  
+  # Add median rate to the property  
+  str.data$med.rate <- med.daily$Var[match(str.data$property.id, med.daily$ID)] 
+
+  # Remove those with no valid median rate
+  str.data <- str.data[!is.na(str.data$med.rate), ]
+    
+```
+
+## Write out data  
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  save(str.data, ltr.data, daily.data, listing.data, subs, abb.col, beach.shp, core.suburbs,
+       exch.rate, ltr.col, str.col, sa1s.shp, suburbs.shp, study.suburbs,
+       file=paste0(data.path, 'prepared/prep_workspace.RData'))
+```

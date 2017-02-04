@@ -278,4 +278,58 @@ abbCalcBookStr <- function(id,
                     med.block=med.block))
 }
 
+### Set the cleaning counter -------------------------------------------------------------
+
+setCleanCount <- function(){
+  
+  # Make counts of initial sizes
+  str.orig <- nrow(str.data)
+  daily.orig <- nrow(daily.data)
+  ltr.orig <- nrow(ltr.data)
+  list.orig <- nrow(listing.data)
+  
+  # Create initial data.frame
+  clean.df <- data.frame(operation='initial',
+                         str=str.orig,
+                         daily=daily.orig,
+                         ltr=ltr.orig,
+                         list=list.orig)
+  
+  # Assign initial values to globalEnv
+  assign('clean.count', clean.df, envir=.GlobalEnv)
+  assign('str.run.total', nrow(str.data), envir=.GlobalEnv)
+  assign('ltr.run.total', nrow(ltr.data), envir=.GlobalEnv)
+  assign('list.run.total', nrow(listing.data), envir=.GlobalEnv)
+  assign('daily.run.total', nrow(daily.data), envir=.GlobalEnv)
+  
+}
+
+### Cleaning counting updater ------------------------------------------------------------
+
+countCleaning <- function(operation){
+
+  # Count recent cuts  
+  str.cut <- str.run.total - nrow(str.data)
+  daily.cut <- daily.run.total - nrow(daily.data)
+  ltr.cut <- ltr.run.total - nrow(ltr.data)
+  listing.cut <- list.run.total - nrow(listing.data)
+  
+  # Build new dataframe
+  new.df <- data.frame(operation=operation,
+                       str=str.cut,
+                       daily=daily.cut,
+                       ltr=ltr.cut,
+                       list=listing.cut)
+  
+  # Add to existing DF
+  comb.df <- rbind(clean.count, new.df)
+  
+  # Assign temp data to globalEnv
+  assign('clean.count', comb.df, envir=.GlobalEnv)
+  assign('str.run.total', nrow(str.data), envir=.GlobalEnv)
+  assign('ltr.run.total', nrow(ltr.data), envir=.GlobalEnv)
+  assign('list.run.total', nrow(listing.data), envir=.GlobalEnv)
+  assign('daily.run.total', nrow(daily.data), envir=.GlobalEnv)
+  
+}
 
