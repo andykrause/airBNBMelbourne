@@ -1,0 +1,114 @@
+---
+title: "Abb Analysis"
+author: "Andy Krause and Gideon Aschwanden"
+date: "February 5, 2017"
+output: html_document
+---
+
+### Introduction
+
+&nbsp;
+
+### Preliminary Commands
+
+&nbsp;
+
+```{r load_libraries, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+
+  library(spdep)
+  library(maptools)
+  library(gstat)
+  library(ggplot2)
+  library(geosphere)
+  library(ggmap)
+  library(xtable)
+  library(chron)
+  library(plyr)
+  library(sp)
+  library(rgeos)
+  library(reshape2)
+  library(stringr)
+  library(RColorBrewer)
+  library(Hmisc)
+
+```
+
+
+```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+
+  # Get computer names
+
+  comp.name <- Sys.info()['nodename']
+
+  # Assign path based on computer name
+  
+  if(comp.name == '7020D-121777-W' | comp.name == 'DESKTOP-1D7JO4J'){
+  
+    data.path <- 'c:/dropbox/research/airBNB/data/'
+    code.path <- 'c:/code/'
+    fig.path <- 'c:/dropbox/research/airBNB/figures/'
+
+  } else {
+  
+    data.path <- 'alternate data path'
+    code.path <- 'alternate data path'
+    fig.path <- 'alternate data path'
+    
+  }
+
+```
+
+Next, we source the necessary custom code files for the analysis.  
+  
+```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+
+ # Current Project files
+
+  source(paste0(code.path, "research/AirBNBMelbourne/abb_Functions.R"))
+
+ # Other custom files
+
+  source(paste0('https://raw.githubusercontent.com/andykrause/dataVizTools',
+                '/master/ggPlotTools.R'))
+  source(paste0('https://raw.githubusercontent.com/andykrause/datamgmttools',
+                '/master/dataMungeTools.R'))
+  source(paste0('https://raw.githubusercontent.com/andykrause/spatialTools',
+                '/master/spatialLogitModels.R'))
+  source(paste0('https://raw.githubusercontent.com/andykrause/spatialTools',
+                '/master/point2surface_Tools.R'))
+
+```
+
+
+```{r load_str_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Property Information
+
+  load(paste0(data.path, 'prepared/prep_workspace.RData'))
+
+```
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str.data$str.revenue <- str.data$bookings * str.data$med.rate
+
+  str.data$extr.par <- 366 / str.data$total.days
+
+  str.data$str.full.revenue <- (str.data$bookings * str.data$extr.par *
+                                  str.data$med.rate)
+  
+```
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Calculate the actual revenue
+  ltr.data$ltr.revenue <- ltr.data$event.price * (52 - ltr.data$dom / 7)
+  
+  # Remove those with very low revenues (due to very long DOMs)
+  ltr.data <- ltr.data[ltr.data$ltr.revenue > 10000, ]
+  
+  countCleaning('revenue')
+
+```
+
+

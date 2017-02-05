@@ -1240,13 +1240,18 @@ Next we extract all of the daily reservation data that fits our criteria -- rese
   # Remove those with no valid median rate
   str.data <- str.data[!is.na(str.data$med.rate), ]
     
+  ## Remove those with less than 180 observed days (missing obs)
+  str.data <- str.data[str.data$total.days >= 180, ]
+  
 ```
 
 ## Write out data  
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  save(str.data, ltr.data, daily.data, listing.data, subs, abb.col, beach.shp, core.suburbs,
-       exch.rate, ltr.col, str.col, sa1s.shp, suburbs.shp, study.suburbs,
+  save(str.data, ltr.data, daily.data, listing.data, subs, abb.col, 
+       beach.shp, core.suburbs, exch.rate, ltr.col, str.col, sa1s.shp, 
+       suburbs.shp, study.suburbs,
        file=paste0(data.path, 'prepared/prep_workspace.RData'))
+
 ```
