@@ -1251,7 +1251,8 @@ Next we extract all of the daily reservation data that fits our criteria -- rese
 
   save(str.data, ltr.data, daily.data, listing.data, subs, abb.col, 
        beach.shp, core.suburbs, exch.rate, ltr.col, str.col, sa1s.shp, 
-       suburbs.shp, study.suburbs,
+       suburbs.shp, study.suburbs, clean.count, daily.run.total, list.run.total,
+       ltr.run.total, str.run.total,
        file=paste0(data.path, 'prepared/prep_workspace.RData'))
 
 ```
