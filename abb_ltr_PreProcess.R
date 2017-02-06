@@ -56,7 +56,7 @@
   
  ## Remove those not occuring in 2015 or later
   
-  r16 <- r16[r16$event.year > 2014, ]
+  r16 <- r16[r16$event.year >= 2014, ]
   
  ## Add an identifier that signifies last record in a set of advertisements (of record)  
     
@@ -115,7 +115,7 @@
  ## Write out data
   
   export.path <- paste0(data.path, '/prepared/')
-  save(ltr.data, file=paste0(data.path, 'ltpropdata.RData'))
-  save(listing.data, file=paste0(data.path, 'ltlistdata.RData'))
+  save(ltr.data, file=paste0(export.path, 'ltpropdata.RData'))
+  save(listing.data, file=paste0(export.path, 'ltlistdata.RData'))
   
  
