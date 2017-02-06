@@ -337,7 +337,7 @@ countCleaning <- function(operation){
 
 imputeRents <- function(ltr.df,
                         str.df,
-                        mod.specs,
+                        mod.spec,
                         clip.fields=NULL)
 {
   
@@ -377,41 +377,18 @@ imputeRents <- function(ltr.df,
   
   ## Build regression models for rental values
   
-  ltr.mod <- lm(ltr.mod.spec, data=ltr.df)
-  
-  ## Add the fitted values to the long term data
-  
-  ltr.df$imp.rent <- exp(ltr.mod$fitted)
+  ltr.mod <- lm(mod.spec, data=ltr.df)
   
   ## Add the predicted values to the short term data
   
-  str.df$imp.rent <- exp(predict(ltr.mod, str.df))
-  
-  ## If Imputing for LTR
-  
-  if(imp.ltr){
-  
-    # Build regression models
-    str.mod <- lm(str.mod.spec, data=str.df)
-  
-    # Add the fitted values to the long term data
-    str.df$imp.rate <- exp(str.mod$fitted)
-  
-    # Add the predicted values to the short term data
-    ltr.df$imp.rate <- exp(predict(str.mod, ltr.df))
-  
-  } else {
-    
-    ltr.df <- ltr.mod <- NULL
-  
-  }
-    
+  imp.rent <- exp(predict(ltr.mod, str.df))
+
   ## Return Values  
   
-  return(list(str=str.df,
-              ltr=ltr.df,
-              str.mod=str.mod,
-              ltr.mod=ltr.mod))
+  return(list(str=data.frame(property.id=str.df$property.id,
+                             imp.rent=imp.rent),
+              mod=ltr.mod))
+              
 }
 
 ### Basic engine for calculating the revenues for abb and ltr ----------------------------
