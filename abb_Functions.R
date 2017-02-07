@@ -1096,65 +1096,93 @@ fullMarketAnalysis <- function(ltr.df,
               mrkt.score=market.ratio))
 }
 
-### Wrapper for all numeric comparison calculations --------------------------------------
+### Wrapper function to handle all of the imputation and comparison ----------------------
 
-revCompWrapper <- function(ltr.df,
-                           str.df,
-                           ltr.mod.spec,
-                           str.mod.spec,
-                           clip.field='suburb'){  
+abbImputeCompare <- function(str.df,
+                             ltr.df,
+                             mod.spec, 
+                             match.factor=NULL,
+                             split.field=NULL,
+                             verbose=FALSE){
   
+  ## Split data by field  
   
-  ## Impute rates and rents
+  # If field is specified
+  if(!is.null(split.field)){
+    
+    str.list <- split(str.df, str.df[ ,split.field])
+    ltr.list <- split(ltr.df, ltr.df[ ,split.field])
+    
+    if(verbose){
+      split.levels <- levels(as.factor(str.data[,split.field]))
+      cat('Splitting data into: ', paste(split.levels,
+                                         collapse='\n'), '\n')
+    }
+    
+    # If no field specified  
+  } else {
+    
+    str.list <- list(str.df)
+    ltr.list <- list(ltr.df)
+    
+    if(verbose){
+      cat('Data analyzed at global level')
+    }
+    
+  }
   
-  imp.data <- imputeRatesRents(ltr.df=ltr.df, 
+  ## Loop through split dfs
+  
+  # Set up capture list
+  imp.list <- list()
+  
+  # Run Loop
+  for(il in 1:length(str.list)){
+    
+    if(verbose) cat('Imputing and Comparing: ', split.levels[il], '\n')
+    
+    # Impute long term rents
+    imp.temp <- imputeLtrRents(ltr.df=ltr.df, 
                                str.df=str.df, 
-                               ltr.mod.spec=ltr.mod.spec, 
-                               str.mod.spec=str.mod.spec,
-                               clip.field=clip.field)
+                               mod.spec=mod.spec,
+                               match.factor=match.factor)
+    
+    # Add imputed LTRs to the STR data
+    str.list[[il]] <- merge(str.list[[il]], imp.temp$imp.rent, by='property.id')
+    imp.list[[il]] <- imp.temp
+    
+    # Impute days on market
+    str.list[[il]]$imp.dom <- imputeDOM(str.list[[il]], 
+                                        ltr.list[[il]], 
+                                        calc.type='median')
+    
+    # Create imputed LTR Revenue
+    str.list[[il]]$ltr.imp.revenue <- (str.list[[il]]$imp.rent * 
+                                         (52 - str.list[[il]]$imp.dom / 7))
+    
+    # Compare revenues 
+    comp.revs <- compareRevenues(str.list[[il]])
+    
+    # Add revenue comparison fields to str data
+    str.list[[il]] <- merge(str.list[[il]], 
+                            comp.revs, 
+                            by='property.id')
+    
+    
+  }
   
-  # Extract out DFs
-  str.df <- imp.data$str
-  ltr.df <- imp.data$ltr
+  ## Convert list into a df  
   
-  ## Within type imputation revenues
+  str.df <- rbind.fill(str.list)
   
-  imp.revs <- revenueEngine(str.df, 
-                            ltr.df,
-                            rate.field='imp.rate',
-                            rent.field='imp.rent')
+  ## Add indicator of which field was the split based on  
   
-  # Add back to DFs
-  str.df$imp.revenue <- imp.revs$str
-  ltr.df$imp.revenue <- imp.revs$ltr
+  str.df$split.field <- split.field
   
-  ## Cross type revenue estimation
+  ## Return Values  
   
-  # Apply dom to str
-  str.df$imp.dom <- imputeDOM(str.df, ltr.df, calc.type='median')
-  
-  # Apply occ.rate to ltr
-  ltr.df$imp.occ <- imputeOccRate(ltr.df, str.df, calc.type='median')
-  
-  # Estimate cross revenues
-  impx.revs <- revenueEngine(str.df=ltr.df, 
-                             ltr.df=str.df,
-                             rate.field='imp.rate',
-                             rent.field='imp.rent',
-                             occ.field='imp.occ',
-                             dom.field='imp.dom')
-  
-  # Add back to DFs
-  str.df$imp.ltr.revenue <- impx.revs$ltr
-  ltr.df$imp.str.revenue <- impx.revs$str
-  
-  ## Compare revenues
-  
-  comp.revs <- compareRevenues(str.df, ltr.df)
-  
-  ## Return Values   
-  
-  return(list(str=comp.revs$str,
-              ltr=comp.revs$ltr))    
+  return(str.df)
   
 }
+
+
