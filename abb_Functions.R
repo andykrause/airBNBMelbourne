@@ -335,10 +335,10 @@ countCleaning <- function(operation){
 
 ### Cross impute rates and rents ---------------------------------------------------------
 
-imputeRents <- function(ltr.df,
-                        str.df,
-                        mod.specs,
-                        clip.fields=NULL)
+imputeLtrRents <- function(ltr.df,
+                           str.df,
+                           mod.spec,
+                           match.factor=NULL)
 {
   
   ## Arguments
@@ -351,13 +351,13 @@ imputeRents <- function(ltr.df,
   
   ## Remove those within the clip field that isn't present in both  
   
-  if(!is.null(clip.fields)){
+  if(!is.null(match.factor)){
     
-    for(i.cf in 1:length(clip.fields)){
+    for(i.cf in 1:length(match.factor)){
       
       # Find the fields that are used to clip
-      l.cf <- which(names(ltr.df) == clip.fields[i.cf])
-      s.cf <- which(names(str.df) == clip.fields[i.cf])
+      l.cf <- which(names(ltr.df) == match.factor[i.cf])
+      s.cf <- which(names(str.df) == match.factor[i.cf])
       
       # Get IDs for those to be removed
       id.l <- ltr.df[ ,l.cf] %in% names(table(as.character(str.df[ ,s.cf])))
@@ -377,69 +377,17 @@ imputeRents <- function(ltr.df,
   
   ## Build regression models for rental values
   
-  ltr.mod <- lm(ltr.mod.spec, data=ltr.df)
-  
-  ## Add the fitted values to the long term data
-  
-  ltr.df$imp.rent <- exp(ltr.mod$fitted)
+  ltr.mod <- lm(mod.spec, data=ltr.df)
   
   ## Add the predicted values to the short term data
   
-  str.df$imp.rent <- exp(predict(ltr.mod, str.df))
+  imp.rent <- exp(predict(ltr.mod, str.df))
   
-  ## If Imputing for LTR
-  
-  if(imp.ltr){
-  
-    # Build regression models
-    str.mod <- lm(str.mod.spec, data=str.df)
-  
-    # Add the fitted values to the long term data
-    str.df$imp.rate <- exp(str.mod$fitted)
-  
-    # Add the predicted values to the short term data
-    ltr.df$imp.rate <- exp(predict(str.mod, ltr.df))
-  
-  } else {
-    
-    ltr.df <- ltr.mod <- NULL
-  
-  }
-    
   ## Return Values  
   
-  return(list(str=str.df,
-              ltr=ltr.df,
-              str.mod=str.mod,
-              ltr.mod=ltr.mod))
-}
-
-### Basic engine for calculating the revenues for abb and ltr ----------------------------
-
-revenueEngine <- function(str.df,
-                          ltr.df,
-                          rate.field='med.rate',
-                          rent.field='event.price',
-                          occ.field='occ.rate',
-                          dom.field='dom',
-                          cost.list=NULL)
-{
-  
-  ## Calculate Airbnb Revenues  
-  
-  str.rev <- str.df[, rate.field] * 365 * str.df[ ,occ.field]
-  
-  ## Calculate long term rental revenues  
-  
-  ltr.rev <- ltr.df[, rent.field] * (52 - (ltr.df[ ,dom.field] / 7))
-  
-  ## Save for future costs
-  
-  ## Return values  
-  
-  return(list(str=str.rev,
-              ltr=ltr.rev))
-  
+  return(list(imp.rent=data.frame(property.id=str.df$property.id,
+                                  imp.rent=imp.rent),
+              model=ltr.mod))
 }
 
 ### Impute days on market for the airbnb properties --------------------------------------
@@ -466,35 +414,6 @@ imputeDOM <- function(str.df,
   ## Return Values
   
   return(str.df$imp.dom)
-  
-}
-
-### Impute occupancy rate for the ltr properties -----------------------------------------
-
-imputeOccRate <- function(ltr.df,
-                          str.df, 
-                          calc.type='median',
-                          submarket=NULL){
-  
-  ## If median type  
-  
-  if(calc.type == 'median'){
-    occ.qtl <- makeWtdQtl(str.df$occ.rate, return.type='raw',
-                          wgts=(str.df$bookings + str.df$available.days))
-    ltr.df$imp.occ <- occ.qtl[51]
-  }
-  
-  ## If model type
-  
-  if(calc.type == 'model'){
-    
-    # Save for later
-    
-  }
-  
-  ## Return Values
-  
-  return(ltr.df$imp.occ)
   
 }
 
