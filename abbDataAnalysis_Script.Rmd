@@ -195,6 +195,8 @@ We start by specifying the imputation models for the LTR and the Airbnb datasets
   ltr.mod.spec <- formula(log(event.price) ~ as.factor(type) + 
                             as.factor(bedbath) + as.factor(suburb) + 
                             as.factor(ltr.month))
+  str.mod.spec <- formula(log(nightly.rate) ~ as.factor(type) + 
+                            as.factor(bedbath) + as.factor(suburb))
 
 ```
 
@@ -203,12 +205,25 @@ We then employ a custom function to cross impute rates and rents for the two dat
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
-  imp.rents <- imputeRents(ltr.df=ltr.data, 
-                           str.df=str.data, 
-                           mod.spec=ltr.mod.spec,
-                           clip.field='suburb')
+  imp.data <- imputeRatesRents(ltr.df=ltr.data, 
+                               str.df=str.data, 
+                               ltr.mod.spec=ltr.mod.spec, 
+                               str.mod.spec=str.mod.spec,
+                               clip.field='suburb')
 
-  str.glob <- merge(str.data, imp.rents$str, by='property.id')
+```
+
+From the imputed results, we extract the base data (with imputed values) as well as the model summaries. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Extract out DFs (only those that imputed)
+  str.imp <- imp.data$str
+  ltr.imp <- imp.data$ltr
+  
+  # Extract models
+  str.sum <- summary(imp.data$str.mod)
+  ltr.sum <- summary(imp.data$ltr.mod)
 
 ```
 
@@ -217,15 +232,13 @@ Next we cross impute days on market and occupancy rates.
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   # Apply dom to abb
-  str.glob$imp.dom <- imputeDOM(str.glob, ltr.data, calc.type='median')
+  str.imp$imp.dom <- imputeDOM(str.imp, ltr.imp, calc.type='median')
   
+  # Apply occ.rate to ltr
+  ltr.imp$imp.occ <- imputeOccRate(ltr.imp, str.imp, calc.type='median')
+  
+
 ```
-
-
-
-HERE HERE HERE
-
-
 
 With the cross-imputed DOMs and occupancy rates we now make the cross-tenure imputations of revenues and add them back to the original datasets. 
 
