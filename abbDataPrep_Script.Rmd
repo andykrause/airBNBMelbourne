@@ -1251,14 +1251,17 @@ Here we combine the two Strict (regular and super) cancellation policies into on
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  ss60 <- which(str.data$cancel.policy == 'Super Strict 60 Days')
-  str.data$cancel.policy[ss60] <- 'Strict'
-  cpmiss <- which(str.data.ic$cancel.policy == '')
+ ## ID those with missing cancel policies and remove
+
+  cpmiss <- which(str.data$cancel.policy == '')
   str.data <- str.data[-cpmiss, ]
 
-```
-    
+ ## ID those with Super Strict and change to Strict  
+  
+  ss60 <- which(str.data$cancel.policy == 'Super Strict 60 Days')
+  str.data$cancel.policy[ss60] <- 'Strict'
 
+```
 
 ## Write out data  
 
