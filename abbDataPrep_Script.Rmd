@@ -1245,6 +1245,21 @@ Next we extract all of the daily reservation data that fits our criteria -- rese
   
 ```
 
+#### Host Policies
+
+Here we combine the two Strict (regular and super) cancellation policies into one as there are few 'super' strict and this is used as a factor in future modeling.  We also remove the few observations with missing host policy data
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ss60 <- which(str.data$cancel.policy == 'Super Strict 60 Days')
+  str.data$cancel.policy[ss60] <- 'Strict'
+  cpmiss <- which(str.data.ic$cancel.policy == '')
+  str.data <- str.data[-cpmiss, ]
+
+```
+    
+
+
 ## Write out data  
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
