@@ -89,20 +89,32 @@ Next, we source the necessary custom code files for the analysis.
 
 ```
 
+State gives energy costs at 330 (apt) to 520 (house).  For 2 person in apt that works out to 5 per person per day.  For house of 4 that works out to about 4 per person per day.  
+
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str.data$str.act.revenue <- str.data$bookings * str.data$med.rate
+  str.data$cpppd <- 4.5
+  str.data$avg.guests <- str.data$bedrooms * 1.5
+
+  str.data$str.act.revenue <- ((str.data$bookings * str.data$med.rate) - 
+                                 (str.data$bookings * str.data$avg.guests * str.data$cpppd))
 
   str.data$extr.par <- 366 / str.data$total.days
 
-  str.data$str.ext.revenue <- (str.data$bookings * str.data$extr.par *
-                                  str.data$med.rate)
-  
+  str.data$str.ext.revenue <- ((str.data$bookings * str.data$extr.par *
+                                  str.data$med.rate) - 
+                                 (str.data$bookings * str.data$avg.guests * 
+                                    str.data$cpppd * str.data$extr.par))
+  # 
   str.data$occ.rate <- 1 - (str.data$block.rate + str.data$avail.rate)
 
-  str.data$pot.occ.rate <- (str.data$bookings * str.data$extr.par) / (366 - (366 * str.data$block.rate)) 
+  str.data$pot.occ.rate <- ((str.data$bookings * str.data$extr.par) / 
+    (366 - (366 * str.data$block.rate))) 
   
-  str.data$str.pot.revenue <- (str.data$pot.occ.rate * 366 * str.data$med.rate)
+  str.data$str.pot.revenue <- ((str.data$pot.occ.rate * 366 * str.data$med.rate) - 
+                                 (str.data$pot.occ.rate * 366  * str.data$avg.guests *  
+                                    str.data$cpppd))
+  
 
 ```
 
@@ -465,11 +477,76 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
                                    mean(svm.qtl$pred$pred)))
 ```
 
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  mod.ext.str <- glm(str.ext.pref~type+as.factor(bedbath),
+                     family=binomial(link='logit'),
+                     data=str.data.ic)
+  mod.pot.str <- glm(str.pot.pref~type+as.factor(bedbath),
+                     family=binomial(link='logit'),
+                     data=str.data.ic)
+```
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
+  mod.ext.loc <- glm(str.ext.pref~type+as.factor(bedbath)+
+                                  sub.mrkt,
+                     family=binomial(link='logit'),
+                     data=str.data.ic)
+  mod.pot.loc <- glm(str.pot.pref~type+as.factor(bedbath)+
+                                  sub.mrkt,
+                     family=binomial(link='logit'),
+                     data=str.data.ic)
+```
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  mod.ext.host <- glm(str.ext.pref~type+as.factor(bedbath)+
+                        sub.mrkt+
+                        I(max.guests/bedrooms)+min.stay+
+                        I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                      family=binomial(link='logit'),
+                      data=str.data.ic)
+  mod.pot.host <- glm(str.pot.pref~type+as.factor(bedbath)+
+                        sub.mrkt+
+                        I(max.guests/bedrooms)+min.stay+
+                        I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                      family=binomial(link='logit'),
+                      data=str.data.ic)
+```
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  mod.ext.str <- lm(str.ext.prem~type+as.factor(bedbath),
+                    data=str.data.ic)
+  mod.pot.str <- lm(str.pot.prem~type+as.factor(bedbath),
+                    data=str.data.ic)
   
-  
+```
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  mod.ext.host <- lm(str.ext.prem~type+as.factor(bedbath)+
+                        sub.mrkt+
+                        I(max.guests/bedrooms)+min.stay+
+                        I(cancel.policy=='Flexible') + I(cancel.policy=='Strict') + suburb,
+                      data=str.data.ic)
+  mod.pot.host <- lm(str.pot.prem~type+as.factor(bedbath)+
+                        sub.mrkt+
+                        I(max.guests/bedrooms)+min.stay+
+                        I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                      data=str.data.ic)
+```
+
+
+
+
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
   ps <- which(str.data.ic$host.type == 'Profit Seeker')
   os <- which(str.data.ic$host.type == 'Opportunistic Sharer')
   mu <- which(str.data.ic$host.type == 'Multi-Platform User')
