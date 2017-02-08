@@ -492,28 +492,128 @@ compareRevenues <- function(str.df){
   
 }
 
+### Wrapper function to handle all of the imputation and comparison ----------------------
+
+abbImputeCompare <- function(str.df,
+                             ltr.df,
+                             mod.spec, 
+                             match.factor=NULL,
+                             split.field=NULL,
+                             verbose=FALSE){
+  
+  ## Split data by field  
+  
+  # If field is specified
+  if(!is.null(split.field)){
+    
+    str.list <- split(str.df, str.df[ ,split.field])
+    ltr.list <- split(ltr.df, ltr.df[ ,split.field])
+    
+    if(verbose){
+      split.levels <- levels(as.factor(str.data[,split.field]))
+      cat('Splitting data into: ', paste(split.levels,
+                                         collapse='\n'), '\n')
+    }
+    
+    # If no field specified  
+  } else {
+    
+    str.list <- list(str.df)
+    ltr.list <- list(ltr.df)
+    
+    if(verbose){
+      cat('Data analyzed at global level')
+    }
+    
+  }
+  
+  ## Loop through split dfs
+  
+  # Set up capture list
+  imp.list <- list()
+  
+  # Run Loop
+  for(il in 1:length(str.list)){
+    
+    if(verbose) cat('Imputing and Comparing: ', split.levels[il], '\n')
+    
+    # Add quartile information to the data
+    
+    str.list[[il]]$rate.qtl <- makeWtdQtl(str.list[[il]]$med.rate, 
+                                          return.type='rank') 
+    str.list[[il]]$occ.qtl <- makeWtdQtl(str.list[[il]]$occ.rate, 
+                                         return.type='rank') 
+    str.list[[il]]$pot.occ.qtl <- makeWtdQtl(str.list[[il]]$pot.occ.rate, 
+                                             return.type='rank') 
+    
+    # Impute long term rents
+    imp.temp <- imputeLtrRents(ltr.df=ltr.df, 
+                               str.df=str.df, 
+                               mod.spec=mod.spec,
+                               match.factor=match.factor)
+    
+    # Add imputed LTRs to the STR data
+    str.list[[il]] <- merge(str.list[[il]], imp.temp$imp.rent, by='property.id')
+    imp.list[[il]] <- imp.temp
+    
+    # Impute days on market
+    str.list[[il]]$imp.dom <- imputeDOM(str.list[[il]], 
+                                        ltr.list[[il]], 
+                                        calc.type='median')
+    
+    # Create imputed LTR Revenue
+    str.list[[il]]$ltr.imp.revenue <- (str.list[[il]]$imp.rent * 
+                                         (52 - str.list[[il]]$imp.dom / 7))
+    
+    # Compare revenues 
+    comp.revs <- compareRevenues(str.list[[il]])
+    
+    # Add revenue comparison fields to str data
+    str.list[[il]] <- merge(str.list[[il]], 
+                            comp.revs, 
+                            by='property.id')
+    
+    
+  }
+  
+  ## Convert list into a df  
+  
+  str.df <- rbind.fill(str.list)
+  
+  ## Add indicator of which field was the split based on  
+  
+  str.df$split.field <- split.field
+  
+  ## Return Values  
+  
+  return(str.df)
+  
+}
+
+
 ### Create comparison table --------------------------------------------------------------
 
-createCompTable <- function(str.df,
-                            split.field=NULL){
+abbCreateCompTable <- function(ic.df,
+                               split.field=NULL){
   
   if(split.field == 'none'){
     
-    str.act <- mean(str.df$str.act.pref)
-    str.ext <- mean(str.df$str.ext.pref)
+    str.act <- mean(ic.df$str.act.pref)
+    str.ext <- mean(ic.df$str.ext.pref)
     str.pot <- mean(ltr.df$str.pot.pref)
     
     rate.table <- data.frame(ID='all',
                              var=c(str.act, str.ext, str.pot),
-                             rev.type=c('Actual', 'Extrapolated', 
+                             rev.type=c('Actual', 
+                                        'Extrapolated', 
                                         'Potential'))
     
   } else {
     
     # Calculate cross-tab values
-    str.act <- tapply2DF(str.df$str.act.pref, str.df[ ,split.field], mean)
-    str.ext <- tapply2DF(str.df$str.ext.pref, str.df[ ,split.field], mean)
-    str.pot <- tapply2DF(str.df$str.pot.pref, str.df[, split.field], mean)
+    str.act <- tapply2DF(ic.df$str.act.pref, ic.df[ ,split.field], mean)
+    str.ext <- tapply2DF(ic.df$str.ext.pref, ic.df[ ,split.field], mean)
+    str.pot <- tapply2DF(ic.df$str.pot.pref, ic.df[, split.field], mean)
     
     # Add names
     str.act$rev.type <- 'Actual'
@@ -523,14 +623,20 @@ createCompTable <- function(str.df,
     # Combine into table
     rate.table <- rbind(str.act, str.ext, str.pot)
     
-    # Reorder factors
+    # Reorder factors for common split fields
     if(split.field == 'sub.mrkt'){
       
       rate.table$ID <- factor(rate.table$ID, 
                               levels=c('city-core', 'city', 'beach',
                                        'suburban', 'rural'))
-      
     }
+    
+    if(split.field == 'host.type'){
+      rate.table$ID <- factor(rate.table$ID,
+                              levels=c('Profit Seeker', 'Opportunistic Sharer', 
+                                       'Multi-Platform User', 'Unknown'))
+    }
+    
   }
   
   ## Return Values
@@ -541,24 +647,24 @@ createCompTable <- function(str.df,
 
 ### Creating preference plots ------------------------------------------------------------  
 
-makePrefPlot <- function(pref.data,
-                         x.field,
-                         y.field,
-                         group.field='none',
-                         metric='mean',
-                         cumulative=FALSE,
-                         smooth=FALSE,
-                         smooth.span=.15){
+abbPrefPlot <- function(pref.data,
+                        x.field,
+                        split.field='none',
+                        metric='mean',
+                        cumulative=FALSE,
+                        quartile=FALSE,
+                        smooth=FALSE,
+                        smooth.span=.15,
+                        spl.col){
   
   
   ## Fixing some variables
   
-  if(x.field == 'occ.rate' | x.field == 'pot.occ.rate'){
+  if(x.field == 'occ' | x.field == 'occ.rate'){
     
     pref.data[, x.field] <- round(100 * pref.data[, x.field], 0)
     
   }
-  
   
   ## Extract function of analysis
   
@@ -574,22 +680,22 @@ makePrefPlot <- function(pref.data,
     
     # Extract the ith data
     if(cumulative){
-      pref.df <- pref.data[pref.data[,x.field] >= i.pl, ]
+      pref.df <- pref.data[pref.data[ ,x.field] >= i.pl, ]
     } else {
-      pref.df <- pref.data[pref.data[,x.field] == i.pl, ]
+      pref.df <- pref.data[pref.data[ ,x.field] == i.pl, ]
     }
     
     
-    if(group.field != 'none'){
+    if(split.field != 'none'){
       
       # Create the table
-      pref.table <- tapply2DF(pref.df[ ,y.field], 
-                              pref.df[ ,group.field],
+      pref.table <- tapply2DF(pref.df$pref, 
+                              pref.df[ ,split.field],
                               metric.fnct)
     } else {
       
       pref.table <- data.frame(ID='all', 
-                               Var=metric.fnct(pref.df[,y.field], na.rm=T))
+                               Var=metric.fnct(pref.df$pref, na.rm=T))
     }
     
     # Add the x variable
@@ -600,26 +706,28 @@ makePrefPlot <- function(pref.data,
     
   }
   
-  ## Convert to a data.frame  
+ ## Convert to a data.frame  
   
   pref.full <- rbind.fill(pref.list)
   
-  if(group.field == 'sub.mrkt'){
+ ## Fix Factor Levels
+  
+  if(split.field == 'sub.mrkt'){
     pref.full$ID <- factor(pref.full$ID, 
                            levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
   }
-  if(group.field == 'host.type'){
+  if(split.field == 'host.type'){
     pref.full$ID <- factor(pref.full$ID, 
                            levels=c('Profit Seeker', 'Opportunistic Sharer', 
                                     'Multi-Platform User', 'Unknown'))
   }
   
-  ## Creat the base plot  
+ ## Creat the base plot  
   
   pref.plot <- ggplot(pref.full,
                       aes(x=x.var, y=Var, group=ID, color=ID))
   
-  ## Add lines  
+ ## Add lines  
   
   if(smooth){
     pref.plot <- pref.plot + stat_smooth(se=FALSE, size=2, 
@@ -627,8 +735,35 @@ makePrefPlot <- function(pref.data,
   } else {
     pref.plot <- pref.plot + geom_line()
   }
+ 
+ ## Add specific plot outputs
   
-  ## Return Values
+  if(x.field == 'occ'){
+    pref.plot <- pref.plot + 
+      xlab('\nOccupancy Rate') +
+      scale_x_continuous(breaks=seq(0, 100, by=25),
+                         labels=c('0%', '25%', '50%', '75%', '100%')) 
+  }
+  if(x.field == 'occ.qtl'){
+    pref.plot <- pref.plot + 
+      xlab('\nOccupancy Rate (Quantile)') +
+      scale_x_continuous(breaks=seq(0, 100, by=25),
+                         labels=c('0th', '25th', '50th', '75th', '100th')) 
+  }
+  
+  
+  
+ ## Add global plot options
+  
+  pref.plot <- pref.plot +  
+    ylab('\n% of Properties where STR is Preferable') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    scale_colour_manual(values=spl.col,
+                        name='')
+  
+  
+ ## Return Values
   
   return(pref.plot)
   
@@ -637,23 +772,34 @@ makePrefPlot <- function(pref.data,
 
 ### Create heatmaps of profitability -----------------------------------------------------
 
-makeHeatMap <- function(hm.data,
-                        x.field,
-                        y.field,
-                        color.field,
-                        bins=c(10, 10),
-                        fill.colors=c('red', 'forestgreen'),
-                        alpha.count=TRUE,
-                        alpha.fill=1,
-                        add.points=FALSE,
-                        hexmap=FALSE,
-                        point.data=NULL,
-                        svm=FALSE,
-                        return.svm=FALSE,
-                        svm.opts=list(type='C-svc',
-                                      kernel='polydot',
-                                      poly.degree=2,
-                                      expand.factor=100)){
+abbHeatMap <- function(hm.data,
+                       x.field,
+                       y.field,
+                       pref.field,
+                       bins=NULL,
+                       fill.colors=c('red', 'forestgreen'),
+                       alpha.count=TRUE,
+                       alpha.fill=1,
+                       add.points=FALSE,
+                       hexmap=FALSE,
+                       point.data=NULL,
+                       svm=FALSE,
+                       quantile=FALSE,
+                       return.svm=FALSE,
+                       svm.opts=list(type='C-svc',
+                                     kernel='polydot',
+                                     poly.degree=2,
+                                     expand.factor=100)){
+  
+  ## Set bins
+  
+  if(is.null(bins)){
+    bins <- c(0, 0)
+    if(x.field == 'occ' | x.field == 'occ.rate') bins[1] <- .05
+    if(x.field == 'occ.qtl') bins[1] <- 5
+    if(y.field == 'nightly.rate') bins[2] <- 25
+    if(y.field == 'rate.qtl') bins[2] <- 5
+  }
   
   ## Prepare the plotting data  
   
@@ -664,11 +810,13 @@ makeHeatMap <- function(hm.data,
     svm.obj <- makeSVM(hm.data,
                        x.field=x.field,
                        y.field=y.field,
-                       z.field=color.field,
+                       z.field=pref.field,
                        svm.type=svm.opts$type,
                        svm.kernel=svm.opts$kernel,
                        poly.degree=svm.opts$poly.degree,
-                       expand.factor=svm.opts$expand.factor)
+                       expand.factor=svm.opts$expand.factor,
+                       quantile=quantile,
+                       bins=bins)
     
     # Convert initial data to point data
     point.data <- hm.data
@@ -685,16 +833,17 @@ makeHeatMap <- function(hm.data,
     # Set up X, Y and fill variables
     hm.data$x.var <- hm.data[ ,x.field]
     hm.data$y.var <- hm.data[ ,y.field]
-    hm.data$fill.var <- hm.data[ ,color.field]  
+    hm.data$fill.var <- hm.data[ ,pref.field] 
     
   }
   
-  ## Make the plot  
+ ## Make the plot  
   
   # Set up the basics
   hm.plot <- ggplot(data=hm.data,
                     aes(x=x.var, y=y.var))
-  
+
+    
   # If adding by count
   if(alpha.count){
     
@@ -751,14 +900,40 @@ makeHeatMap <- function(hm.data,
     }
   }
   
+ ## Tidy up plot
+  
+  if(x.field == 'occ' | x.field == 'occ.rate'){
+    hm.plot <- hm.plot +
+      xlab('\n Occupancy Rate') +
+      scale_x_continuous(breaks=seq(0, 1, by=.25),
+                         labels=c('0%', '25%', '50%', '75%', '100%'))  
+  }
+  if(x.field == 'occ.qtl'){
+    hm.plot <- hm.plot +
+      xlab('\n Occupancy Rate (Quantile)') +
+      scale_x_continuous(breaks=seq(0, 100, by=25),
+                         labels=c('0th', '25th', '50th', '75th', '100th'))  
+  }
+  if(y.field == 'nightly.rate'){
+    hm.plot <- hm.plot +
+      ylab('\n Nightly Rate') 
+  }
+  if(y.field == 'rate.qtl'){
+    hm.plot <- hm.plot +
+      ylab('\n Nightly Rate (Quantile)') +
+      scale_y_continuous(breaks=seq(0, 100, by=25),
+                         labels=c('0th', '25th', '50th', '75th', '100th'))  
+  }
+  
   # Add fill legend
   hm.plot <- hm.plot + 
     scale_fill_manual(values=fill.colors,
                       name='',
                       labels=c('Long Term Preferred     ',
-                               'Airbnb Preferred        '))
+                               'Short Term Preferred     ')) +
+    theme(legend.position='bottom')
   
-  ## Return Values  
+ ## Return Values  
   
   # If return SVM data
   if(return.svm){
@@ -781,7 +956,9 @@ makeSVM <- function(svm.data,
                     svm.type='C-svc',
                     svm.kernel='polydot',
                     poly.degree=4,
-                    expand.factor=100){
+                    expand.factor=100,
+                    quantile=FALSE,
+                    bins=c(1, 1)){
   
   
   # Create XY data
@@ -801,18 +978,27 @@ makeSVM <- function(svm.data,
   ## Make predictions over grid
   
   # Set up grid
-  x.range <- max(svm.data[ ,x.field]) - min(svm.data[ ,x.field])
-  x.inc <- x.range / expand.factor
-  xx.min <- min(svm.data[, x.field]) - x.inc
-  xx.max <- max(svm.data[, x.field]) + x.inc
-  
-  y.range <- max(svm.data[ ,y.field]) - min(svm.data[ ,y.field])
-  y.inc <- y.range / expand.factor
-  yy.min <- min(svm.data[, y.field]) - y.inc
-  yy.max <- max(svm.data[, y.field]) + y.inc
-  
-  pred.grid <- expand.grid(seq(xx.min, xx.max, x.inc),
-                           seq(yy.min, yy.max, y.inc))  
+  if(quantile){
+    
+    pred.grid <- expand.grid(seq(.5, 99.5, by=bins[1]),
+                             seq(.5, 99.5, by=bins[2]))
+    
+  } else {
+    
+    x.range <- max(svm.data[ ,x.field]) - min(svm.data[ ,x.field])
+    x.inc <- x.range / expand.factor
+    xx.min <- min(svm.data[, x.field]) 
+    xx.max <- max(svm.data[, x.field]) 
+    
+    y.range <- max(svm.data[ ,y.field]) - min(svm.data[ ,y.field])
+    y.inc <- y.range / expand.factor
+    yy.min <- min(svm.data[, y.field]) 
+    yy.max <- max(svm.data[, y.field]) 
+    
+    pred.grid <- expand.grid(seq(xx.min, xx.max, x.inc),
+                             seq(yy.min, yy.max, y.inc)) 
+    
+  }
   
   # Make the predictions
   svm.pred <- predict(svm.obj, pred.grid)
@@ -844,345 +1030,176 @@ calcMarketScore <- function(mrkt.data,
   return(mrkt.value)
 }
 
-### Full market analysis wrapper ---------------------------------------------------------
 
-fullMarketAnalysis <- function(ltr.df,
-                               str.df,
-                               ltr.mod.spec,
-                               str.mod.spec,
-                               clip.field,
-                               market.field='none',
-                               mrkt.col=NULL,
-                               heat.col=c('red', 'green'))
+### Full wrapper for the analysis and viz functions --------------------------------------
+
+abbPrefAnalysisViz <- function(ic.df,
+                               pref.type,
+                               split.field,
+                               facet.field){
   
-{  
   
-  ## Fix null
+  ## Set preference and occupancy rates
   
-  if(market.field != 'type'){
-    if(length(table(str.df$type)) == 1 |
-       length(table(ltr.df$type)) == 1){
-      
-      ltr.mod.spec <- update(ltr.mod.spec, . ~ . - as.factor(type))
-      str.mod.spec <- update(str.mod.spec, . ~ . - as.factor(type))
-      
-    }
+  if(pref.type == 'Actual'){
+    ic.df$pref <- ic.df$str.act.pref
+    ic.df$diff <- ic.df$str.act.prem
+    ic.df$occ <- ic.df$occ.rate
+    ic.df$occ.qtl <- ic.df$occ.qtl
+  }
+  if(pref.type == 'Extrapolated'){
+    ic.df$pref <- ic.df$str.ext.pref
+    ic.df$diff <- ic.df$str.ext.prem
+    ic.df$occ <- ic.df$occ.rate
+    ic.df$occ.qtl <- ic.df$occ.qtl
+  }
+  if(pref.type == 'Potential'){
+    ic.df$pref <- ic.df$str.pot.pref
+    ic.df$diff <- ic.df$str.pot.prem
+    ic.df$occ <- ic.df$pot.occ.rate
+    ic.df$occ.qtl <- ic.df$pot.occ.qtl
   }
   
+  ## Make the basic comparison table
   
-  ## Make comparison between two markets  
+  # Full preference table
+  pref.table <- abbCreateCompTable(ic.df=ic.df,
+                                   split.field=split.field)
   
-  mrkt.comp <- revCompWrapper(ltr.df=ltr.df,
-                              str.df=str.df,
-                              ltr.mod.spec=ltr.mod.spec,
-                              str.mod.spec=str.mod.spec,
-                              clip.field='suburb')   
+  # Convert to wide format for output
+  pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var')
   
+  # Limit to selected preference rate measure
+  pref.table <- pref.table[pref.table$rev.type == pref.type, ]
   
-  ## Make a simple table of comparison
-  
-  mrkt.table <- createCompTable(mrkt.comp$str, mrkt.comp$ltr, market.field)
-  
-  if(!is.null(market.field) && market.field == 'sub.mrkt'){
-    mrkt.table$ID <- factor(mrkt.table$ID, 
-                            levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
-  }
-  
-  ## make basic 2x2 comparison
+  ## Make the basic comparison bar chart  
   
   # Set colors
-  if(is.null(mrkt.col)){
-    mrkt.col <- 1:(nrow(mrkt.table)/4)
+  
+  spl.col <- 1:nrow(pref.table)
+  
+  if(split.field == 'sub.mrkt'){
+    spl.col <- c("#FA5863", "#00758C", "#FCB30E", "#4DE26E", "#8B0E52")
   }
   
-  # Make Plot
-  twotwo.bar.plot <- 
-    ggplot(mrkt.table, 
-           aes(x=ID, weights=Var, fill=ID)) + 
+  if(split.field == 'host.type'){
+    spl.col <- c("#8B0E52", "#04D3BF", "#565E61", "#9CA19B")
+  }
+  
+  # Build the bar chart
+  pref.bar <- 
+    ggplot(pref.table, aes(x=ID, weights=Var, fill=ID)) + 
     geom_bar() +
-    facet_grid(est ~ data) +
-    scale_fill_manual(values=mrkt.col) +
+    scale_fill_manual(values=spl.col) +
     xlab('') +
-    ylab('% of properties where Airbnb is more profitable') +
-    scale_y_continuous(breaks=c(0,.25,.5,.75,1),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    theme(legend.position='none')
-  
-  ## Make simple 1 Actual Airbnb plot  
-  
-  # Extract data  
-  
-  str.act.table <- mrkt.table[mrkt.table$est == 'Actual Rates & Rents' &
-                                mrkt.table$data == 'Airbnb', ]
-  
-  # Make plot
-  
-  str.act.plot <- 
-    ggplot(str.act.table, 
-           aes(x=ID, weights=Var, fill=ID)) + 
-    geom_bar() +
-    scale_fill_manual(values=sm.col) +
-    xlab('') +
-    ylab('% of properties where Airbnb is more profitable') +
-    scale_y_continuous(breaks=c(0,.25,.5,.75,1),
+    ylab('% of properties where STR is preferred') +
+    scale_y_continuous(breaks=c(0, .25, .5, .75, 1),
                        labels=c('0%', '25%', '50%', '75%', '100%')) +
     theme(legend.position='none') +
     coord_cartesian(ylim=c(0, 1))
   
-  ## Preferred option by occupancy rate
+  ## 1 Dimensional Pref Plots (Occ.Rate)
   
-  rawocc.pplot <- makePrefPlot(mrkt.comp$str,
-                               x.field='occ.rate',
-                               y.field='str.act',
-                               group.field=market.field,
-                               smooth=TRUE,
-                               smooth.span=.75)
-  rawocc.pplot <- rawocc.pplot +
-    xlab('\nOccupancy Rate') +
-    ylab('\n% of Properties where Airbnb is more profitable') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    scale_y_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    scale_color_manual(values=mrkt.col)
+  occ.1pp <- abbPrefPlot(pref.data=ic.df,
+                         x.field='occ',
+                         split.field=split.field,
+                         smooth=TRUE,
+                         smooth.span=.66,
+                         spl.col=spl.col)
   
-  ## Add the quantile locations
+  occq.1pp <- abbPrefPlot(pref.data=ic.df,
+                          x.field='occ.qtl',
+                          split.field=split.field,
+                          smooth=TRUE,
+                          smooth.span=.66,
+                          spl.col=spl.col)
   
-  mrkt.comp$str$occ.qtl <- makeWtdQtl(mrkt.comp$str$occ.rate, 
-                                      return.type='rank') 
-  mrkt.comp$str$rate.qtl <- makeWtdQtl(mrkt.comp$str$med.rate, 
-                                       return.type='rank') 
+  ## 2 Dimensional Pref Plots (Occ + Nightly Rate)
   
-  
-  ## Make quartile location plot
-  
-  qtlocc.pplot <- makePrefPlot(mrkt.comp$str,
-                               x.field='occ.qtl',
-                               y.field='str.act',
-                               group.field=market.field,
-                               smooth=TRUE,
-                               smooth.span=.75)
-  qtlocc.pplot <- qtlocc.pplot +
-    xlab('\nQualtile of Occupancy Rate') +
-    ylab('\n% of Properties where Airbnb is more profitable') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    scale_y_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    scale_color_manual(values=mrkt.col)
-  
-  ## Make the rate heatmap  
-  
-  rate.hm <- makeHeatMap(mrkt.comp$str,
-                         x.field='occ.rate',
-                         y.field='nightly.rate',
-                         color.field='str.act',
-                         bins=c(.05, 25),
-                         svm=F, 
-                         alpha.count=T,
-                         add.points=T,
-                         fill.colors=heat.col)
-  
-  rate.hm <- rate.hm +
-    xlab('\n Occupancy Rate') +
-    ylab('\n Nightly Rate') +
-    scale_x_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    theme(legend.position='bottom')
-  
-  # Rate SVM heatmap
-  
-  rate.hm.svm <- makeHeatMap(mrkt.comp$str,
-                             x.field='occ.rate',
-                             y.field='nightly.rate',
-                             color.field='str.act',
-                             bins=c(.05, 25),
-                             svm=T, 
-                             alpha.count=F,
-                             add.points=T,
-                             fill.colors=heat.col)
-  
-  rate.hm.svm <- rate.hm.svm +
-    xlab('\n Occupancy Rate') +
-    ylab('\n Nightly Rate') +
-    scale_x_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    theme(legend.position='bottom')
-  
-  ## Make quartile heat map  
-  
-  qtl.hm <- makeHeatMap(mrkt.comp$str,
-                        x.field='occ.qtl',
-                        y.field='rate.qtl',
-                        color.field='str.act',
-                        bins=c(5, 5),
+  # Rate v Rate
+  rate.hm <- abbHeatMap(ic.df,
+                        x.field='occ',
+                        y.field='nightly.rate',
+                        pref.field='pref',
                         svm=F, 
                         alpha.count=T,
                         add.points=T,
-                        fill.colors=heat.col)
+                        fill.colors=c(abb.col[1], abb.col[5]))
   
-  qtl.hm <- qtl.hm +
-    xlab('\n Quantile of Occupancy Rate') +
-    ylab('\n Quantile of Nightly Rate') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    scale_y_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    theme(legend.position='bottom')
-  
-  ## Make quartile heat map  
-  
-  qtl.hm.svm <- makeHeatMap(mrkt.comp$str,
-                            x.field='occ.qtl',
-                            y.field='rate.qtl',
-                            color.field='str.act',
-                            bins=c(5, 5),
+  # Rate v Rate SVM
+  rate.hm.svm <- abbHeatMap(ic.df,
+                            x.field='occ',
+                            y.field='nightly.rate',
+                            pref.field='pref',
                             svm=T, 
                             alpha.count=F,
                             add.points=T,
-                            fill.colors=heat.col)
+                            fill.colors=c(abb.col[1], abb.col[5]))
   
-  qtl.hm.svm <- qtl.hm.svm +
-    xlab('\n Quantile of Occupancy Rate') +
-    ylab('\n Quantile of Nightly Rate') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    scale_y_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    theme(legend.position='bottom')
+  # Qtl vs Qtl
+  qtl.hm <- abbHeatMap(ic.df,
+                       x.field='occ.qtl',
+                       y.field='rate.qtl',
+                       pref.field='pref',
+                       svm=F, 
+                       alpha.count=T,
+                       add.points=T,
+                       fill.colors=c(abb.col[1], abb.col[5]))
   
-  ## Get SVM Counts for market analysis
+  # QTL vs QTL SVM
+  qtl.hm.svm <- abbHeatMap(ic.df,
+                           x.field='occ.qtl',
+                           y.field='rate.qtl',
+                           pref.field='pref',
+                           svm=T, 
+                           alpha.count=F,
+                           add.points=T,
+                           quantile=T,
+                           fill.colors=c(abb.col[1], abb.col[5]))
   
-  svm.rate <- makeSVM(mrkt.comp$str,
+  ## Make Market Stats Table
+  
+  # Rate Numbers
+  svm.rate <- makeSVM(ic.df,
                       x.field='occ.rate',
                       y.field='nightly.rate',
-                      z.field='str.act',
+                      z.field='str.act.pref',
                       svm.type='C-svc',
                       svm.kernel='polydot',
                       poly.degree=4,
                       expand.factor=100)
   
-  svm.qtl <- makeSVM(mrkt.comp$str,
+  # Qtl Numbers
+  svm.qtl <- makeSVM(ic.df,
                      x.field='occ.qtl',
                      y.field='rate.qtl',
-                     z.field='str.act',
+                     z.field='str.act.pref',
                      svm.type='C-svc',
                      svm.kernel='polydot',
                      poly.degree=4,
                      expand.factor=100)
   
-  ## Calculate the full market score  
-  
-  market.ratio <- data.frame(type=c('rate', 'qtl'),
-                             actual=rep(mean(mrkt.comp$str$str.act), 2),
+  # Complete Table
+  market.stats <- data.frame(type=c('rate', 'qtl'),
+                             actual=rep(mean(str.data.ic$str.act.pref), 2),
                              fitted=c(mean(svm.rate$orig$fitted),
                                       mean(svm.qtl$orig$fitted)),
                              svm=c(mean(svm.rate$pred$pred),
                                    mean(svm.qtl$pred$pred)))
   
-  ## Return values
+  ## Return Values
   
-  return(list(ltr=mrkt.comp$ltr,
-              str=mrkt.comp$str,
-              mrkt.table=mrkt.table,
-              plot.2.2=twotwo.bar.plot,
-              plot.1=str.act.plot,
-              rawocc.plot=rawocc.pplot,
-              qtlocc.plot=qtlocc.pplot,
-              qtl.hm=qtl.hm,
-              qtl.hm.svm=qtl.hm.svm,
+  return(list(pref.table=pref.table,
+              pref.table.wide=pref.table.wide,
+              pref.bar=pref.bar,
+              occ.1pp=occ.1pp,
+              occq.1pp=occq.1pp,
               rate.hm=rate.hm,
               rate.hm.svm=rate.hm.svm,
-              mrkt.score=market.ratio))
-}
-
-### Wrapper function to handle all of the imputation and comparison ----------------------
-
-abbImputeCompare <- function(str.df,
-                             ltr.df,
-                             mod.spec, 
-                             match.factor=NULL,
-                             split.field=NULL,
-                             verbose=FALSE){
+              qtl.hm=qtl.hm,
+              qtl.hm.svm=qtl.hm.svm,
+              market.stats=market.stats))
   
-  ## Split data by field  
-  
-  # If field is specified
-  if(!is.null(split.field)){
-    
-    str.list <- split(str.df, str.df[ ,split.field])
-    ltr.list <- split(ltr.df, ltr.df[ ,split.field])
-    
-    if(verbose){
-      split.levels <- levels(as.factor(str.data[,split.field]))
-      cat('Splitting data into: ', paste(split.levels,
-                                         collapse='\n'), '\n')
-    }
-    
-    # If no field specified  
-  } else {
-    
-    str.list <- list(str.df)
-    ltr.list <- list(ltr.df)
-    
-    if(verbose){
-      cat('Data analyzed at global level')
-    }
-    
-  }
-  
-  ## Loop through split dfs
-  
-  # Set up capture list
-  imp.list <- list()
-  
-  # Run Loop
-  for(il in 1:length(str.list)){
-    
-    if(verbose) cat('Imputing and Comparing: ', split.levels[il], '\n')
-    
-    # Impute long term rents
-    imp.temp <- imputeLtrRents(ltr.df=ltr.df, 
-                               str.df=str.df, 
-                               mod.spec=mod.spec,
-                               match.factor=match.factor)
-    
-    # Add imputed LTRs to the STR data
-    str.list[[il]] <- merge(str.list[[il]], imp.temp$imp.rent, by='property.id')
-    imp.list[[il]] <- imp.temp
-    
-    # Impute days on market
-    str.list[[il]]$imp.dom <- imputeDOM(str.list[[il]], 
-                                        ltr.list[[il]], 
-                                        calc.type='median')
-    
-    # Create imputed LTR Revenue
-    str.list[[il]]$ltr.imp.revenue <- (str.list[[il]]$imp.rent * 
-                                         (52 - str.list[[il]]$imp.dom / 7))
-    
-    # Compare revenues 
-    comp.revs <- compareRevenues(str.list[[il]])
-    
-    # Add revenue comparison fields to str data
-    str.list[[il]] <- merge(str.list[[il]], 
-                            comp.revs, 
-                            by='property.id')
-    
-    
-  }
-  
-  ## Convert list into a df  
-  
-  str.df <- rbind.fill(str.list)
-  
-  ## Add indicator of which field was the split based on  
-  
-  str.df$split.field <- split.field
-  
-  ## Return Values  
-  
-  return(str.df)
   
 }
-
 
