@@ -205,7 +205,7 @@ We then employ a custom function to cross impute rates and rents for the two dat
   
   imp.data <- imputeLtrRents(ltr.df=ltr.data, 
                                str.df=str.data, 
-                               mod.specs=ltr.mod.spec,
+                               mod.spec=ltr.mod.spec,
                                match.factor='suburb')
 
 ```
@@ -247,90 +247,53 @@ Next, we compare the revenues from the two and extract the new datasets.
 
 ```
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+Realizing that the imputed long term rental values may be more accurate when estimated at smaller scales, we functionalize the above processes and then apply it to short term rentals, broken into submarkets by type, bed/bath and geographic area.  In other words, we separately estimate LTR rents for Apartments with 1bed/1bath in the city core, Apartments with 1bed/1bath in the beach submarket, etc. for all compbinations of type, bed/bath and geographic area. We then combine the results form all estimates back into a single data.frame that contains all of the short-term rentals. 
 
-abbImputeCompare <- function(str.df,
-                             ltr.df,
-                             mod.spec, 
-                             match.factor=NULL,
-                             split.field=NULL){
-  
-  if(!is.null(split.field)){
-    
-    str.list <- split(str.df, str.df[ ,split.field])
-    ltr.list <- split(ltr.df, ltr.df[ ,split.field])
-    
-  } else {
-    
-    str.list <- list(str.df)
-    ltr.list <- list(ltr.df)
-    
-  }
-  
-  
-  imp.list <- list()
-  
-  for(il in 1:length(str.list)){
-    
-    imp.temp <- imputeLtrRents(ltr.df=ltr.df, 
-                                     str.df=str.df, 
-                                     mod.specs=mod.spec,
-                                     match.factor=match.factor)
+```{r build.tbg.data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-    str.list[[il]] <- merge(str.list[[il]], imp.temp$imp.rent, by='property.id')
-    imp.list[[il]] <- imp.temp
-    
-    str.list[[il]]$imp.dom <- imputeDOM(str.list[[il]], 
-                                        ltr.data[[il]], 
-                                        calc.type='median')
-    str.list[[il]]$ltr.imp.revenue <- str.list[[il]]$imp.rent * (52 - str.list[[il]]$imp.dom / 7)
+ # Create the type, bed/bath and geo sub market variable
 
-    comp.revs <- compareRevenues(str.list[[il]])
+ str.data$tbg <- paste0(str.data$product,'.', str.data$sub.mrkt)
+ ltr.data$tbg <- paste0(ltr.data$product,'.', ltr.data$sub.mrkt)
 
-    str.list[[il]] <- merge(str.list[[il]], 
-                            comp.revs, 
-                            by='property.id')
+ # Make IC estimates at TBG level
 
-        
-  }
-  
-  str.df <- rbind.fill(str.list)
-  str.df$split.field <- split.field
-  
-  
-                             }
+ str.data.ic <- abbImputeCompare(str.df=str.data,
+                                 ltr.df=ltr.data,
+                                 mod.spec=ltr.mod.spec,
+                                 match.factor='suburb',
+                                 split.field='tbg',
+                                 verbose=TRUE)
 
 
 ```
 
 
-
-
-
-
-
-### Analyze Results
+## Analyze Results
 
 First we make a comparison table of the results, broken down by submarket.  
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  mrkt.table <- createCompTable(str.glob, 'sub.mrkt')
+ # Make Basic comparison table
+  pref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                   split.field='sub.mrkt')
 
-  mrkt.table$ID <- factor(mrkt.table$ID, 
-                          levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
-  
+ # Convert to wide format for output
+  pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var')
+
+ # Limit to the extrapolated pref type
+  pref.table <- pref.table[pref.table$rev.type == 'Extrapolated', ]
+    
 ```
 
-We plot these results in a 2x2 matrix to show the preference likelihoods under the 4 possible scenarios. 
+We then turn this into a simple chart to see the differences
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
     
   sm.col <- abb.col[c(1, 3, 6, 5, 2)]
-  ht.col <- abb.col(c(2, 4, 10, 9)]
 
-  bar.plot <- 
-    ggplot(mrkt.table, aes(x=ID, weights=Var, fill=ID)) + 
+  ggplot(pref.table, aes(x=ID, weights=Var, fill=ID)) + 
     geom_bar() +
     facet_grid(~rev.type) +
     scale_fill_manual(values=sm.col) +
@@ -346,20 +309,16 @@ Next, we plot the \% of properties that have short-term preference versus the oc
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  rawocc.pplot <- makePrefPlot(str.glob,
-                               x.field='pot.occ.rate',
-                               y.field='str.pot.pref',
-                               group.field='sub.mrkt',
+  str.data.ic$pref <- str.data.ic$str.ext.pref
+
+  rawocc.pplot <- abbPrefPlot(str.data.ic,
+                               x.field='occ.rate',
+                               split.field='sub.mrkt',
                                smooth=TRUE,
-                               smooth.span=.75)
-  rawocc.pplot <- rawocc.pplot +
-    xlab('\nOccupancy Rate') +
-    ylab('\n% of Properties where Airbnb is more profitable') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    scale_y_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    scale_color_manual(values=sm.col)
+                               smooth.span=.35 ,
+                              spl.col=sm.col)
+  rawocc.pplot
+  
 
 ```
 
@@ -368,9 +327,7 @@ Looking at the distribution of occupancy rates, we that it is not uniform in any
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str.glob$sub.mrkt <- factor(str.glob$sub.mrkt, 
-                         levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
-  ggplot(str.glob, aes(x=pot.occ.rate, group=sub.mrkt, color=sub.mrkt, fill=sub.mrkt)) +
+  ggplot(str.data.ic, aes(x=occ.rate, group=sub.mrkt, color=sub.mrkt, fill=sub.mrkt)) +
     geom_density(alpha=.3) +
     facet_wrap(~sub.mrkt) +
     scale_color_manual(values=sm.col) +
@@ -391,17 +348,16 @@ We then calculate quantile values for rates and replot the charts
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str.glob$occ.qtl <- makeWtdQtl(str.glob$occ.rate, 
+  str.data.ic$occ.qtl <- makeWtdQtl(str.data.ic$occ.rate, 
                                       return.type='rank') 
-  str.glob$rate.qtl <- makeWtdQtl(str.glob$med.rate, 
+  str.data.ic$rate.qtl <- makeWtdQtl(str.data.ic$med.rate, 
                                   return.type='rank') 
   
   ## Make quartile location plot
   
-  qtlocc.pplot <- makePrefPlot(str.glob,
+  qtlocc.pplot <- abbPrefPlot(str.data.ic,
                                x.field='occ.qtl',
-                               y.field='str.act.pref',
-                               group.field='sub.mrkt',
+                               split.field='sub.mrkt',
                                smooth=TRUE,
                                smooth.span=.75)
   qtlocc.pplot <- qtlocc.pplot +
@@ -412,6 +368,9 @@ We then calculate quantile values for rates and replot the charts
     scale_y_continuous(breaks=seq(0, 1, by=.25),
                        labels=c('0%', '25%', '50%', '75%', '100%')) +
     scale_color_manual(values=sm.col)
+  
+  qtlocc.pplot
+  
 
 ```
 
@@ -419,103 +378,68 @@ Next we build a heat map that shows which combinations of occ rate and nightly r
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
-  rate.hm <- makeHeatMap(str.glob,
+  rate.hm <- abbHeatMap(str.data.ic,
                 x.field='occ.rate',
                 y.field='nightly.rate',
-                color.field='str.act.pref',
-                bins=c(.05, 25),
+                pref.field='str.ext.pref',
                 svm=F, 
                 alpha.count=T,
                 add.points=T,
                 fill.colors=c(abb.col[1], abb.col[5]))
-
+  rate.hm
   
-  rate.hm <- rate.hm +
-    xlab('\n Occupancy Rate') +
-    ylab('\n Nightly Rate') +
-    scale_x_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    theme(legend.position='bottom')
-
 ```
 
 To make the distinction more clear, we employ a Support Vector Machine to classify the areas into short and long term preference. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  rate.hm.svm <- makeHeatMap(str.glob,
-                         x.field='occ.rate',
-                         y.field='nightly.rate',
-                         color.field='str.act.pref',
-                         bins=c(.05, 25),
-                         svm=T, 
-                         alpha.count=F,
-                         add.points=T,
-                         fill.colors=c(abb.col[1], abb.col[5]))
-  
-  rate.hm.svm <- rate.hm.svm +
-    xlab('\n Occupancy Rate') +
-    ylab('\n Nightly Rate') +
-    scale_x_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    theme(legend.position='bottom')
+  rate.hm.svm <- abbHeatMap(str.data.ic,
+                            x.field='occ.rate',
+                            y.field='nightly.rate',
+                            pref.field='str.ext.pref',
+                            svm=T, 
+                            alpha.count=F,
+                            add.points=T,
+                            fill.colors=c(abb.col[1], abb.col[5]))
+  rate.hm.svm
+
   
 ```
 
-Again, due to the non-uniformity of distribution of these two axis, we convert to quantiles and re-plot.
-
-
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
-  qtl.hm <- makeHeatMap(str.glob,
-                         x.field='occ.qtl',
-                         y.field='rate.qtl',
-                         color.field='str.act.pref',
-                         bins=c(5, 5),
-                         svm=F, 
-                         alpha.count=T,
-                         add.points=T,
-                         fill.colors=c(abb.col[1], abb.col[5]))
-  
-  qtl.hm <- qtl.hm +
-    xlab('\n Quantile of Occupancy Rate') +
-    ylab('\n Quantile of Nightly Rate') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    scale_y_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    theme(legend.position='bottom')
+  qtl.hm <- abbHeatMap(str.data.ic,
+                x.field='occ.qtl',
+                y.field='rate.qtl',
+                pref.field='str.ext.pref',
+                svm=F, 
+                alpha.count=T,
+                add.points=T,
+                fill.colors=c(abb.col[1], abb.col[5]))
+  qtl.hm
 
 ```
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
-  qtl.hm.svm <- makeHeatMap(str.glob,
-                        x.field='occ.qtl',
-                        y.field='rate.qtl',
-                        color.field='str.act.pref',
-                        bins=c(5, 5),
-                        svm=T, 
-                        alpha.count=F,
-                        add.points=T,
-                        fill.colors=c(abb.col[1], abb.col[5]))
-  
-  qtl.hm.svm <- qtl.hm.svm +
-    xlab('\n Quantile of Occupancy Rate') +
-    ylab('\n Quantile of Nightly Rate') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    scale_y_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    theme(legend.position='bottom')
-  
+  qtl.hm.svm <- abbHeatMap(str.data.ic,
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T, 
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  qtl.hm.svm
+
 ```
 
-Finally, we calculate the areas of the heat maps and combine into a table. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  svm.rate <- makeSVM(str.glob,
+  svm.rate <- makeSVM(str.data.ic,
                      x.field='occ.rate',
                      y.field='nightly.rate',
                      z.field='str.act.pref',
@@ -524,7 +448,7 @@ Finally, we calculate the areas of the heat maps and combine into a table.
                      poly.degree=4,
                      expand.factor=100)
   
-  svm.qtl <- makeSVM(str.glob,
+  svm.qtl <- makeSVM(str.data.ic,
                       x.field='occ.qtl',
                       y.field='rate.qtl',
                       z.field='str.act.pref',
@@ -534,7 +458,7 @@ Finally, we calculate the areas of the heat maps and combine into a table.
                       expand.factor=100)
   
   market.ratio <- data.frame(type=c('rate', 'qtl'),
-                             actual=rep(mean(str.glob$str.act.pref), 2),
+                             actual=rep(mean(str.data.ic$str.act.pref), 2),
                              fitted=c(mean(svm.rate$orig$fitted),
                                       mean(svm.qtl$orig$fitted)),
                              svm=c(mean(svm.rate$pred$pred),
@@ -542,49 +466,3 @@ Finally, we calculate the areas of the heat maps and combine into a table.
 ```
 
 
-### Submarkets
-
-We now take the analytical process just completed on the entire metro and apply it to various submarkets.  We use a custom function that combines all the processes above into a single command. 
-
-#### Property Type
-
-We start by comparing apartments to houses.  First we set a new imputation model specification
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Set model specifications
-  ltr.mod.spec <- formula(log(event.price) ~ as.factor(bedbath) + as.factor(suburb) + 
-                            as.factor(ltr.month))
-  str.mod.spec <- formula(log(nightly.rate) ~ as.factor(bedbath) + as.factor(suburb))
-  
-
-```
-
-We then recompute the market analysis for each property type.
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Select data
-  str.apt <- which(str.revs$type == 'Apartment')
-  ltr.apt <- which(ltr.revs$type == 'Apartment')
-
-  # Estimate House Results  
-  house <- fullMarketAnalysis(ltr.df=ltr.revs[-ltr.apt,],
-                              str.df=str.revs[-str.apt, ],
-                              ltr.mod.spec=ltr.mod.spec,
-                              str.mod.spec=str.mod.spec,
-                              clip.field='suburb',
-                              market.field='none',
-                              mrkt.col=sm.col,
-                              heat.col=c(abb.col[1], abb.col[5]))
-
-   apt <- fullMarketAnalysis(ltr.df=ltr.revs[ltr.apt,],
-                             str.df=str.revs[str.apt, ],
-                             ltr.mod.spec=ltr.mod.spec,
-                             str.mod.spec=str.mod.spec,
-                             clip.field='suburb',
-                             market.field='sub.mrkt',
-                             mrkt.col=sm.col,
-                             heat.col=c(abb.col[1], abb.col[5]))
-
-```
