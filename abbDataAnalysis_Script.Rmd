@@ -468,11 +468,6 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  ss60 <- which(str.data.ic$cancel.policy == 'Super Strict 60 Days')
-  str.data.ic$cancel.policy[ss60] <- 'Strict'
-  cpmiss <- which(str.data.ic$cancel.policy == '')
-  str.data.ic <- str.data.ic[-cpmiss, ]
-  
   
   
   ps <- which(str.data.ic$host.type == 'Profit Seeker')
