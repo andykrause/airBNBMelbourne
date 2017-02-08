@@ -466,3 +466,27 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 ```
 
 
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ss60 <- which(str.data.ic$cancel.policy == 'Super Strict 60 Days')
+  str.data.ic$cancel.policy[ss60] <- 'Strict'
+  cpmiss <- which(str.data.ic$cancel.policy == '')
+  str.data.ic <- str.data.ic[-cpmiss, ]
+  
+  
+  
+  ps <- which(str.data.ic$host.type == 'Profit Seeker')
+  os <- which(str.data.ic$host.type == 'Opportunistic Sharer')
+  mu <- which(str.data.ic$host.type == 'Multi-Platform User')
+  un <- which(str.data.ic$host.type == 'Unknown')
+  
+  
+  mod.str <- glm(str.pot.pref~type+as.factor(bedbath)+
+                    sub.mrkt+
+                    I(max.guests/bedrooms)+min.stay+
+                    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                 family=binomial(link='logit'),
+                 data=str.data.ic[un,])
+  
+
+```
