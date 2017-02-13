@@ -502,13 +502,13 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   mod.ext.host <- glm(str.ext.pref~type+as.factor(bedbath)+
-                        sub.mrkt+
+                        sub.mrkt+as.factor(host.type)+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       family=binomial(link='logit'),
                       data=str.data.ic)
   mod.pot.host <- glm(str.pot.pref~type+as.factor(bedbath)+
-                        sub.mrkt+
+                        sub.mrkt+as.factor(host.type)+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       family=binomial(link='logit'),
@@ -528,21 +528,17 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  mod.ext.host <- lm(str.ext.prem~type+as.factor(bedbath)+
+  mod.ext.host.prem <- lm(str.ext.prem~type+as.factor(bedbath)+
                         sub.mrkt+
                         I(max.guests/bedrooms)+min.stay+
-                        I(cancel.policy=='Flexible') + I(cancel.policy=='Strict') + suburb,
+                        I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       data=str.data.ic)
-  mod.pot.host <- lm(str.pot.prem~type+as.factor(bedbath)+
+  mod.pot.host.prem <- lm(str.pot.prem~type+as.factor(bedbath)+
                         sub.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       data=str.data.ic)
 ```
-
-
-
-
 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
@@ -553,12 +549,293 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
   un <- which(str.data.ic$host.type == 'Unknown')
   
   
-  mod.str <- glm(str.pot.pref~type+as.factor(bedbath)+
+  mod.ext.ps <- glm(str.pot.pref~type+as.factor(bedbath)+
+                    sub.mrkt+
+                    I(max.guests/bedrooms)+min.stay+
+                    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                 family=binomial(link='logit'),
+                 data=str.data.ic[ps,])
+  
+  
+  mod.ext.os <- glm(str.pot.pref~type+as.factor(bedbath)+
+                    sub.mrkt+
+                    I(max.guests/bedrooms)+min.stay+
+                    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                 family=binomial(link='logit'),
+                 data=str.data.ic[os,])
+  
+  mod.ext.mu <- glm(str.pot.pref~type+as.factor(bedbath)+
+                    sub.mrkt+
+                    I(max.guests/bedrooms)+min.stay+
+                    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                 family=binomial(link='logit'),
+                 data=str.data.ic[mu,])
+  
+  mod.ext.un <- glm(str.pot.pref~type+as.factor(bedbath)+
                     sub.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[un,])
   
+```
+
+
+### Moving Window Logit
+
+To better capture the spatial variation in the logit model results, we set up a moving window logit model that estimates a different model at each estimation point on the map.  Before beginning, we import a new suburbs shapefile and trim it to those suburbs with Airbnb properties. 
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ suburbs.shp <- readShapePoly(paste0(data.path, 'geographic/melbSuburbs.shp'),
+                              proj4string=CRS("+init=epsg:4283"),
+                              delete_null_obj=TRUE)
+
+ ssubs <- table(str.data.ic$suburb)
+ s.subs <- subs[subs$id %in% names(ssubs),]
+ s.suburbs <- suburbs.shp[suburbs.shp@data$NAME_2006 %in% names(ssubs),]
+ sssubs <- fortify(s.suburbs)
+ 
+```
+
+Next we set up the prediction points.  We drap a grid over the entire area and use those points for prediction points. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Min, Max and Range
+ xmin <- min(s.subs$long)
+ xmax <- max(s.subs$long)
+ ymin <- min(s.subs$lat)
+ ymax <- max(s.subs$lat)
+ xrange <- xmax-xmin
+ yrange <- ymax-ymin
+ 
+ # Set Scale
+ scale <- mean(xrange, yrange)/100
+ 
+ # Create estimation points
+ est.data <- str.data.ic
+ est.points <- createGridPoints(s.suburbs, scale, T)
 
 ```
+
+We then specify the logistic regression model and set the moving window bandwidth. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Set model specification  
+ 
+ pot.mod.spec <- str.pot.pref ~ type + as.factor(bedbath) + 
+   I(max.guests / bedrooms) + min.stay + 
+   I(cancel.policy == 'Flexible') + 
+   I(cancel.policy == 'Strict')
+ 
+ ext.mod.spec <- str.ext.pref ~ type + as.factor(bedbath) + 
+   I(max.guests / bedrooms) + min.stay + 
+   I(cancel.policy == 'Flexible') + 
+   I(cancel.policy == 'Strict')
+
+
+ ## Set bandwidth
+ 
+ k <- 400
+
+```
+
+The results are estimated with the custom MWL function
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ pot.results.all <- mwl(est.data, 
+                        est.points, 
+                        pot.mod.spec, 
+                        k)
+
+ ext.results.all <- mwl(est.data, 
+                        est.points, 
+                        ext.mod.spec, 
+                        k)
+ 
+ 
+  pot.results.ps <- mwl(est.data[ps, ], 
+                        est.points, 
+                        pot.mod.spec, 
+                        k)
+   pot.results.os <- mwl(est.data[os, ], 
+                        est.points, 
+                        pot.mod.spec, 
+                        k)
+ 
+   pot.results.mu <- mwl(est.data[mu, ], 
+                        est.points, 
+                        pot.mod.spec, 
+                        k)
+ 
+   pot.results.un <- mwl(est.data[un, ], 
+                        est.points, 
+                        pot.mod.spec, 
+                        k)
+ 
+
+   ext.results.ps <- mwl(est.data[ps, ], 
+                        est.points, 
+                        ext.mod.spec, 
+                        k)
+   ext.results.os <- mwl(est.data[os, ], 
+                        est.points, 
+                        ext.mod.spec, 
+                        k)
+ 
+   ext.results.mu <- mwl(est.data[mu, ], 
+                        est.points, 
+                        ext.mod.spec, 
+                        k)
+ 
+   ext.results.un <- mwl(est.data[un, ], 
+                        est.points, 
+                        ext.mod.spec, 
+                        k)
+ 
+
+```
+
+Coefficents are extracted and put into a data.frame
+
+
+MAKE A FUNCTION BELOW HERE
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+extrMWLCoef <- function(mwl.results,
+                        est.points,
+                        names.coef){
+ 
+ coef.names <- rownames(mwl.results[[1]])
+ 
+ # Create a list to capture
+ coef.list <- list()
+ 
+ # Create a data.frame to capture
+ coef.df <- data.frame(lat=est.points@coords[,2],
+                       long=est.points@coords[,1])
+ 
+ # Loop through and extract coefficients
+ for(cn in 1:length(coef.names)){
+   coef.list[[cn]] <- lapply(mwl.results, getMWLCoef, coef=coef.names[cn])
+   coef.df[ ,ncol(coef.df) + 1] <- unlist(coef.list[[cn]])
+ }
+ 
+ # Add plottable names
+ colnames(coef.df)[3:13] <- names.coef
+ 
+ return(coef.df)
+
+}
+```
+
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+x.names <- c('intercept', 'house', 'bb11', 'bb21', 'bb31',
+                              'bb32', 'bb42', 'guest', 'minstay', 'flex', 'strict')
+
+pra.coef <- extrMWLCoef(pot.results.all,
+                        est.points,
+                        x.names)
+era.coef <- extrMWLCoef(ext.results.all,
+                        est.points,
+                        x.names)
+prp.coef <- extrMWLCoef(pot.results.ps,
+                        est.points,
+                        x.names)
+pro.coef <- extrMWLCoef(pot.results.os,
+                        est.points,
+                        x.names)
+prm.coef <- extrMWLCoef(pot.results.mu,
+                        est.points,
+                        x.names)
+pru.coef <- extrMWLCoef(pot.results.un,
+                        est.points,
+                        x.names)
+erp.coef <- extrMWLCoef(ext.results.ps,
+                        est.points,
+                        x.names)
+ero.coef <- extrMWLCoef(ext.results.os,
+                        est.points,
+                        x.names)
+erm.coef <- extrMWLCoef(ext.results.mu,
+                        est.points,
+                        x.names)
+eru.coef <- extrMWLCoef(ext.results.un,
+                        est.points,
+                        x.names)
+```
+
+Finally, these coefficients are converted to a surface. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+makeMWLSurfs <- function(mwl.coefs,
+                         est.points){
+
+  # Make capture list
+  surf.list <- list()
+  
+  mwl.coefs <- mwl.coefs[ ,!names(mwl.coefs) %in% c('lat', 'long')]
+ 
+ # Create surfaces
+  for(sl in 1:ncol(mwl.coefs)){
+   
+   # If NAs
+   to.cut <- which(is.na(mwl.coefs[,sl]))
+   if(length(to.cut) > 0){
+     surf.points <- est.points[-to.cut,]
+     surf.value <- mwl.coefs[-to.cut, sl]
+   } else {
+     surf.points <- est.points
+     surf.value <- mwl.coefs[ , sl]
+   }
+   
+   # Surface estimation
+   surf.list[[sl]] <- point2Surface(surf.points, 
+                                    surf.value,
+                                    .01, 
+                                    1.5)
+  }
+  
+  names(surf.list) <- names(mwl.coefs)
+
+return(surf.list)    
+}
+
+```
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+pra.surfs <- makeMWLSurfs(pra.coef,
+                          est.points)
+era.surfs <- makeMWLSurfs(era.coef,
+                          est.points)
+
+
+prp.surfs <- makeMWLSurfs(prp.coef,
+                          est.points)
+pro.surfs <- makeMWLSurfs(pro.coef,
+                          est.points)
+prm.surfs <- makeMWLSurfs(prm.coef,
+                          est.points)
+pru.surfs <- makeMWLSurfs(pru.coef,
+                          est.points)
+
+
+erp.surfs <- makeMWLSurfs(erp.coef,
+                          est.points)
+ero.surfs <- makeMWLSurfs(ero.coef,
+                          est.points)
+erm.surfs <- makeMWLSurfs(erm.coef,
+                          est.points)
+eru.surfs <- makeMWLSurfs(eru.coef,
+                          est.points)
+
+```
+
