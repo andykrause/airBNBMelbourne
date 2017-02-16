@@ -3,7 +3,7 @@ title: "Should I Airbnb My Property?"
 author: "Andy Krause and Gideon Aschwanden"
 header-includes:
     - \usepackage{setspace}\doublespacing
-date: "January 14, 2017"
+date: "February 17, 2017"
 output:
   pdf_document: default
   html_document: default
@@ -120,122 +120,134 @@ Though issues of second homes were primarily treated as a rural phenomenom for d
 
 Overall, the extant literature on short-term rentals is limited, but growing.  Of the three types of research -- pricing, impacts on housing market and legalities/externalities -- none specifically address the decision faced by an owner who is trying to decide between a long- or short-term leasing strategy. The closest analog in the literature is a piece by @larson2009pur examining the choice between purchasing a time-share or simply paying for hotel rooms.  Theoretically, the literature shows that in most cases there is a demonstratable difference between first and second home market dynamics due to the use differences of the occupants.  We hypothesize that this same thinking can be extended to the difference between short-term rental occupants (tourists and business travelers) and long-term rental occupants (workers and retirees) and, as a result, there should be differences in the market which make certain housing products and locations preferable (more profitable) under a short-term versus long-term tenure.
 
-<!-- ## Method -->
+## Method
 
-<!-- We approach answering the question of whether to pursue a short- or long-term leasing strategy by creating and assessing a scenario likely to be faced by a recent purchaser of a property.  More specifically, we examine the following case: -->
+We approach answering the question of whether to pursue a short- or long-term leasing strategy by creating and assessing a scenario likely to be faced by a recent purchaser of a property.  More specifically, we examine the following case:
 
-<!-- * An investor purchases a property in Melbourne on Sept 1, 2015. -->
-<!-- * They are looking to maximize the revenue over the 12-month period from September 1, 2015 to August 31, 2016. -->
-<!-- * The choices are 1) traditional year long rental (long term), or: 2) short-term, Airbnb type rental. -->
-<!-- * Only direct monetary revenues and costs are considered, others such as liquidity and inconvience are not considered.   -->
+* An investor purchases a property in Melbourne, Australia on September 1, 2015.
+* They are looking to maximize the net revenue over the 12-month period from September 1, 2015 to August 31, 2016.
+* The choices are 1) traditional year long rental (long term), or: 2) short-term, nightly Airbnb-type rental.
+* Only direct monetary revenues and costs are considered, others such as liquidity and inconvenience are not considered.
+* As most long-term rental use a leasing agency, we will assume use of an agency. 
 
-<!-- We will not, a priori, specify a location or property type as we hypothesize that the preference of a short-term rental over a long-term one will vary by the location and property characteristics.  Additionally, Australia implements a particular tax policy, often termed `negative gearing', that does allow for favourable tax treatment to real estate investors who experience greater costs than revenues on investment properties^[See @fane2004negative for a complete explanation of negative gearing.]  However, as the negative gearing policy requires knowledge of the investor's personal income situation, we will not be considering any effects of this policy in our analysis here.   -->
 
-<!-- One benefit of a short-term rental may be the ability to adjust the nightly rate over the course of the year to reflect changing demand and market trends. As future market trends are unknown at the time of purchase and the decision of long- vs short-term leasing strategy is asymetrically irreversable (can go from short to long, but not long to short), we make our comparisons using a fixed nightly (short-term) rate to respresent the most likely state of knowledge for our hypothetical investor on September 1, 2015. Both long- term rents and short-term rates and occupancy structures will be baesd on the market conditions as of this date.   -->
+We will not, a priori, specify a location or property type for the scenario as we hypothesize that the preference of a short-term rental over a long-term one will vary by the location and property characteristics. The extent to which location, property type and property characteristics impact the probabilit of short-term preference are examined in the results section. 
 
-<!-- We do not directly observe properties that are utilized in both a short and long term leasing strategy.  Therefore, comparisons are done based on estimated or imputed revenues.  Most specifically, we will estimate short-term revenue for observations of long-term rentals (LTRs) and long-term revenue for observations of short-term rentals (STRs). A preference for short or long term leasing strategy will be determined based on comparing the observed and estimated revenues.     -->
+Australia implements a particular tax policy, often termed `negative gearing', that allows for favourable tax treatment to real estate investors who experience greater costs than revenues on investment properties^[See @fane2004negative for a complete explanation of negative gearing.] To date, this policy only applies to long-term rental properties.  While this policy can influence the net revenue (post tax) of a property, the negative gearing policy requires knowledge of the investor's personal income situation.  As we do not have access to this information in the marketplace, we will not be considering any effects of this policy in our analysis here.
 
-<!-- ### Comparison -->
+One benefit of a short-term rental may be the ability to adjust the nightly rate over the course of the year to reflect changing demand and market trends. As future market trends are unknown at the time of purchase and the decision of long- vs short-term leasing strategy is asymetrically irreversable (can go from short to long, but not long to short), we make our comparisons using a fixed nightly (short-term) rate to respresent the most likely state of knowledge for our hypothetical investor on September 1, 2015. Both long-term rents and short-term rates and occupancy structures will be based on the market conditions as of this date.
 
-<!-- In this above scenario we compare the 12-month revenues from the a long-term rental with those of a short-term rental.  We define returns here as the gross revenue minus the direct costs associated with each of the two tenure possibilities. -->
+We do not directly observe properties that are utilized in both a short- and long-term leasing strategy.  Therefore, comparisons are done based on estimated or imputed revenues.  Most specifically, we will estimate the long-term revenue for observations of properties currently listed on a short-term rental portal (Airbnb). Initially, we attempted to also estimate short-term rental revenue for long-term properties but found the process of imputing occupancy rates and nightly rate structures too inaccurate to provide valid comparisons.
 
-<!-- \begin{equation} -->
-<!-- Rev_{LT} = RevG_{LT} - C_{LT} -->
-<!-- \end{equation} -->
+### Comparison
 
-<!-- \begin{equation} -->
-<!-- Rev_{ST} = RevG_{ST} - C_{ST} -->
-<!-- \end{equation} -->
+In this scenario we compare the observed 12-month revenues from short-term rental properties with their hypothetical long-term rental revenues.  We define revenue here as the gross revenue minus the direct costs associated with each of the two tenure possibilities. Costs which are equivalent between the two strategies are ignored.  
 
-<!-- Where $Rev_{LT}$ is the net revenue for a long-term rental, $RevG_{LT}$ is the gross revenue and $C_{LT}$ are the costs associated with long-term rental. The gross long-term revenue is expressed by:  -->
+\begin{equation}
+Rev_{ST} = RevG_{ST} - C_{ST}
+\end{equation}
 
-<!-- \begin{equation} -->
-<!-- RevG_{LT} = Rent_{M} * (12 - C_{S}) -->
-<!-- \end{equation} -->
+The gross short-term revenue is expressed by:
 
-<!-- where $Rent_{M}$ is the nominal monthly rent and $C_{S}$ are search costs defined in terms of the time (in months) spent to find a long-term tenant. -->
+\begin{equation}
+RevG_{ST} = Rate_{N} * O_{Total}
+\end{equation}
 
-<!-- The short-term revenue is expresse by: -->
+where $Rate_{N}$ is the average nightly rate and $O_{Total}$ are the total number of occupancies (bookings) over the 12-month period. For long-term revenues:
 
-<!-- \begin{equation} -->
-<!-- RevG_{ST} = Rate_{N} * O_{Total} -->
-<!-- \end{equation} -->
+\begin{equation}
+Rev_{LT} = RevG_{LT} - C_{LT}
+\end{equation}
 
-<!-- where $Rate_{N}$ is the average nightly rate and $O_{Total}$ are the total number of occupancies (bookings) over the 12-month period. -->
+Where $Rev_{LT}$ is the net revenue for a long-term rental, $RevG_{LT}$ is the gross revenue and $C_{LT}$ are the specific costs associated with long-term rental. The gross long-term revenue is expressed by:
 
-<!-- We have limited our consideration of costs in this case to be those undergone during a single year of ownership.  Broadly speaking, these fall into three categories for long-term rental and four categories for short-term properties.  Long-term costs are summarized as: -->
+\begin{equation}
+RevG_{LT} = Rent_{M} * (12 - C_{S})
+\end{equation}
 
-<!-- \begin{equation} -->
-<!-- C_{LT} = T + M + F -->
-<!-- \end{equation} -->
+where $Rent_{M}$ is the nominal monthly rent and $C_{S}$ are search costs defined in terms of the time (in months) spent to find a long-term tenant.
 
-<!-- where $T$ are tax related expenses, $M$ are general maintenance expenses and $F$ are finaning costs. Short-term properies experience the same three costs ($T$, $M$ and $F$) plus additional janitorial costs between each of the short-term occupants.  -->
+We have limited our consideration of costs in this case to be those undergone during a single year of ownership.  Broadly speaking, these fall into four categories long-term rental and five for short-term properties.  Long-term costs are summarized as:
 
-<!-- \begin{equation} -->
-<!-- C_{ST} = T + M + F + J -->
-<!-- \end{equation} -->
+\begin{equation}
+C_{LT} = T + M + F + L
+\end{equation}
 
-<!-- As our scenario compares a hypothetical and particular owner over the course of a single  year the tax $T$ and $F$ costs are identical between the two leasing strategy and therefore cancel out. General maintenance $M$ expenses may differ between the two strategies, and an argument could be made for either to be higher. Long-term renters spend more time in the property over the course of the year and bring their own appliance and furniture which may damage the home. They are also more likely to affix items to the structure.  Conversely, short-term rentals are usually furnished and the occupants have less incentive not to be evicted as their damage is not often uncovered until after they have left^[Note that Airbnb's rating policy may help protect hosts as bad guests can be flagged on the platform.].  Both arguments are meritous and we were unable to find any evidence to support maintenance costs being higher in short or long term rentals. As a result we have made the assumption that the maintenance costs will be identical, and they too cancel out.  -->
+where $T$ are tax related expenses, $M$ are general maintenance expenses, $F$ are financing costs and $L$ are leasing agency fees. Short-term properies experience three of the same costs ($T$, $M$ and $F$) plus additional janitorial costs $J$ between each of the short-term occupants as well as property utility costs, $U$ over the course of the year.
 
-<!-- Finally, we have janitorial costs $J$. These cover the costs to 'turn-over' the property between occupants.  For a short-term leasing strategy, these costs can be experiences every day or two, depending on the minimum length of stay and the total number of occupancies over the course of the year. Our data for short-term rentals comes from the Airbnb platform.  In addition to the nightly rate that an occupant pays to the owner there is also a separate 'cleaning fee' that is attached, as is a booking fee to Airbnb. Some hosts add additional 'linen' fees to cover costs of laundering.  While it may be advantageous for hosts in competitive markets to underquote their cleaning fees to keep occupancies up, we have no evidence to suggest that owners are exhibiting such behavior.  As a result of janitorial fees being a separate line item and directly paid by the occupants can also be ignored in the comparative analysis below as they are direct.       -->
+\begin{equation}
+C_{ST} = T + M + F + J + U
+\end{equation}
 
-<!-- Given that the costs cancel out between the two options, we will consider short-term rental (STR) strategy to be prefable to long-term rental (LTR) strategy if the following inequality holds: -->
+As our scenario compares a hypothetical and particular owner over the course of a single  year the tax $T$ and $F$ costs are identical between the two leasing strategy and therefore cancel out. General maintenance $M$ expenses may differ between the two strategies, and an argument could be made for either to be higher. Long-term renters spend more time in the property over the course of the year and bring their own appliances^[White goods are usually not supplied in the Australian rental market.] and furniture which may damage the home. They are also more likely to affix items to the structure.  Conversely, short-term rentals are usually furnished and the occupants have less incentive not to be evicted as their damage is not often uncovered until after they have left^[Note that Airbnb's rating policy may help protect hosts as bad guests can be flagged on the platform.].  Both arguments are meritous and we were unable to find any evidence to support maintenance costs being higher in short or long term rentals. As a result we have made the assumption that the maintenance costs will be identical, and they too cancel out.
 
-<!-- \begin{equation} -->
-<!-- RevG_{ST} > RevG_{LT}  -->
-<!-- \end{equation} -->
+Leasing costs $L$ are the fees paid to the rental agency to find and manage tenants over the life of the lease.  In Melbourne, rates generally range from 5\% to 7\% per annum.  We have assumed leasing costs of 6\% of the total gross revenue of the long-term lease contract. 
 
-<!-- More specifically, if: -->
+Janitorial costs, $J$, cover the costs to 'turn-over' the property between occupants.  For a short-term leasing strategy, these costs can be experienced every day or two, depending on the minimum length of stay and the total number of occupancies over the course of the year. Our data for short-term rentals comes from the Airbnb platform.  In addition to the nightly rate that an occupant pays to the owner there is also a separate 'cleaning fee' that is attached, as is a booking fee to Airbnb^[This fee could be considered analogous to the leasing fees $L$ that long-term rentals pay]. Some hosts add additional 'linen' fees to cover costs of laundering.  While it may be advantageous for hosts in competitive markets to underquote their cleaning fees to keep occupancies up, we have no evidence to suggest that owners are exhibiting such behavior. As a result of janitorial fees being a separate line item and directly paid by the occupants they can also be ignored in the comparative analysis below as they are direct.
 
-<!-- \begin{equation} -->
-<!-- Rate_{N} * O_{Total} > Rent_{M} * (12 - C_{S}) -->
-<!-- \end{equation} -->
+Finally, there are utility costs, $U$, that are borne by the property owner in a short-term leasing strategy but by the tenant in a long-term option.  The State of Victoria estimates energy costs for an apartment at A\$330 per month and for a larger house at A\$520 per month.  For two people in an apartment the cost is approximately A\$5 per person per day and for a four person household in a detached house the cost is around A\$4 per person per day person. For the purposes of estimating utility costs for the short-term rentals we use a mid-point value of A\$4.50 per person per day.  As we don't know total number of guests in each reservation we use a figure of 1.7 guests per bedroom and sum up the total costs for all bookings over the year.   
 
-<!-- ## Data -->
+\begin{equation}
+U = (4.5 * B * 1.7) * O
+\end{equation}
 
-<!-- Data for this studies were gathered from two different sources, one for short-term rental market and one for the long-term rental market.  Short-term rental market observations are from the Airbnb online portal. Airbnb is the largest short-term rental hub in the Melbourne region. As opposed to similar sites such as VRBO.com and homeaway.com which focus on vacation homes in tourist dominated areas such as beaches and ski resorts, Airbnb offers considerable coverage in urban areas and, therefore, directly competes to a greater degree with more traditional long-term rentals than the other sites. The data on the AirBNB market in Melbourne have been purchased from www.airdna.co, a data provider specializing in AirBNB data collection and analysis. The short term data include two types of observations, property level and nightly. Property-level data consists of a single observation for each property that is or has been listed on the Airbnb portal over the October 2014 to August 2016 period^[This time period represents the period in which AirDNA was engaged in data collection in Melbourne.]  The nightly data offer one observation for each property for each night of the year during its time on the portal.  These data indicate the advertised price, the occupancy status and a unique reservation identification (useful for determining the length of stay). -->
+We will consider short-term rental (STR) strategy to be prefable to long-term rental (LTR) strategy if the following inequality holds:
 
-<!-- The Airbnb data cover the Melbourne metropolitan region from October 1st, 2014 to August 30th, 2016. There are missing nightly observations during the time period before September 1, 2015. After initially imputed these observations we found the results unreliable and have structured the analysis to only cover the time period containing complete data.  All monetary values in the Airbnb data are in US dollars and have been converted to Australian dollars using the median of the exchange rate during this time period, 1.32 Australian dollars to 1 US dollar. -->
+\begin{equation}
+Rev_{ST} > Rev_{LT}
+\end{equation}
 
-<!-- The data on long-term leases was provided by Australia Property Monitors (APM), a Fairfax Group company. In raw form, this dataset includes an observation for each rental property listing for each time a detail of the listing changed. For example, if a property were listed for rent for one month and the price was dropped once each week there would be four observations in the dataset. These four observations are grouped by an event-specific identification number. This number is specific to the listing event, not the property. In each case the last observation signifies the final price of the rental contract. We separate this data into two sets for efficiency reasons. The first data set includes all information about the property, physical and economic (date and amount of rental contract), while the second contains a property ID, a rental event ID, the list price and the date of the change. As such, the first dataset is a set of market observations with associated characteristics and the second is a listing history of each rental event. The long-term lease data covers the period from January 2014 to December 2015. -->
+More specifically, if:
 
-<!-- Unfortunately, there are no common identifiers between the two datasets as the Airbnb data does not include address. Both sets of data do include latitude and longitude, but in a dense urban area with many multiple-family dwellings it is impossible to match apartments based on a two-dimensional coordinates. As a result of this, we are unable to directly match observations from the two datasets. However, the number of properties that rented long term for the 2014 to 2015 period and then switched to Airbnb for the 2015 to 2016 period are likely very small and this inability to directly match properties does not greatly impact our modeling strategy. -->
+\begin{equation}
+(Rate_{N} * O_{Total}) - U > (Rent_{M} * (12 - C_{S})) - L
+\end{equation}
 
-<!-- ```{r set_constants, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'} -->
+## Data
 
-<!--   exch.rate <- 1.32 -->
+Data for this study were gathered from two different sources, one for short-term rental market and one for the long-term rental market.  Short-term rental market observations are from the Airbnb online portal. Airbnb is the largest short-term rental hub in the Melbourne region. As opposed to similar sites such as VRBO.com and Homeaway.com which focus on vacation homes in tourist dominated areas such as beaches and ski resorts, Airbnb offers considerable coverage in urban areas and, therefore, directly competes to a greater degree with more traditional long-term rentals than the other sites. The data on the Airbnb market in Melbourne have been purchased from www.airdna.co, a data provider specializing in Airbnb data collection and analysis. The short-term data include two types of observations, property level and nightly. Property-level data consists of a single observation for each property that is or has been listed on the Airbnb portal over the October 2014 to August 2016 period^[This time period represents the period in which AirDNA was engaged in data collection in Melbourne.]  The nightly data offer one observation for each property for each night of the year during its time on the portal.  These nightly data indicate the advertised price, the occupancy status and a unique reservation identification.
 
-<!-- ``` -->
+The Airbnb data cover the Melbourne metropolitan region from October 1st, 2014 to August 30th, 2016. There are missing nightly observations during the time period before September 1, 2015. After initially imputed these observations we found the results unreliable and have structured the analysis to only cover the time period containing complete data.  All monetary values in the Airbnb data are in US dollars and have been converted to Australian dollars using the median of the exchange rate during this time period, 1.32 Australian dollars to 1 US dollar.
 
-<!-- ### Preparation -->
+The data on long-term leases was provided by Australia Property Monitors (APM), a Fairfax Group company. In raw form, this dataset includes an observation for each rental property listing for each time a detail of the listing changed. For example, if a property were listed for rent for one month and the price was dropped once each week there would be four observations in the dataset. These four observations are grouped by an event-specific identification number. This number is specific to the listing event, not the property. In each case the last observation signifies the final price of the rental contract. We separate this data into two sets for efficiency reasons. The first data set includes all information about the property, physical and economic (date and amount of rental contract), while the second contains a property ID, a rental event ID, the list price and the date of the change. As such, the first dataset is a set of market observations with associated characteristics and the second is a listing history of each rental event. The long-term lease data cover the period from January 2014 to December 2015.
 
-<!-- In this section we describe the operations that we have performed to prepare the two sets of raw data for analysis.  Primarily, this involves the filtering out data errors, outlier values and other observations than contain data that do not fit our research questions. Additionally, as our data are from two different sources, a number of fields also require standardization so that comparisons between the two leasing strategy options  -- long-term rental (LTR) vs short-term rental (STR) -- can be made. -->
+Unfortunately, there are no common identifiers between the two datasets as the Airbnb data does not include address. Both sets of data do include latitude and longitude, but in a dense urban area with many multiple-family dwellings it is impossible to match apartments based on a two-dimensional coordinates. As a result of this, we are unable to directly match observations from the two datasets. However, the number of properties that rented long-term for the 2014 to 2015 period and then switched to Airbnb for the 2015 to 2016 period are likely very small and this inability to directly match properties does not greatly impact our modeling strategy.
 
-<!-- We begin by filtering observations by time. Our hypothetical leasing strategy decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long-term rental versus an AirBNB-type, short-term rental approach to generating income. To determine the likely LTR rate for any given property, we will use the observed rental transactions from September 1, 2014 to August 31, 2015. Taking the Airbnb or STR approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors). In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question. -->
+```{r set_constants, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'}
 
-<!-- Next, we filter the data based on property types. AirBNB units are classified into 19 different property types. The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that some designation, such as Igloo, at the very least, are not completely true representations of the property type]. For the sake of this analysis, we will collapse these twenty types into three types: -->
+  exch.rate <- 1.32
 
-<!-- 1. **House**:  Includes properties labeled 'House' or 'Townhouse' -->
-<!-- 2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium' -->
-<!-- 3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt. -->
+```
 
-<!-- Within the long-term rental data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories: -->
+### Preparation
 
-<!-- 1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse' -->
-<!-- 2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio' -->
-<!-- 3. **Other**: Includes properties labeled as 'Semi' and 'Villa' -->
+Here we describe the operations that we have performed to prepare the two sets of raw data for analysis.  Primarily, this involves the filtering out data errors, outlier values and other observations than contain data that do not fit our research questions. Additionally, as our data are from two different sources, a number of fields also require standardization so that comparisons between the two leasing strategy options  -- long-term rental (LTR) vs short-term rental (STR) -- can be made.
 
-<!-- Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the short-term data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure)^[Also note that 'Apartment-type' ownership is very rare in Australia.  Nearly every multi-family dwelling is owned as a condominium.  See @berry2000investment for more information on the overall structure of the Australian market]. Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context. -->
+We begin by filtering observations by time. Our hypothetical leasing strategy decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long-term rental versus an AirBNB-type, short-term rental approach to generating income. To determine the likely LTR rate for any given property, we will use the observed rental transactions from September 1, 2014 to August 31, 2015. Taking the Airbnb or STR approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors). In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.
 
-<!-- The **Other** category only makes up a very small percentage of the properties in both the short and long term market; especially so in the long-term market (Figure 1) .  Additionally, a large proportion of the **Others** in the short-term data are Bed & Breakfast units, a use which doesn't fit with our research question. As a result, we remove the 'Others' from both the short- and the long-term rental data. -->
+Next, we filter the data based on property types. AirBNB units are classified into 19 different property types. The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that some designation, such as Igloo, at the very least, are not completely true representations of the property type]. For the sake of this analysis, we will collapse these twenty types into three types:
 
-<!-- ```{r load_beforePT, message=FALSE, warning=FALSE, cache=FALSE, comment=FALSE, echo=FALSE, results='hide'} -->
-<!--   data.path <- 'c:/dropbox/research/airBNB/data/' -->
-<!--   load(paste0(data.path, '/analyzed/abb_beforePT.RData')) -->
-<!--   abb.data1 <- before.PT$abb.data -->
-<!--   ltr.data1 <- before.PT$ltr.data -->
+1. **House**:  Includes properties labeled 'House' or 'Townhouse'
+2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium'
+3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt.
 
-<!-- ``` -->
+Within the long-term rental data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories:
+
+1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse'
+2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio'
+3. **Other**: Includes properties labeled as 'Semi' and 'Villa'
+
+Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the short-term data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units or Studios, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure)^[Also note that 'Apartment-type' ownership is very rare in Australia.  Nearly every multi-family dwelling is owned as a condominium.  See @berry2000investment for more information on the overall structure of the Australian market]. Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context.
+
+The **Other** category only makes up a very small percentage of the properties in both the short and long term market; especially so in the long-term market (Figure 1) .  Additionally, a large proportion of the **Others** in the short-term data are Bed & Breakfast units, a use which doesn't fit with our research question. As a result, we remove the 'Others' from both the short- and the long-term rental data.
+
+```{r load_beforePT, message=FALSE, warning=FALSE, cache=FALSE, comment=FALSE, echo=FALSE, results='hide'}
+  data.path <- 'c:/dropbox/research/airBNB/data/'
+  load(paste0(data.path, '/analyzed/analyzed_workspace.RData'))
+```
+
+
+
 
 <!-- ```{r type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3, fig.cap='Tenure Type by Property Type', fig.lp='typecomp'} -->
 
