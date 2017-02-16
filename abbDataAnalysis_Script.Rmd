@@ -513,15 +513,30 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       family=binomial(link='logit'),
                       data=str.data.ic)
+  
+  pref.models <- list(mod.ext.str, mod.ext.loc, mod.ext.host, 
+                      mod.pot.str, mod.pot.loc, mod.pot.host)
+  names(pref.models) <- c('ext.str', 'ext.loc', 'ext.host',
+                          'pot.str', 'pot.loc', 'pot.host')
+
 ```
 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  mod.ext.str <- lm(str.ext.prem~type+as.factor(bedbath),
+  mod.ext.str.prem <- lm(str.ext.prem~type+as.factor(bedbath),
                     data=str.data.ic)
-  mod.pot.str <- lm(str.pot.prem~type+as.factor(bedbath),
+  mod.pot.str.prem <- lm(str.pot.prem~type+as.factor(bedbath),
                     data=str.data.ic)
+  
+  mod.ext.loc.prem <- glm(str.ext.pref~type+as.factor(bedbath)+
+                                  sub.mrkt,
+                     family=binomial(link='logit'),
+                     data=str.data.ic)
+  mod.pot.loc.prem <- glm(str.pot.pref~type+as.factor(bedbath)+
+                                  sub.mrkt,
+                     family=binomial(link='logit'),
+                     data=str.data.ic)
   
 ```
 
@@ -538,6 +553,12 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       data=str.data.ic)
+  
+    prem.models <- list(mod.ext.str.prem, mod.ext.loc.prem, mod.ext.host.prem, 
+                      mod.pot.str.prem, mod.pot.loc.prem, mod.pot.host.prem)
+    names(prem.models) <- c('ext.str', 'ext.loc', 'ext.host',
+                          'pot.str', 'pot.loc', 'pot.host')
+
 ```
 
 
@@ -549,7 +570,7 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
   un <- which(str.data.ic$host.type == 'Unknown')
   
   
-  mod.ext.ps <- glm(str.pot.pref~type+as.factor(bedbath)+
+  mod.pot.ps <- glm(str.pot.pref~type+as.factor(bedbath)+
                     sub.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
@@ -557,27 +578,61 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
                  data=str.data.ic[ps,])
   
   
-  mod.ext.os <- glm(str.pot.pref~type+as.factor(bedbath)+
+  mod.pot.os <- glm(str.pot.pref~type+as.factor(bedbath)+
                     sub.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[os,])
   
-  mod.ext.mu <- glm(str.pot.pref~type+as.factor(bedbath)+
+  mod.pot.mu <- glm(str.pot.pref~type+as.factor(bedbath)+
                     sub.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[mu,])
   
-  mod.ext.un <- glm(str.pot.pref~type+as.factor(bedbath)+
+  mod.pot.un <- glm(str.pot.pref~type+as.factor(bedbath)+
                     sub.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[un,])
   
+  mod.ext.ps <- glm(str.ext.pref~type+as.factor(bedbath)+
+                    sub.mrkt+
+                    I(max.guests/bedrooms)+min.stay+
+                    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                 family=binomial(link='logit'),
+                 data=str.data.ic[ps,])
+  
+  
+  mod.ext.os <- glm(str.ext.pref~type+as.factor(bedbath)+
+                    sub.mrkt+
+                    I(max.guests/bedrooms)+min.stay+
+                    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                 family=binomial(link='logit'),
+                 data=str.data.ic[os,])
+  
+  mod.ext.mu <- glm(str.ext.pref~type+as.factor(bedbath)+
+                    sub.mrkt+
+                    I(max.guests/bedrooms)+min.stay+
+                    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                 family=binomial(link='logit'),
+                 data=str.data.ic[mu,])
+  
+  mod.ext.un <- glm(str.ext.pref~type+as.factor(bedbath)+
+                    sub.mrkt+
+                    I(max.guests/bedrooms)+min.stay+
+                    I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
+                 family=binomial(link='logit'),
+                 data=str.data.ic[un,])
+
+host.models <- list(mod.ext.ps, mod.ext.os, mod.ext.mu, mod.ext.un,
+                    mod.pot.ps, mod.pot.os, mod.pot.mu, mod.pot.un)
+names(host.models) <- c('ext.ps', 'ext.os', 'ext.mu', 'ext.un',
+                        'pot.ps', 'pot.os', 'pot.mu', 'pot.un')
+    
 ```
 
 
@@ -675,7 +730,6 @@ The results are estimated with the custom MWL function
                         pot.mod.spec, 
                         k)
  
-
    ext.results.ps <- mwl(est.data[ps, ], 
                         est.points, 
                         ext.mod.spec, 
@@ -769,6 +823,11 @@ erm.coef <- extrMWLCoef(ext.results.mu,
 eru.coef <- extrMWLCoef(ext.results.un,
                         est.points,
                         x.names)
+all.mwl.coefs <- list(pra.coef, era.coef, prp.coef, pro.coef, prm.coef, pru.coef,
+                  erp.coef, ero.coef, erm.coef, eru.coef)
+names(all.mwl.coefs) <- c('pra', 'era', 'prp', 'pro', 'prm', 'pru', 
+                          'erp', 'ero', 'erm', 'eru')
+
 ```
 
 Finally, these coefficients are converted to a surface. 
@@ -836,6 +895,22 @@ erm.surfs <- makeMWLSurfs(erm.coef,
                           est.points)
 eru.surfs <- makeMWLSurfs(eru.coef,
                           est.points)
+all.mwl.surfs <- list(pra.surfs, era.surfs, prp.surfs, pro.surfs, prm.surfs, pru.surfs,
+                      erp.surfs, ero.surfs, erm.surfs, eru.surfs)
+names(all.mwl.surfs) <- c('pra', 'era', 'prp', 'pro', 'prm', 'pru',
+                          'erp', 'ero', 'erm', 'eru')
+```
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+save(clean.count, daily.data, listing.data, ltr.data, pref.table, pref.table.wide,
+     s.subs, sssubs, str.data, str.data.ic, subs, all.mwl.coefs, all.mwl.surfs,
+     core.suburbs, est.points, exch.rate, host.models, pref.models, prem.models,
+     file=paste0(data.path, 'analyzed/analyzed_workspace.RData'))
+
+
 
 ```
+
 
