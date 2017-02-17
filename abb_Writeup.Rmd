@@ -47,7 +47,8 @@ bibliography: abb.bib
   
     data.path <- 'c:/dropbox/research/airBNB/data/'
     code.path <- 'c:/code/'
-
+    fig.path <- 'c:/dropbox/research/airBNB/figures/'
+    
   } else {
   
     data.path <- 'alternate data path'
@@ -137,7 +138,7 @@ Australia implements a particular tax policy, often termed `negative gearing', t
 
 One benefit of a short-term rental may be the ability to adjust the nightly rate over the course of the year to reflect changing demand and market trends. As future market trends are unknown at the time of purchase and the decision of long- vs short-term leasing strategy is asymetrically irreversable (can go from short to long, but not long to short), we make our comparisons using a fixed nightly (short-term) rate to respresent the most likely state of knowledge for our hypothetical investor on September 1, 2015. Both long-term rents and short-term rates and occupancy structures will be based on the market conditions as of this date.
 
-We do not directly observe properties that are utilized in both a short- and long-term leasing strategy.  Therefore, comparisons are done based on estimated or imputed revenues.  Most specifically, we will estimate the long-term revenue for observations of properties currently listed on a short-term rental portal (Airbnb). Initially, we attempted to also estimate short-term rental revenue for long-term properties but found the process of imputing occupancy rates and nightly rate structures too inaccurate to provide valid comparisons.
+We do not directly observe properties that are utilized in both a short- and long-term leasing strategy. Therefore, comparisons are done based on estimated or imputed revenues. Most specifically, we will estimate the long-term revenue for observations of properties currently listed on a short-term rental portal (Airbnb). Initially, we attempted to also estimate short-term rental revenue for long-term properties but found the process of imputing occupancy rates and nightly rate structures too inaccurate to provide valid comparisons.
 
 ### Comparison
 
@@ -221,7 +222,7 @@ Unfortunately, there are no common identifiers between the two datasets as the A
 
 ### Preparation
 
-Here we describe the operations that we have performed to prepare the two sets of raw data for analysis.  Primarily, this involves the filtering out data errors, outlier values and other observations than contain data that do not fit our research questions. Additionally, as our data are from two different sources, a number of fields also require standardization so that comparisons between the two leasing strategy options  -- long-term rental (LTR) vs short-term rental (STR) -- can be made.
+Here we describe the operations that we have performed to prepare the two sets of raw data for analysis. Primarily, this involves the filtering out data errors, outlier values and other observations than contain data that do not fit our research questions. Additionally, as our data are from two different sources, a number of fields require standardization so that comparisons between the two leasing strategy options -- long-term rental (LTR) vs short-term rental (STR) -- can be made.
 
 We begin by filtering observations by time. Our hypothetical leasing strategy decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long-term rental versus an AirBNB-type, short-term rental approach to generating income. To determine the likely LTR rate for any given property, we will use the observed rental transactions from September 1, 2014 to August 31, 2015. Taking the Airbnb or STR approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors). In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.
 
@@ -241,79 +242,36 @@ Part of the difficulty in perfectly mapping property types from these two datase
 
 The **Other** category only makes up a very small percentage of the properties in both the short and long term market; especially so in the long-term market (Figure 1) .  Additionally, a large proportion of the **Others** in the short-term data are Bed & Breakfast units, a use which doesn't fit with our research question. As a result, we remove the 'Others' from both the short- and the long-term rental data.
 
-```{r load_beforePT, message=FALSE, warning=FALSE, cache=FALSE, comment=FALSE, echo=FALSE, results='hide'}
+```{r load_beforePT, message=FALSE, warning=FALSE, cache=TRUE, comment=FALSE, echo=FALSE, results='hide'}
   data.path <- 'c:/dropbox/research/airBNB/data/'
   load(paste0(data.path, '/analyzed/analyzed_workspace.RData'))
 ```
 
+```{r load_ptplot, message=FALSE, warning=FALSE, cache=TRUE, comment=FALSE, echo=FALSE, results='hide', fig.height=3, fig.cap='Tenure Type by Property Type', fig.lp='typecomp'}
+
+  load(paste0(fig.path, 'ltrtypes.RData'))
+  load(paste0(fig.path, 'strtypes.RData'))
+
+  ggMultiPlots(str.types, ltr.types, cols=2)
+  
+```
+
+Next, the short-term rentals properties can be listed as one of three types relating to the extent of the property which is able to be booked:
+
+1. **Entire Home/Apt**: The entire home or apartment is available
+2. **Private Room**: One room within a house or apartment is available
+3. **Shared Room**: A bed within a room shared by another occupant(s) is available
+
+As long-term rentals do not offer **Private Room** or **Shared Room** options^[Our dataset does not include rooming houses, purpose built student accommodations and other types of rentals which may offer private or shared room options] and our purpose here is a comparison of long- and short-term returns, we remove all short-term properties that do not lease the entire home or apartment. Unfortunately, this filter does remove about 40% of the short-term data (Figure 2), however, given the research question it is unavoidable.
+
+```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=2.5, fig.width=3.75, fig.cap='Listing Type of Short Term Rentals'}
 
 
+ load(paste0(fig.path, 'listtypes.RData'))
 
-<!-- ```{r type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3, fig.cap='Tenure Type by Property Type', fig.lp='typecomp'} -->
+ list.types
 
-<!--   # Create Airbnb plot -->
-
-<!--   abb.types <- ggplot(abb.data1, aes(x=type)) + -->
-<!--     geom_bar(color=str.col, fill=str.col) + -->
-<!--     xlab('') + -->
-<!--     ylab('# of Properties\n') + -->
-<!--     labs(title = "Short Term Rentals\n") + -->
-<!--     theme(plot.title = element_text(hjust = 0.5)) -->
-
-<!--   # Create long term rental plot -->
-
-<!--   ltr.types <- ggplot(ltr.data1, aes(x=type)) + -->
-<!--     geom_bar(color=ltr.col, fill=ltr.col) + -->
-<!--     xlab('') + -->
-<!--     ylab('# of Properties\n') + -->
-<!--     labs(title = "Long Term Rentals\n") + -->
-<!--     theme(plot.title = element_text(hjust = 0.5)) -->
-
-<!--   # Output plots -->
-
-<!--   ggMultiPlots(abb.types, ltr.types, cols=2) -->
-
-<!-- ``` -->
-
-<!-- ```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--   abb.data1 <- subset(abb.data1, type != 'Other') -->
-<!--   ltr.data1 <- subset(ltr.data1, type != 'Other') -->
-
-<!-- ``` -->
-
-<!-- Next, the short-term rentals properties can be listed as one of three types relating to the extent of the property which is able to be booked: -->
-
-<!-- 1. **Entire Home/Apt**: The entire home or apartment is available -->
-<!-- 2. **Private Room**: One room within a house or apartment is available -->
-<!-- 3. **Shared Room**: A bed within a room shared by another occupant(s) is available -->
-
-<!-- As long-term rentals do not offer **Private Room** or **Shared Room** options^[Our dataset does not include rooming houses, purpose built student accommodations and other types of rentals which may offer private or shared room options] and our purpose here is a comparison of long- and short-term returns, we remove all short-term properties that do not lease the entire home or apartment. Unfortunately, this filter does remove about 40% of the short-term data (Figure 2), however, given the research question it is unavoidable. -->
-
-<!-- ```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=2.5, fig.width=3.75, fig.cap='Listing Type of Short Term Rentals'} -->
-
-<!--   # Fix data types and names -->
-
-<!--   abb.data1$listing.type <- as.character(abb.data1$listing.type) -->
-<!--   abb.data1$listing.type[abb.data1$listing.type == 'Entire home/apt'] <- 'Entire home' -->
-
-<!--   # Make Plot -->
-
-<!--   ggplot(abb.data1, aes(x=listing.type)) + -->
-<!--     geom_bar(color=abb.col[1], fill=abb.col[1]) + -->
-<!--     xlab('') + -->
-<!--     ylab('# of Properties\n') + -->
-<!--     labs(title = "Short Term Rentals \nby Listing Type\n") + -->
-<!--     theme(plot.title = element_text(hjust = 0.5)) -->
-
-
-<!-- ``` -->
-
-<!-- ```{r keep_entire_home, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--   abb.data1 <- abb.data1[abb.data1$listing.type == 'Entire home', ] -->
-
-<!-- ``` -->
+```
 
 <!-- #### Structural Characteristics -->
 
