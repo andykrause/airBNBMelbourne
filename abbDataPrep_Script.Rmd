@@ -373,11 +373,16 @@ As the chart below show, the **Other** category only makes up a very small perce
     ylab('# of Properties\n') +
     theme(plot.title = element_text(hjust = 0.5)) 
 
+  
+  
   # Output plots
   png(file=paste0(fig.path, 'dataclean_proptype.png'), width = 480, height = 280, 
       bg='transparent')
     ggMultiPlots(str.types, ltr.types, cols=2)
   dev.off()
+  
+  save(str.types, file=paste0(fig.path, 'strtypes.RData'))
+  save(ltr.types, file=paste0(fig.path, 'ltrtypes.RData'))
   
 ```
 
@@ -405,18 +410,23 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
   str.data$listing.type <- as.character(str.data$listing.type)
   str.data$listing.type[str.data$listing.type == 'Entire home/apt'] <- 'Entire home'
 
-  # Make Plot
-  png(file=paste0(fig.path, 'dataclean_listtype.png'), width = 480, height = 280, 
-      bg='transparent')
-
-    ggplot(str.data, aes(x=listing.type)) + 
+  list.types <- ggplot(str.data, aes(x=listing.type)) + 
       geom_bar(color=str.col, fill=str.col) +
       xlab('\nListing Type\n') + 
       ggtitle('\nShort Term Rentals by Listing Type\n')  +
       ylab('# of Properties\n') +
     theme(plot.title = element_text(hjust = 0.5)) 
   
+  # Make Plot
+  png(file=paste0(fig.path, 'dataclean_listtype.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    list.types
+  
   dev.off()
+  
+  save(list.types, file=paste0(fig.path, 'listtypes.RData'))
+  
   
 ```
 
@@ -500,7 +510,10 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
       bg='transparent')
     ggMultiPlots(strbed, ltrbed, cols=1)
   dev.off()
-    
+  
+  save(ltrbed, file=paste0(fig.path, 'ltrbed.RData'))
+  save(strbed, file=paste0(fig.path, 'strbed.RData'))
+
 ```
 
 For both short and long term rentals we see that most apartments have less than 4 bedrooms and houses less than 5.  We filter the data accordingly. Additionally, note that short term rentals consider studio apartments to be 0 bed units while the long term data considers these as 1 bedroom. We convert the 0 bed short term units to 1 bed units.   
@@ -572,7 +585,10 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
     ggMultiPlots(stbath, ltbath, cols=1)
     
   dev.off()
-    
+   
+  save(ltbath, file=paste0(fig.path, 'ltrbath.RData'))
+  save(stbath, file=paste0(fig.path, 'strbath.RData'))
+ 
 ```
 
 Here we see that nearly all properties have 3 or fewer bathrooms and we filter the data accordingly. A few short term properties state no baths, which is likely an error so we remove these as well. Also, here we notice that the short term data gives bathrooms in halves, while the long term data presents baths in whole numbers.  We round the baths up to whole integers. 
@@ -641,6 +657,10 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
     ggMultiPlots(ltbb, stbb, cols=1)
 
   dev.off()  
+  
+  save(ltbb, file=paste0(fig.path, 'ltrbb.RData'))
+  save(stbb, file=paste0(fig.path, 'strbb.RData'))
+
     
 ```
 
@@ -749,6 +769,10 @@ Next, we convert the Airbnb values to Australian dollars from US dollars using t
     ggMultiPlots(ltr.plot, rate.plot, cols=2)
   
   dev.off()
+  
+  save(ltr.plot, file=paste0(fig.path, 'rentplot.RData'))
+  save(rate.plot, file=paste0(fig.path, 'rateplot.RData'))
+
   
 ```
 
@@ -859,6 +883,9 @@ Location is clearly an important determinant in both the short and long term ren
   dev.off()
   
   loc.map
+  
+  save(loc.map, file=paste0(fig.path, 'suburbMap.RData'))
+
     
 ```
 
@@ -1104,6 +1131,10 @@ The location of the short and long term rentals, colored by submarket, are shown
   dev.off()
 
   ggMultiPlots(str.map, ltr.map, cols=2)
+  
+  save(str.map, file=paste0(fig.path, 'strMap.RData'))
+  save(ltr.map, file=paste0(fig.path, 'ltrMap.RData'))
+
 
 ```
 
@@ -1149,6 +1180,10 @@ The chart below break down the relative frequency of short and long term rental 
   dev.off()
     
   ggMultiPlots(strtype.map, ltrtype.map, cols=2)
+  
+  save(strtype.map, file=paste0(fig.path, 'strsubplot.RData'))
+  save(ltrtype.map, file=paste0(fig.path, 'ltrsubplot.RData'))
+
   
 ```
 
