@@ -273,190 +273,28 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
 
 ```
 
-<!-- #### Structural Characteristics -->
+#### Structural Characteristics 
 
-<!-- We now turn to filtering by structural characteristics. As the Airbnb data provides limited information on the structural characteristics, the only overlapping fields that we have between the two datasets are bedrooms and bathrooms. Additionally, as the markets and structural components of houses and apartment differ, we bifurcate our analysis between the two property types from this point forward. -->
+We now turn to filtering by structural characteristics. As the Airbnb data provides limited information on the structural characteristics, the only overlapping fields that we have between the two datasets are bedrooms and bathrooms. Additionally, as the markets and structural components of houses and apartments differ, we bifurcate our analysis between the two property types from this point forward. 
 
-<!-- We begin by removing all properties that are missing bedroom information or have a likely data error in this fields (more than 14 bedrooms). For both short and long term rentals we see that most apartments have less than four bedrooms and houses less than five (Figure 3).  We filter the data accordingly. Additionally, note that short term rentals consider studio apartments to be 0 bed units while the long term data considers these as 1 bedroom. We convert the 0 bed short term units to 1 bed units. -->
+We begin by removing all properties that are missing bedroom or bathroom information or have a likely data error in this fields (more than 14 bedrooms or 10 bathrooms). For both short and long term rentals we find that most apartments have fewer than four bedrooms and houses fewer than five.  For both property types, the vast majority of properties have three or fewer bathrooms. We filter the data accordingly. Additionally, note that short term rentals consider studio apartments to be 0 bed units while the long term data considers these as 1 bedroom. We convert the 0 bed short term units to 1 bed units. A few short term properties indicate no baths, which is likely an error so we remove these observations from the data. Also, here we notice that the short term data gives bathrooms in halves, while the long term data presents baths in whole numbers.  We round the baths in the short term data up to whole integers.
 
-<!-- ```{r bed_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
+In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short-term rental) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two (Figure 3). From this analysis we see that there are 6 combinations that make up most all properties:  1bed/1bath, 2/1, 2/2, 3/1, 3/2 and 4/2. We filter the data to these combinations. 
 
-<!--  # Remove missing and data errors -->
+```{r bb_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.width=5.75, fig.cap='Bed/Baths by Property Type'}
 
-<!--   # Long term data -->
-<!--   ltr.data1 <- ltr.data1[!is.na(ltr.data1$bedrooms), ] -->
-<!--   ltr.data1 <- ltr.data1[ltr.data1$bedrooms <= 10, ] -->
 
-<!--   # Short term data -->
-<!--   abb.data1 <- abb.data1[!is.na(abb.data1$bedrooms), ] -->
-<!--   abb.data1 <- abb.data1[abb.data1$bedrooms <= 10, ] -->
+ load(paste0(fig.path, 'ltrbb.RData'))
+ load(paste0(fig.path, 'strbb.RData'))
+ 
+ stbb <- stbb + ylab('# of Obs')
+ ltbb <- ltbb + ylab('# of Obs')
+ 
+ ggMultiPlots(stbb, ltbb)
+  
+```
 
-<!-- ``` -->
-
-<!-- ```{r bed_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Bedrooms by Tenure & Property Type'} -->
-
-<!--  # Build long term bar plot -->
-
-<!--    ltrbed <- ggplot(ltr.data1, aes(x=bedrooms)) + -->
-<!--     geom_bar(fill=ltr.col, color=ltr.col) + -->
-<!--     facet_wrap(~type) + -->
-<!--     scale_x_continuous(labels=1:10, breaks=1:10)+ -->
-<!--     xlab('') + -->
-<!--     ylab('# of Props\n') + -->
-<!--     labs(title = "Bedrooms in Long Term Rentals\n") + -->
-<!--     theme(plot.title = element_text(hjust = 0.5)) -->
-
-<!--  # Build short term bar plot -->
-
-<!--   abbbed <- ggplot(abb.data1, aes(x=bedrooms)) + -->
-<!--     geom_bar(fill=str.col, color=str.col) + -->
-<!--     facet_wrap(~type) + -->
-<!--     scale_x_continuous(labels=0:10, breaks=0:10)+ -->
-<!--     xlab('') + -->
-<!--     ylab('# of Props\n') + -->
-<!--     labs(title = "Bedrooms in Short Term Rentals\n") + -->
-<!--     theme(plot.title = element_text(hjust = 0.5)) -->
-
-<!--  # Make the comparison plot -->
-
-<!--   ggMultiPlots(abbbed, ltrbed, cols=1) -->
-
-<!-- ``` -->
-
-<!-- ```{r bed_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--  # Remove all with more than 4 beds -->
-
-<!--   abb.data1 <- abb.data1[abb.data1$bedrooms < 5, ] -->
-<!--   ltr.data1 <- ltr.data1[ltr.data1$bedrooms < 5, ] -->
-
-<!--  # Remove apartments with more than 3 -->
-
-<!--   abba <- which(abb.data1$bedrooms > 3 & abb.data1$type =='Apartment') -->
-<!--   ltra <- which(ltr.data1$bedrooms > 3 & ltr.data1$type =='Apartment') -->
-
-<!--   if(length(abba) > 0) abb.data1 <- abb.data1[-abba, ] -->
-<!--   if(length(ltra) > 0) ltr.data1 <- ltr.data1[-ltra, ] -->
-
-<!--   # Convert 0 Bed to 1 Bed -->
-<!--   abb.data1$bedrooms[abb.data1$bedrooms == 0] <- 1 -->
-
-<!-- ``` -->
-
-<!-- We then turn to bathrooms, starting by looking at the distribution of baths between short/long and apartment/house. Here we see that nearly all properties have three or fewer bathrooms and we filter the data accordingly (Figure 4). A few short term properties indicate no baths, which is likely an error so we remove these observations from the data. Also, here we notice that the short term data gives bathrooms in halves, while the long term data presents baths in whole numbers.  We round the baths in the short term data up to whole integers. -->
-
-<!-- ```{r bath_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--  # Remove missing data -->
-
-<!--   ltr.data1 <- ltr.data1[!is.na(ltr.data1$baths), ] -->
-<!--   abb.data1 <- abb.data1[!is.na(abb.data1$baths), ] -->
-
-<!-- ``` -->
-
-<!-- ```{r bath_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Bathrooms by Tenure & Property Type'} -->
-
-<!--  # Build long term plot -->
-
-<!--   ltbath <- ggplot(ltr.data1, aes(x=baths)) + -->
-<!--     geom_bar(fill=ltr.col, color=ltr.col) + -->
-<!--     facet_wrap(~type) + -->
-<!--     scale_x_continuous(labels=1:8, breaks=1:8)+ -->
-<!--     xlab('') + -->
-<!--     ylab('# of Props\n') + -->
-<!--     labs(title = "Bathrooms in Long Term Rentals\n") + -->
-<!--     theme(plot.title = element_text(hjust = 0.5)) -->
-
-<!--  # Build short term plot -->
-
-<!--   stbath <- ggplot(abb.data1, aes(x=baths)) + -->
-<!--     geom_bar(fill=str.col, color=str.col) + -->
-<!--     facet_wrap(~type) + -->
-<!--     scale_x_continuous(labels=0:8, breaks=0:8)+ -->
-<!--     xlab('') + -->
-<!--     ylab('# of Props\n') + -->
-<!--     labs(title = "Bathrooms in Short Term Rentals\n") + -->
-<!--     theme(plot.title = element_text(hjust = 0.5)) -->
-
-<!--  # Make Plots -->
-
-<!--   ggMultiPlots(stbath, ltbath, cols=1) -->
-
-<!-- ``` -->
-
-<!-- ```{r bath_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--  # Filter by bath count -->
-
-<!--   # Short term data -->
-<!--   abb.data1 <- abb.data1[abb.data1$baths < 4, ] -->
-<!--   abb.data1 <- abb.data1[abb.data1$baths > 0, ] -->
-
-<!--   # Long term data -->
-<!--   ltr.data1 <- ltr.data1[ltr.data1$baths < 4, ] -->
-
-<!--  # Round baths up -->
-
-<!--   abb.data1$baths <- round(abb.data1$baths + .01, 0) -->
-
-<!-- ``` -->
-
-<!-- In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short-term rental) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two (Figure 5). From this analysis we see that there are 6 combinations that make up most all properties:  1bed/1bath, 2/1, 2/2, 3/1, 3/2 and 4/2. We filter the data to these combinations. -->
-
-<!-- ```{r filtBB, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--  # Create combination variable -->
-
-<!--   ltr.data1$bedbath <- paste0(ltr.data1$bedrooms, '..', ltr.data1$baths) -->
-<!--   abb.data1$bedbath <- paste0(abb.data1$bedrooms, '..', abb.data1$baths) -->
-
-<!-- ``` -->
-
-<!-- ```{r filtBB2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Bed/Bath Combo by Tenure & Property Type'} -->
-
-<!--  # Make long term plot -->
-
-<!--   ltb <- ggplot(ltr.data1, aes(x=bedbath)) + -->
-<!--     geom_bar(fill=ltr.col, color=ltr.col) + -->
-<!--     xlab('') + -->
-<!--     ylab('# of Props\n') + -->
-<!--     labs(title = "Bed/Bath Combo in Long Term Rentals\n") + -->
-<!--     theme(plot.title = element_text(hjust = 0.5)) + -->
-<!--     theme(axis.text.x = element_text(angle = 90, vjust=0.4)) + -->
-<!--     facet_wrap(~type) -->
-
-<!--  # Make short term plots -->
-
-<!--   stb <- ggplot(abb.data1, aes(x=bedbath)) + -->
-<!--     geom_bar(fill=str.col, color=str.col) + -->
-<!--     xlab('') + -->
-<!--     ylab('# of Props\n') + -->
-<!--     labs(title = "Bed/Bath Combo in Short Term Rentals\n") + -->
-<!--     scale_y_continuous(breaks=c(1000, 3000, 5000)) + -->
-<!--     theme(plot.title = element_text(hjust = 0.5)) + -->
-<!--     theme(axis.text.x = element_text(angle = 90, vjust=0.4)) + -->
-<!--     facet_wrap(~type) -->
-
-<!--  # Plot -->
-
-<!--   ggMultiPlots(ltb, stb, cols=1) -->
-
-<!-- ``` -->
-
-<!-- ```{r filtBB3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--  # Set level of acceptable combinations -->
-
-<!--   acc.bb <- c('1..1', '2..1', '2..2', '3..1', '3..2', '4..2') -->
-
-<!--  # Filter data -->
-
-<!--   ltr.data1 <- ltr.data1[ltr.data1$bedbath %in% acc.bb, ] -->
-<!--   abb.data1 <- abb.data1[abb.data1$bedbath %in% acc.bb, ] -->
-
-<!-- ``` -->
-
-<!-- ### Rates and Rental values -->
+### Rates and Rental values
 
 <!-- Next we filter by the prices -- the nightly rates and weekly rental values. The long term rental data have a single price observation, the asking rent at closing.  For the short term data, there are two indicators of nightly rate.  First, each property has a average nightly rate figure that takes the average of the rates for all booked nights over the October 2014 to August 2016 period. Second, there is a rate for each day in the daily observations. For the vast majority of properties, the daily rates change very little, but for a select few there is a wide variation in the daily rates, often somewhat randomly. In cases where a small number of reservations have been made, the average nightly rate can deviate widely from usual rate due to outliers on the high end. To remedy this, we create a new property-level variable that is the median nightly rate of successful bookings over the September 1, 2015 to August 31, 2016 period. -->
 
