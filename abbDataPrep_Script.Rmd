@@ -731,23 +731,13 @@ Next, we convert the Airbnb values to Australian dollars from US dollars using t
 
 ```
 
-
-Next we extract all of the daily reservation data that fits our criteria -- reserved and not over $500 per night^[Note that there are some outlying daily observations that do not agree with the property level Airbnb summary data from the data source.  We do this step to remove those]. From this information we calculate the median nightly reservation price for each property and append it to the property level data. 
-
-
-From these density plots we see that most long-term Rentals are greater than $200 and less than $1000 per week while most nightly rates are greater than $50 and less than $500 per night. We filter the data accordingly. 
+Next we extract all of the daily reservation data for the reserved nightly. From this information we calculate the median nightly reservation price for each property and append it to the property level data. 
 
 ```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- ## Filter the long term data
+   # Get all of the reservations
+  resv.daily <- daily.data[daily.data$status == 'R', ]
 
-  ltr.data <- ltr.data[ltr.data$event.price >= 200 & 
-                         ltr.data$event.price <= 1000, ]
-
-  # Get all of the reservations
-  resv.daily <- daily.data[daily.data$status == 'R' &
-                              daily.data$price < 500, ]
-  
   # Calculate the property specific median nightly rate
   med.daily <- tapply2DF(resv.daily$price, resv.daily$property.id, median)
   
@@ -757,7 +747,9 @@ From these density plots we see that most long-term Rentals are greater than $20
   # Remove those with no valid median rate
   str.data <- str.data[!is.na(str.data$med.rate), ]
    
-```  
+```
+
+From these density plots we see that most long-term Rentals are greater than $200 and less than $1000 per week while most nightly rates are greater than $50 and less than $500 per night. We filter the data accordingly. 
 
 ```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
@@ -805,9 +797,12 @@ From these density plots we see that most long-term Rentals are greater than $20
   
 ```
 
-```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+```{r ltprice_fltr33s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
- ## Filter the short term data
+  ## Filter the long term data
+
+  ltr.data <- ltr.data[ltr.data$event.price >= 200 & 
+                         ltr.data$event.price <= 1000, ]
 
   str.data <- str.data[str.data$nightly.rate >= 50 &
                          str.data$med.rate <= 500, ]
@@ -815,7 +810,7 @@ From these density plots we see that most long-term Rentals are greater than $20
   # Count Cleaning
   countCleaning('rates.rents')
   
-```
+```  
 
 #### Observed Revenue
 
@@ -875,6 +870,8 @@ Looking at the distribution of the revenues from each tenure type, we see that t
   save(revdens, file=paste0(fig.path, 'revdens.RData'))
   
   ltr.data <- ltr.data[ltr.data$gross.revenue > 10000, ]
+  
+    countCleaning('revenue')
   
 ```
 
