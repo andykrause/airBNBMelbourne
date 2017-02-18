@@ -296,279 +296,21 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
 
 ### Rates and Rental values
 
-<!-- Next we filter by the prices -- the nightly rates and weekly rental values. The long term rental data have a single price observation, the asking rent at closing.  For the short term data, there are two indicators of nightly rate.  First, each property has a average nightly rate figure that takes the average of the rates for all booked nights over the October 2014 to August 2016 period. Second, there is a rate for each day in the daily observations. For the vast majority of properties, the daily rates change very little, but for a select few there is a wide variation in the daily rates, often somewhat randomly. In cases where a small number of reservations have been made, the average nightly rate can deviate widely from usual rate due to outliers on the high end. To remedy this, we create a new property-level variable that is the median nightly rate of successful bookings over the September 1, 2015 to August 31, 2016 period. -->
+Next we filter by the prices -- the nightly rates and weekly rental values. The long term rental data have a single price observation, the asking rent at closing.  For the short term data, there are two indicators of nightly rate.  First, each property has a average nightly rate figure that takes the average of the rates for all booked nights over the October 2014 to August 2016 period. Second, there is a rate for each day in the daily observations. For the vast majority of properties, the daily rates change very little, but for a select few there is a wide variation in the daily rates, often somewhat randomly. In cases where a small number of reservations have been made, the average nightly rate can deviate widely from usual rate due to outliers on the high end. To remedy this, we create a new property-level variable that is the median nightly rate of successful bookings over the September 1, 2015 to August 31, 2016 period.
 
-<!-- We start by removing property level observations missing price data. Plotting the distribution of the rates and rents we see that most long term weekly rentals are greater than \$200 and less than \$1000 per week while most median nightly rates are greater than \$50 and less than \$500 per night (Figure 6). We filter the property level data accordingly.  We also filter the short term daily data to include only those observations with nightly rates between \$50 and \$500. -->
+We start by removing property level observations missing price data. Plotting the distribution of the rates and rents we see that most long term weekly rentals are greater than \$200 and less than \$1,000 per week while most median nightly rates are greater than \$50 and less than \$500 per night (Figure 4). We filter the property level data accordingly.  We also filter the short term daily data to include only those observations with nightly rates between \$50 and \$500.
 
-<!-- ```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
+```{r ratesrents, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.width=5.75, fig.cap='Melbourne Suburb Classifications'}
 
-<!--   ltr.data1 <- ltr.data1[!is.na(ltr.data1$event.price), ] -->
-<!--   abb.data1 <- abb.data1[!is.na(abb.data1$nightly.rate), ] -->
 
-<!-- ``` -->
+ load(paste0(fig.path, 'rateplot.RData'))
+ load(paste0(fig.path, 'rentplot.RData'))
 
-<!-- ```{r exch_rate_adj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
+ ggMultiPlots(rate.plot, ltr.plot, cols=2)
+  
+```
 
-<!--   # Property level data -->
-
-<!--   abb.data1$average.daily.rate <- abb.data1$average.daily.rate * exch.rate -->
-<!--   abb.data1$nightly.rate <- abb.data1$nightly.rate * exch.rate -->
-<!--   abb.data1$weekly.rate <- abb.data1$weekly.rate * exch.rate -->
-<!--   abb.data1$monthly.rate <- abb.data1$monthly * exch.rate -->
-
-<!--   # Daily data -->
-
-<!--   #daily.data$price <- daily.data$price * exch.rate -->
-
-<!-- ``` -->
-
-<!-- ```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
-
-<!--   # ltr Plot -->
-
-<!--   ltr.plot <- ggplot(ltr.data1, aes(x=event.price)) + -->
-<!--     geom_density(fill=ltr.col, alpha=.8) + -->
-<!--     ylab('Frequency') + -->
-<!--     xlab('Weekly Rental') + -->
-<!--     ggtitle('Long Term Rentals') + -->
-<!--     scale_x_continuous(limits=c(0, 1500)) + -->
-<!--     theme(axis.title.y=element_blank(), -->
-<!--           axis.text.y=element_blank(), -->
-<!--           axis.ticks.y=element_blank(), -->
-<!--           plot.title = element_text(hjust = 0.5)) -->
-
-
-<!--   # Nightly Rate plot -->
-<!--   rate.plot <- ggplot(abb.data1, aes(x=nightly.rate)) + -->
-<!--     geom_density(fill=str.col, alpha=.8) + -->
-<!--     ylab('Frequency') + -->
-<!--     xlab('Nightly Rate') + -->
-<!--     ggtitle('Short Term Rentals') + -->
-<!--     scale_x_continuous(limits=c(0, 600)) + -->
-<!--     theme(axis.title.y=element_blank(), -->
-<!--           axis.text.y=element_blank(), -->
-<!--           axis.ticks.y=element_blank(), -->
-<!--           plot.title = element_text(hjust = 0.5)) -->
-
-<!-- ``` -->
-
-<!-- ```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.cap='Rates and Rents by Tenure Type'} -->
-
-<!--   ggMultiPlots(ltr.plot, rate.plot, cols=2) -->
-
-<!-- ``` -->
-
-<!-- ```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--  ## Filter the long term data -->
-
-<!--   ltr.data1 <- ltr.data1[ltr.data1$event.price >= 200 & -->
-<!--                          ltr.data1$event.price <= 1000, ] -->
-
-<!--  ## Filter the short term data -->
-
-<!--   abb.data1 <- abb.data1[abb.data1$nightly.rate >= 50 & -->
-<!--                          abb.data1$nightly.rate <= 500, ] -->
-
-<!-- ``` -->
-
-<!-- ### Location and Submarkets -->
-
-<!-- Location is an important determinant in both the short- and long-term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts. The specific suburb of a property is the second, or finer scale, at which the market operates. Figure 7 shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries. -->
-
-<!-- ```{r mappoints2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
-
-<!--  ## Build the map object -->
-
-<!--   # Set colors -->
-<!--   g.cols <- abb.col[c(2, 10, 9)] -->
-
-<!--   # Make map -->
-<!--   loc.map <- ggplot() + -->
-<!--     geom_polygon(data=subs, aes(x=long, y=lat, group=group, fill=des), alpha=.8) + -->
-<!--     scale_fill_manual(values=c('gray10', 'gray40', 'gray70'), -->
-<!--                       labels=c('Inner      ', -->
-<!--                                'Middle      ', -->
-<!--                                'Outer')) + -->
-<!--     geom_path(data=subs, aes(x=long, y=lat, group=group), col='gray90', size=.1, alpha=.2) + -->
-<!--     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) + -->
-<!--     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) + -->
-<!--     xlab('') + ylab('')+ -->
-<!--     theme(legend.position = 'bottom', -->
-<!--           legend.title = element_blank(), -->
-<!--           plot.title = element_text(hjust = 0.5), -->
-<!--           panel.grid.major = element_blank(), -->
-<!--           panel.grid.minor = element_blank(), -->
-<!--           panel.background = element_rect(fill = "white"), -->
-<!--           axis.text.x = element_blank(), -->
-<!--           axis.text.y = element_blank(), -->
-<!--           axis.ticks = element_blank(), -->
-<!--           axis.title.x=element_blank(), -->
-<!--           axis.title.y=element_blank(), -->
-<!--           panel.border = element_rect(colour = "black", fill=NA, size=1)) + -->
-<!--     ggtitle("Melbourne Suburb Classifications") -->
-
-<!-- ``` -->
-
-<!-- ```{r plot_loc_map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3.5, fig.width=5.5, fig.cap='Melbourne Suburb Classifications'} -->
-
-<!--   loc.map -->
-
-<!-- ``` -->
-
-<!-- ```{r load_afterSP, message=FALSE, warning=FALSE, cache=TRUE, comment=FALSE, echo=FALSE, results='hide'} -->
-<!--   data.path <- 'c:/dropbox/research/airBNB/data/' -->
-<!--   load(paste0(data.path, '/analyzed/abb_afterSP.RData')) -->
-<!--   abb.data2 <- after.SP$abb.data -->
-<!--   ltr.data2 <- after.SP$ltr.data -->
-
-<!-- ``` -->
-
-<!-- It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beaches; and 2) Proximity to key tourist activities and events. Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analyzing short and long term rentals in Melbourne: -->
-
-<!-- 1. Rural (Outer suburbs, not Beach) -->
-<!-- 2. Suburban (Middle suburbs, not Beach) -->
-<!-- 3. City (Inner Suburbs, not Beach, not Core) -->
-<!-- 4. City-Core (Select inner suburbs with tourist activities and near CBD) -->
-<!-- 5. Beach (Properties within 500m of Port Phillip Bay east of Yarra River) -->
-
-<!-- We select the 18 suburbs below to represent the 'core' of the city (Table 1).  The majority of tourist destinations and major events such as the Australian Open and the Grand Prix are located in these suburbs.  All are well serviced by public transportation and possess abundant amenities for tourists. -->
-
-<!-- ```{r, results="asis", comment=FALSE, message=FALSE, echo=FALSE} -->
-
-<!--  core.suburbs <- c('Albert Park', 'Carlton', 'Collingwood', 'Cremorne', 'Docklands', -->
-<!--                    'East Melbourne', 'Fitzroy', 'Melbourne', 'Port Melbourne', 'Prahran', -->
-<!--                    'Richmond', 'South Melbourne', 'South Yarra', 'Southbank', 'St Kilda', -->
-<!--                    'St Kilda West', 'West Melbourne', 'Windsor') -->
-
-<!--  c.subs <- data.frame(A=core.suburbs[1:6], -->
-<!--                       B=core.suburbs[7:12], -->
-<!--                       C=core.suburbs[13:18]) -->
-<!--  names(c.subs) <- NULL -->
-<!--  rownames(c.subs) <- NULL -->
-
-<!--  print(xtable(c.subs, caption = 'List of Core Suburbs\n'), -->
-<!--        include.rownames=F, -->
-<!--        caption.placement="top", -->
-<!--        hline.after=c(0,6)) -->
-
-
-<!-- ``` -->
-
-<!-- We assign these designations by: 1) Adding suburb designations to the properties; 2) Assigning submarkets 1-4 based on suburb location; and 3) Indicating proximity to beach and labeling as 'Beach' submarket.  This process is repeated for both the short and long term data. Finally, we also remove any observations that fall outside of outer suburbs (the extent of the suburbs). The location of the short and long term rentals, colored by submarket, are shown in Figure 8. -->
-
-<!-- Before assigning submarkets to the long term property we must remedy the fact that about 5% of the long term rental observations have missing latitude and longitude values.  Half of these do, however, have a latitude and longitudeg value for the centroid of the street that the property faces.  To retain as many observations as possible in these intial steps we apply the street centroid value to the observations with missing lat/long values.  For those without either set of lat/longs we remove them from the dataset at this point. After making this correction we then assign one of the five submarket designations based on the process described above. -->
-
-<!-- ```{r abb.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--   # Set submarket colors -->
-
-<!--   sm.col <- abb.col[c(1, 3, 6, 5, 2)] -->
-
-<!--   # Make map -->
-
-<!--   abb.map <- ggplot() + -->
-<!--     geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray80', fill='gray90') + -->
-<!--     geom_point(data=abb.data2, aes(x=longitude, y=latitude, color=sub.mrkt), size=.2, -->
-<!--                alpha=.2) + -->
-<!--     scale_color_manual(values=sm.col) + -->
-<!--     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) + -->
-<!--     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) + -->
-<!--     theme(legend.position = 'bottom', -->
-<!--           legend.title = element_blank(), -->
-<!--           plot.title = element_text(hjust = 0.5), -->
-<!--           panel.grid.major = element_blank(), -->
-<!--           panel.grid.minor = element_blank(), -->
-<!--           panel.background = element_rect(fill = "white"), -->
-<!--           axis.text.x = element_blank(), -->
-<!--           axis.text.y = element_blank(), -->
-<!--           axis.ticks = element_blank(), -->
-<!--           axis.title.x=element_blank(), -->
-<!--           axis.title.y=element_blank(), -->
-<!--           panel.border = element_rect(colour = "black", fill=NA, size=1)) + -->
-<!--     guides(colour = guide_legend(override.aes = list(size=3, -->
-<!--                                                      alpha=1))) + -->
-<!--     ggtitle('AirBNB Location\nBy Submarket') -->
-
-<!-- ``` -->
-
-<!-- ```{r ltr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE} -->
-
-<!--   # Make map -->
-
-<!--   ltr.map <- ggplot() + -->
-<!--     geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray80', fill='gray90') + -->
-<!--     geom_point(data=ltr.data2, aes(x=longitude, y=latitude, color=sub.mrkt), size=.1, -->
-<!--                alpha=.1) + -->
-<!--     scale_color_manual(values=sm.col) + -->
-<!--     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) + -->
-<!--     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) + -->
-<!--     xlab('') + ylab('')+ -->
-<!--    theme(legend.position = 'bottom', -->
-<!--           legend.title = element_blank(), -->
-<!--           plot.title = element_text(hjust = 0.5), -->
-<!--           panel.grid.major = element_blank(), -->
-<!--           panel.grid.minor = element_blank(), -->
-<!--           panel.background = element_rect(fill = "white"), -->
-<!--           axis.text.x = element_blank(), -->
-<!--           axis.text.y = element_blank(), -->
-<!--           axis.ticks = element_blank(), -->
-<!--           axis.title.x=element_blank(), -->
-<!--           axis.title.y=element_blank(), -->
-<!--           panel.border = element_rect(colour = "black", fill=NA, size=1)) + -->
-<!--     guides(colour = guide_legend(override.aes = list(size=3, -->
-<!--                                                      alpha=1))) + -->
-<!--     ggtitle('Long Term Rental Location\nBy Submarket') -->
-
-<!-- ``` -->
-
-<!-- ```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5.5, fig.height=9, fig.cap='Location Maps'} -->
-
-<!--   ggMultiPlots(abb.map, ltr.map, cols=1) -->
-
-<!-- ``` -->
-
-<!-- To better visualize the relative frequency of the submarkets in the two tenure types we have broken down the data by submarket by property type by tenure type. A number of interesting observations are illustrated here (Figure 9). First, the vast majority of Airbnb units are apartments in city-core or city locations. As expected and as shown by the map, the long term properties are more evenly spread across the metro region than the short term properties.  Long term houses are more peripheral than apartments, a result of urban development patterns and land economics. Beach properties are, relatively speaking, over-represented in the short term market, especially in apartments, while suburban and rural apartments, somewhat common in long term markets, are nearly absent in the short-term market. Overall, the suburban and rural Airbnb markets are quite thin, later results focusing on these markets will need to be examined in light of this small sample size. -->
-
-<!-- ```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.width=9} -->
-
-<!--   # Make Airbnb submarket map -->
-
-<!--   abbtype.map <- ggplot() + -->
-<!--     geom_bar(data=abb.data2, aes(x=sub.mrkt, fill=sub.mrkt)) + -->
-<!--     scale_fill_manual(values=sm.col) + -->
-<!--     facet_wrap(~type) + -->
-<!--     ylab('# of Properties\n') + xlab('')+ -->
-<!--     theme(legend.position = 'bottom', -->
-<!--           legend.title = element_blank(), -->
-<!--           axis.text.x=element_blank(), -->
-<!--           axis.ticks.x=element_blank(), -->
-<!--           plot.title = element_text(hjust = 0.5)) + -->
-<!--     ggtitle('AirBNB Property Type By Submarket') -->
-
-<!--   # Make Long term rental map -->
-
-<!--   ltrtype.map <- ggplot() + -->
-<!--     geom_bar(data=ltr.data2, aes(x=sub.mrkt, fill=sub.mrkt)) + -->
-<!--     scale_fill_manual(values=sm.col) + -->
-<!--     facet_wrap(~type) + -->
-<!--     ylab('# of Properties\n') + xlab('')+ -->
-<!--     theme(legend.position = 'bottom', -->
-<!--           legend.title = element_blank(), -->
-<!--           axis.text.x=element_blank(), -->
-<!--           axis.ticks.x=element_blank(), -->
-<!--           plot.title = element_text(hjust = 0.5)) + -->
-<!--     ggtitle('Long Term Property Type By Submarket') -->
-
-<!-- ``` -->
-
-<!-- ```{r abbtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=9,fig.height=7, fig.cap='Observations by Submarket'} -->
-
-<!--   ggMultiPlots(abbtype.map, ltrtype.map, cols=1) -->
-
-<!-- ``` -->
-
-<!-- ### Observed Revenue -->
+<!-- #### Observed Revenue -->
 
 <!-- Our final data filtering considers the observed revenue of the properties. For the long-term rentals the observed revenue is the weekly rate multiplied by 52 minus the number of weeks the property was on the market.  In a number of extreme cases, time on market was extremely long and the total observed revenues very low. To remove these outlying observations, we filter out any properties with less than $5,000 in revenue. -->
 
@@ -607,6 +349,70 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
 <!--     coord_cartesian(xlim=c(0, 70000)) -->
 
 <!-- ``` -->
+
+### Location and Submarkets
+
+Location is an important determinant in both the short- and long-term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts. The specific suburb of a property is the second, or finer scale, at which the market operates. Figure 5 shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries.
+
+```{r locmap, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.width=4, fig.cap='Melbourne Submarkets'}
+
+ load(paste0(fig.path, 'suburbMap.RData'))
+
+ loc.map 
+ 
+```
+
+It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beaches; and 2) Proximity to key tourist activities and events. Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analyzing short and long term rentals in Melbourne: 
+
+1. Rural (Outer suburbs, not Beach)
+2. Suburban (Middle suburbs, not Beach)
+3. City (Inner Suburbs, not Beach, not Core)
+4. City-Core (Select inner suburbs with tourist activities and near CBD)
+5. Beach (Properties within 500m of Port Phillip Bay east of Yarra River)
+
+We select the 18 suburbs below to represent the 'core' of the city (Table 1).  The majority of tourist destinations and major events such as the Australian Open and the Grand Prix are located in these suburbs.  All are well serviced by public transportation and possess abundant amenities for tourists.
+
+```{r, results="asis", comment=FALSE, message=FALSE, echo=FALSE}
+
+ c.subs <- data.frame(A=core.suburbs[1:6],
+                      B=core.suburbs[7:12],
+                      C=core.suburbs[13:18])
+ names(c.subs) <- NULL
+ rownames(c.subs) <- NULL
+
+ print(xtable(c.subs, caption = 'List of Core Suburbs\n'),
+       include.rownames=F,
+       caption.placement="top",
+       hline.after=c(0,6))
+
+
+```
+
+We assign these designations by: 1) Adding suburb designations to the properties; 2) Assigning submarkets 1-4 based on suburb location; and 3) Indicating proximity to beach and labeling as 'Beach' submarket.  This process is repeated for both the short and long term data. Finally, we also remove any observations that fall outside of outer suburbs (the extent of the suburbs). The location of the short and long term rentals, colored by submarket, are shown in Figure 6.
+
+Before assigning submarkets to the long term property we must remedy the fact that about 5% of the long term rental observations have missing latitude and longitude values.  Half of these do, however, have a latitude and longitudeg value for the centroid of the street that the property faces.  To retain as many observations as possible in these intial steps we apply the street centroid value to the observations with missing lat/long values.  For those without either set of lat/longs we remove them from the dataset at this point. After making this correction we then assign one of the five submarket designations based on the process described above.
+
+```{r loc.plots, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5.5, fig.height=9, fig.cap='Location Maps'}
+
+  load(paste0(fig.path, 'ltrMap.RData'))
+  load(paste0(fig.path, 'strMap.RData'))
+
+  ggMultiPlots(str.map, ltr.map, cols=1)
+
+```
+
+To better visualize the relative frequency of the submarkets in the two tenure types we have broken down the data by submarket by property type by tenure type. A number of interesting observations are illustrated here (Figure 7). First, the vast majority of Airbnb units are apartments in city-core or city locations. As expected and as shown by the map, the long term properties are more evenly spread across the metro region than the short term properties.  Long term houses are more peripheral than apartments, a result of urban development patterns and land economics. Beach properties are, relatively speaking, over-represented in the short term market, especially in apartments, while suburban and rural apartments, somewhat common in long term markets, are nearly absent in the short-term market. Overall, the suburban and rural Airbnb markets are quite thin, later results focusing on these markets will need to be examined in light of this small sample size.
+
+```{r loc.bars, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=8.5, fig.height=4, fig.cap='Location Maps'}
+
+  load(paste0(fig.path, 'ltrsubplot.RData'))
+  load(paste0(fig.path, 'strsubplot.RData'))
+  ltrtype.map <- ltrtype.map + ylab("")
+
+  ggMultiPlots(strtype.map, ltrtype.map, cols=2)
+
+```
+
 
 <!-- ### Summary of Data Cleaning -->
 
