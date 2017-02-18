@@ -283,6 +283,7 @@ We then clip by time.  For the short-term data we will consider any Airbnb prope
   str.data <- str.data[(str.data$max.date - str.data$min.date) >= 178, ]
   str.data <- str.data[str.data$max.date >= '2016-03-01' &
                          str.data$min.date <= '2016-03-01', ]
+ 
   daily.data <- daily.data[daily.data$date >= '2015-09-01', ]
 
  # Limit long term data  
@@ -730,6 +731,34 @@ Next, we convert the Airbnb values to Australian dollars from US dollars using t
 
 ```
 
+
+Next we extract all of the daily reservation data that fits our criteria -- reserved and not over $500 per night^[Note that there are some outlying daily observations that do not agree with the property level Airbnb summary data from the data source.  We do this step to remove those]. From this information we calculate the median nightly reservation price for each property and append it to the property level data. 
+
+
+From these density plots we see that most long-term Rentals are greater than $200 and less than $1000 per week while most nightly rates are greater than $50 and less than $500 per night. We filter the data accordingly. 
+
+```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ ## Filter the long term data
+
+  ltr.data <- ltr.data[ltr.data$event.price >= 200 & 
+                         ltr.data$event.price <= 1000, ]
+
+  # Get all of the reservations
+  resv.daily <- daily.data[daily.data$status == 'R' &
+                              daily.data$price < 500, ]
+  
+  # Calculate the property specific median nightly rate
+  med.daily <- tapply2DF(resv.daily$price, resv.daily$property.id, median)
+  
+  # Add median rate to the property  
+  str.data$med.rate <- med.daily$Var[match(str.data$property.id, med.daily$ID)] 
+  
+  # Remove those with no valid median rate
+  str.data <- str.data[!is.na(str.data$med.rate), ]
+   
+```  
+
 ```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
   # ltr Plot
@@ -776,22 +805,76 @@ Next, we convert the Airbnb values to Australian dollars from US dollars using t
   
 ```
 
-From these density plots we see that most long-term Rentals are greater than $200 and less than $1000 per week while most nightly rates are greater than $50 and less than $500 per night. We filter the data accordingly. 
-
-```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- ## Filter the long term data
-
-  ltr.data <- ltr.data[ltr.data$event.price >= 200 & 
-                         ltr.data$event.price <= 1000, ]
+```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
  ## Filter the short term data
 
   str.data <- str.data[str.data$nightly.rate >= 50 &
-                         str.data$nightly.rate <= 500, ]
+                         str.data$med.rate <= 500, ]
 
   # Count Cleaning
   countCleaning('rates.rents')
+  
+```
+
+#### Observed Revenue
+
+Our final data filtering considers the observed revenue of the properties. For the long-term rentals the observed revenue is the weekly rate multiplied by 52 minus the number of weeks the property was on the market.  In a number of extreme cases, time on market was extremely long and the total observed revenues very low. To remove these outlying observations, we filter out any properties with less than $5,000 in revenue.
+
+For the short-term data, we first calculate the total number of bookings, the occupancy rate, blocked rate and proportion of the year over which the property was listed.  Using this data we sum up the total revenue from bookings. For properties that were not listed on the site for the entire year, we impute their annual revenue by dividing the actual revenue by the proportion of the year in which they were listed.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] Properties with no reserved bookings, and, therefore, no revenue, are removed.
+
+Looking at the distribution of the revenues from each tenure type, we see that those for the long-term rentals are for more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year (Figure 10).  Short term revenues range from neglible to highs of greater than \$80,000.  While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not. Also, the high number of very low yield Airbnb properties also suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing.
+
+```{r revdensity.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='Comparison of Revenue Distributions'}
+
+ # Compute bookings count
+
+  str.data$bookings <- round(str.data$total.days * 
+                               (1 - (str.data$block.rate + str.data$avail.rate)), 0)
+ 
+ # Remove those with 0 
+
+  str.data <- str.data[str.data$bookings > 0, ]
+
+  str.data$gross.revenue <- (str.data$bookings * str.data$med.rate) 
+  ltr.data$gross.revenue <- ltr.data$event.price * (52 - ltr.data$dom / 7)
+ 
+  str.small <- str.data[,c('baths', 'gross.revenue')]
+  str.small$tenure <- 'short-term'
+  ltr.small <- ltr.data[,c('baths', 'gross.revenue')]
+  ltr.small$tenure <- 'long-term'
+  all.small <- rbind(str.small, ltr.small)
+
+  revdens <- ggplot(all.small, aes(x=gross.revenue, fill=tenure, color=tenure)) +
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=c(ltr.col, abb.col)) +
+    scale_color_manual(values=c(ltr.col, abb.col)) +
+    ggtitle('Annual Revenues by Tenure Type') +
+    xlab('Annual Revenue') +
+    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
+                       labels=c('$0', '$20,000', '$40,000', '$60,000'))+
+    theme(legend.position='bottom',
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y=element_blank()) +
+    coord_cartesian(xlim=c(0, 70000))
+  
+```
+
+```{r revdensplot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+  png(file=paste0(fig.path, 'revdens.png'), width = 480, height = 380, 
+      bg='transparent')
+    
+    revdens
+  
+  dev.off()
+  
+  save(revdens, file=paste0(fig.path, 'revdens.RData'))
+  
+  ltr.data <- ltr.data[ltr.data$gross.revenue > 10000, ]
   
 ```
 
@@ -1248,36 +1331,14 @@ Compute a full value of that total listing count
 
  # Compute bookings count
 
-  str.data$bookings <- round(str.data$total.days * (1 - (str.data$block.rate + str.data$avail.rate)), 0)
+  str.data$bookings <- round(str.data$total.days * 
+                               (1 - (str.data$block.rate + str.data$avail.rate)), 0)
  
  # Remove those with 0 
 
   str.data <- str.data[str.data$bookings > 0, ]
 
-```
-
-### Median rate
-
-Next we extract all of the daily reservation data that fits our criteria -- reserved and not over $500 per night^[Note that there are some outlying daily observations that do not agree with the property level Airbnb summary data from the data source.  We do this step to remove those]. From this information we calculate the median nightly reservation price for each property and append it to the property level data. 
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Get all of the reservations
-  resv.daily <- daily.data[daily.data$status == 'R' &
-                              daily.data$price < 500, ]
-  
-  # Calculate the property specific median nightly rate
-  med.daily <- tapply2DF(resv.daily$price, resv.daily$property.id, median)
-  
-  # Add median rate to the property  
-  str.data$med.rate <- med.daily$Var[match(str.data$property.id, med.daily$ID)] 
-
-  # Remove those with no valid median rate
-  str.data <- str.data[!is.na(str.data$med.rate), ]
-    
-  ## Remove those with less than 180 observed days (missing obs)
-  str.data <- str.data[str.data$total.days >= 180, ]
-  
+ 
 ```
 
 #### Host Policies
