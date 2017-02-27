@@ -43,6 +43,8 @@ We then set the paths to the data and the code, conditional on which of the auth
 
 ```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
+  offline <- TRUE
+
   # Get computer names
 
   comp.name <- Sys.info()['nodename']
@@ -75,6 +77,15 @@ Next, we source the necessary custom code files for the analysis.
 
  # Other custom files
 
+  if(offline){
+
+  source(paste0(code.path, '/dataVizTools/ggPlotTools.R'))
+  source(paste0(code.path, '/datamgmttools/dataMungeTools.R'))
+  source(paste0(code.path, '/spatialTools/spatialLogitModels.R'))
+  source(paste0(code.path, '/spatialTools/point2surface_Tools.R'))
+    
+  } else {
+    
   source(paste0('https://raw.githubusercontent.com/andykrause/dataVizTools',
                 '/master/ggPlotTools.R'))
   source(paste0('https://raw.githubusercontent.com/andykrause/datamgmttools',
@@ -83,6 +94,9 @@ Next, we source the necessary custom code files for the analysis.
                 '/master/spatialLogitModels.R'))
   source(paste0('https://raw.githubusercontent.com/andykrause/spatialTools',
                 '/master/point2surface_Tools.R'))
+
+  }
+  
 
 ```
 
@@ -804,7 +818,7 @@ From these density plots we see that most long-term Rentals are greater than $20
   ltr.data <- ltr.data[ltr.data$event.price >= 200 & 
                          ltr.data$event.price <= 1000, ]
 
-  str.data <- str.data[str.data$nightly.rate >= 50 &
+  str.data <- str.data[str.data$med.rate >= 50 &
                          str.data$med.rate <= 500, ]
 
   # Count Cleaning
@@ -869,7 +883,7 @@ Looking at the distribution of the revenues from each tenure type, we see that t
   
   save(revdens, file=paste0(fig.path, 'revdens.RData'))
   
-  ltr.data <- ltr.data[ltr.data$gross.revenue > 10000, ]
+  ltr.data <- ltr.data[ltr.data$dom <= 180, ]
   
     countCleaning('revenue')
   
@@ -1322,21 +1336,6 @@ As we have limited the time period of analysis from the expanse of the raw data,
 
 ```
 
-Compute a full value of that total listing count
-
-```{r and.bookings, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- # Compute bookings count
-
-  str.data$bookings <- round(str.data$total.days * 
-                               (1 - (str.data$block.rate + str.data$avail.rate)), 0)
- 
- # Remove those with 0 
-
-  str.data <- str.data[str.data$bookings > 0, ]
-
- 
-```
 
 #### Host Policies
 
@@ -1354,6 +1353,10 @@ Here we combine the two Strict (regular and super) cancellation policies into on
   ss60 <- which(str.data$cancel.policy == 'Super Strict 60 Days')
   str.data$cancel.policy[ss60] <- 'Strict'
 
+  # Count Cleaning
+  countCleaning('hostpolicy')
+  
+  
 ```
 
 ## Write out data  

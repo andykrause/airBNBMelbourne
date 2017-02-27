@@ -57,6 +57,8 @@ output: html_document
     
   }
 
+  offline <- TRUE
+
 ```
 
 Next, we source the necessary custom code files for the analysis.  
@@ -69,6 +71,15 @@ Next, we source the necessary custom code files for the analysis.
 
  # Other custom files
 
+  if(offline){
+
+  source(paste0(code.path, '/dataVizTools/ggPlotTools.R'))
+  source(paste0(code.path, '/datamgmttools/dataMungeTools.R'))
+  source(paste0(code.path, '/spatialTools/spatialLogitModels.R'))
+  source(paste0(code.path, '/spatialTools/point2surface_Tools.R'))
+    
+  } else {
+    
   source(paste0('https://raw.githubusercontent.com/andykrause/dataVizTools',
                 '/master/ggPlotTools.R'))
   source(paste0('https://raw.githubusercontent.com/andykrause/datamgmttools',
@@ -77,6 +88,9 @@ Next, we source the necessary custom code files for the analysis.
                 '/master/spatialLogitModels.R'))
   source(paste0('https://raw.githubusercontent.com/andykrause/spatialTools',
                 '/master/point2surface_Tools.R'))
+
+  }
+  
 
 ```
 
