@@ -490,8 +490,7 @@ While this simple analysis does not control for location and product differences
 
 As the difference between extrapolated and potential revenue suggests, many short-term hosts are not listing their properties full-time.  There may be, therefore, different types of hosts operating in the Airbnb market. from anecdotal evidence, there are at least two types of hosts in the market: 1) Those that lease out their properties all the time in the name of profit maximization (Profit Seekers); and 2) Those that lease out their property when very infrequently, for example when they are away on vacation (Opportunistic Sharers).
 If these are the dominant two forms of hosts in the market, then a distribution of properties by the percent of time which they are blocked shoudl be very bi-modal with profit seekers on the left and opportunistic sharers on the right. The left hand panel of figure 9 shows that this breakdown hold somewhat, with peaks of hosts at each end, but that there are also a considerable number of hosts who block their properties some of the time.  
-There is also a third potential host type, that of the host who utilizies multiple platforms to list their short-term property. 
-
+There is also a third potential host type, that of the host who utilizies multiple platforms, of which Airbnb may just be one, to list their short-term property. A potential method to identify these hosts is to look at the number of individual periods of blocked days.  A host using multiple platforms will likely have many, small periods of blocked days on Airbnb as they will block out those days in which reservations are made on other platforms. We test to see if this is a meaningful metric by plotting the total count of blocked periods versus the percentage of blocked days in the right panel of Figure 9. We do find many host with a large number of blocked periods, but, unfortunately, no true pattern emerges.  
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
 
@@ -521,6 +520,8 @@ There is also a third potential host type, that of the host who utilizies multip
 ggMultiPlots(host.block.freq, block.rate.period, cols=2)
 
 ```
+
+Attempts to divide the hosts up with unsupervised^[As there are no official host types we could not run more reliable supervised models.] clustering algorithms -- including the use of more variables -- failed to produce robust categories.  As a more subjective approach, we have divided the hosts up into four categories based on the original two variables considered: block percentage and number of blocked periods. Profit seekers are those host who have blocked percentages less than 25\% of the time.  Opportunistic Sharers have blocked their properties at least 75\% of the time.  Within those two extremes, we consider users who have at least 12 blocked periods during a year to be 'Multi-Platform Users' and the remaining set to be 'Unknown'.  See Figure 10 for a breakdown of these group by the two variables. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
 
@@ -569,6 +570,8 @@ un.host <- base.host +
 ggMultiPlots(ps.host, mu.host, os.host, un.host, cols=2)
   
 ```
+
+Profit Seekers make up 43\% of the hosts, with Opportunistic Sharers capturing 18\% and Multi-Platform Users 10\%.  The remainder 'Unknown' category contains just over 28\% of all properties. The classification of these hosts is not convincing enough to base our entire analytical process on so we will use these breakdowns to add context to the results and to test the sensitivity of our results to the assumptions underlying the extrapolated and potential revenue calculations.   
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4}
 
