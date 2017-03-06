@@ -688,22 +688,28 @@ abbPrefPlot <- function(pref.data,
     
     if(split.field != 'none'){
       
-      # Create the table
-      pref.table <- tapply2DF(pref.df$pref, 
-                              pref.df[ ,split.field],
-                              metric.fnct)
+      if(nrow(pref.df) > 0){
+        # Create the table
+        pref.table <- tapply2DF(pref.df$pref, 
+                                pref.df[ ,split.field],
+                                metric.fnct)
+      } else {
+        pref.table <- NULL
+      }  
     } else {
       
       pref.table <- data.frame(ID='all', 
                                Var=metric.fnct(pref.df$pref, na.rm=T))
     }
     
-    # Add the x variable
-    pref.table$x.var <- i.pl
+    if(nrow(pref.df) > 0){
     
-    # Add to the capture list
-    pref.list[[i.pl]] <- pref.table
+      # Add the x variable
+      pref.table$x.var <- i.pl
     
+      # Add to the capture list
+      pref.list[[i.pl]] <- pref.table
+    }
   }
   
  ## Convert to a data.frame  
@@ -765,7 +771,8 @@ abbPrefPlot <- function(pref.data,
   
  ## Return Values
   
-  return(pref.plot)
+  return(list(data=pref.full,
+              plot=pref.plot))
   
 }
 
@@ -797,7 +804,7 @@ abbHeatMap <- function(hm.data,
     bins <- c(0, 0)
     if(x.field == 'occ' | x.field == 'occ.rate') bins[1] <- .05
     if(x.field == 'occ.qtl') bins[1] <- 5
-    if(y.field == 'nightly.rate') bins[2] <- 25
+    if(y.field == 'med.rate') bins[2] <- 25
     if(y.field == 'rate.qtl') bins[2] <- 5
   }
   
