@@ -398,7 +398,7 @@ Next, we plot the \% of properties that have short-term preference versus the oc
                                smooth=TRUE,
                                smooth.span=.35 ,
                               spl.col=sm.col)
-  rawocc.pplot
+  rawocc.pplot$plot
   
 
 ```
@@ -441,7 +441,7 @@ We then calculate quantile values for rates and replot the charts
                                split.field='sub.mrkt',
                                smooth=TRUE,
                                smooth.span=.75)
-  qtlocc.pplot <- qtlocc.pplot +
+  qtlocc.pplot <- qtlocc.pplot$plot +
     xlab('\nQualtile of Occupancy Rate') +
     ylab('\n% of Properties where Airbnb is more profitable') +
     scale_x_continuous(breaks=seq(0, 100, by=25),
@@ -461,7 +461,7 @@ Next we build a heat map that shows which combinations of occ rate and nightly r
   
   rate.hm <- abbHeatMap(str.data.ic,
                 x.field='occ.rate',
-                y.field='nightly.rate',
+                y.field='med.rate',
                 pref.field='str.ext.pref',
                 svm=F, 
                 alpha.count=T,
@@ -477,7 +477,7 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 
   rate.hm.svm <- abbHeatMap(str.data.ic,
                             x.field='occ.rate',
-                            y.field='nightly.rate',
+                            y.field='med.rate',
                             pref.field='str.ext.pref',
                             svm=T, 
                             alpha.count=F,
