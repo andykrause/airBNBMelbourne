@@ -548,6 +548,10 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
+  str.data.ic$bedbath <- factor(str.data.ic$bedbath,
+                                levels=c('1..1', '2..1', '2..2',
+                                         '3..1', '3..2', '4..2'))
+
   mod.ext.str <- glm(str.ext.pref~type+as.factor(bedbath),
                      family=binomial(link='logit'),
                      data=str.data.ic)
@@ -571,13 +575,13 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   mod.ext.host <- glm(str.ext.pref~type+as.factor(bedbath)+
-                        sub.mrkt+as.factor(host.type)+
+                        sub.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       family=binomial(link='logit'),
                       data=str.data.ic)
   mod.pot.host <- glm(str.pot.pref~type+as.factor(bedbath)+
-                        sub.mrkt+as.factor(host.type)+
+                        sub.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       family=binomial(link='logit'),
