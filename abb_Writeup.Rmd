@@ -604,152 +604,423 @@ We then compare the projected net revenue of the short-term properties to their 
 
 Realizing that the imputed long term rental values may be more accurate when estimated at smaller scales, we impute long term rental rates at submarket level, specifically by type, bed/bath and geographic area.  In other words, we separately estimate LTR rents for Apartments with 1bed/1bath in the city core, Apartments with 1bed/1bath in the beach submarket, etc. for all combinations of type, bed/bath and geographic area. We then combine the results form all estimates back into a single dataset that contains all of the short-term rentals. 
 
-## Results
+### Results
 
-We will begin our analysis by making a comparison of the short and long-term markets at a metro-level.  What we mean by this is that we will treat the entire region as the functional market and will impute rates and rents with a model using all data.  It is likely that different submarkets operate differently, a hypothesis investigated after the full metropolitan region. -->
+We will begin our analysis by making a comparison of the short and long-term markets at the metropolitan level.  Of our sample of 5,783 short-term rental units, 1,600 or 27.7\% of those units recorded a net revenue greater than what would likely have been garnered in the long-term market.  
+
+Occupancy rates are one of the most important components in determining the profitability of short-term rentals. Below we show (left-panel, Figure 9) the percentage of properties for which short-term rental is more profitable versus the occupancy rate over the year analyzed. We see that likelihood of short-term rental being a better option increases sharply with occupancy rate up from about 25\% up to 75\% occupancy. For occupancy rates less than 40\%, long-term rental is more likely to be preferable. 
+
+As the distribution of occupancy rates is not uniform the initial plot may be misleading as to the frequency of short-term rentals being more profitable than long term. In the right hand panel of Figure 9 we transform the x-axis to represent the quantile of the full distribution of occupancy rates. By doing so, we see that, in general, properties need to be in the upper 25th percentile of occupancy rates across the entire market in order to have a equal likelihood of being more profitable as a short-term rental than as a more traditional long term one. As a matter of reference, the mean occupancy rate in the sample is 27.6\%, with a median value of 19.4\%. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='Probability of Short Term Pref. vs Occ. Rate'}
+
+  str.data.ic$pref <- str.data.ic$str.ext.pref
+
+  rawocc <- abbPrefPlot(str.data.ic,
+                         x.field='occ.rate',
+                         smooth=TRUE,
+                         smooth.span=.5)
+  
+  rawocc <- ggplot(rawocc$data,
+                   aes(x=x.var, y=Var))+
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='none') + 
+    ggtitle('Raw Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  
+  str.data.ic$occ.qtl <- makeWtdQtl(str.data.ic$occ.rate, 
+                                      return.type='rank') 
+  str.data.ic$rate.qtl <- makeWtdQtl(str.data.ic$med.rate, 
+                                  return.type='rank') 
+  qtlocc <- abbPrefPlot(str.data.ic,
+                        x.field='occ.qtl',
+                        smooth=TRUE,
+                        smooth.span=.5)
+  
+  qtlocc <- ggplot(qtlocc$data,
+                   aes(x=x.var, y=Var))+
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate (Quantile)') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25th', '50th', '75th', '100th')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='none') + 
+    ggtitle('Quantile Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+   
+  ggMultiPlots(rawocc, qtlocc, cols=2)
+```
+
+Along with occupancy rates, the other important consideration is the nightly rate.  High occupancy rates with low nightly rates may not be any better than lower occupancy rate with a higher nightly rate.  In Figure 10 (left panel) we plot nightly rates versus occupancy rates.  We then divide the area of the scatter plot into 400 equal areas (20 x 20) and color each based on which is more common in the area, short term or long term revenue.  The transparency is related to the total count of actual market properties falling into that area.
+
+The general trend is what is expected, i.e. that higher rates and occupancies, ceteris paribus, means more profitability for short term rentals.  This relationship is not a perfectly linear because the long-term rental revenue varies greatly based on the characteristics of the property.  While the left panel of Figure 16 helps show the general pattern is does leave many indeterminate areas.  In order to better delimit the situations where short-term rentals are more profitable we turn to a support vector machine (SVM) algorithm.
+
+An SVM can be used as a classifier to delineate the boundaries between two (or more) classes of observations.  In this case, we delineate the boundary (right panel) between situations where long-term rentals are more profitable (red) and where short term are (green).  In order to avoid an overly broad straight line delineation we use a polynomial fitting technique. While this process does provide more flexible fit in the area of high data density, it also has the side effect of creating somewhat counter intuitive results in areas of low data (such as the far upper right corner.)  Overall, from the SVM model we see that the short-term preference begins at about 30\% occupancy rate, regardless of nightly rate.  As the occupancy rate increases, the required nighly rate decreases, down to near $100 once occupancies hit 65\% or greater.
+
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center', fig.cap='Analysis of Raw Rates: Metro Level'}
+
+  rate.hm <- abbHeatMap(str.data.ic,
+                x.field='occ.rate',
+                y.field='med.rate',
+                pref.field='str.ext.pref',
+                svm=F, 
+                alpha.count=T,
+                add.points=T,
+                fill.colors=c(abb.col[1], abb.col[5]))
+  rate.hm <- rate.hm + ylab('Nightly Rate')
+
+  rate.hm.svm <- abbHeatMap(str.data.ic,
+                            x.field='occ.rate',
+                            y.field='med.rate',
+                            pref.field='str.ext.pref',
+                            svm=T, 
+                            alpha.count=F,
+                            add.points=T,
+                            fill.colors=c(abb.col[1], abb.col[5]))
+  rate.hm.svm <- rate.hm.svm + ylab('Nightly Rate')
+  
+  ggMultiPlots(rate.hm, rate.hm.svm, cols=2)
+
+```
+
+Both the occupancy rates and the nightly rates are not uniformly distributed and therefore the plots in Figure 10 may be misleading.  We convert both axis to quantiles and replot both in Figure 11.  Here we see a more even distibution of points across the figures.  Additionally, a more reasonable SVM breakdown occurs as well.  The right panel shows that in order for the likelihood of a property to be more profitable in short-term rental to be above 50\% the lowest occupancy rate it can have is 40\%, if the nightly rate is in the top 95th percentile of the market.  For example, if we drop the nightly rate to the median, the occupancy rate need to be at the 60th percentile.
+
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Quantile Rates: Metro Level'}
+
+  qtl.hm <- abbHeatMap(str.data.ic,
+                x.field='occ.qtl',
+                y.field='rate.qtl',
+                pref.field='str.ext.pref',
+                svm=F, 
+                alpha.count=T,
+                add.points=T,
+                fill.colors=c(abb.col[1], abb.col[5]))
+  qtl.hm <- qtl.hm + ylab('Nightly Rate')
+ 
+  qtl.hm.svm <- abbHeatMap(str.data.ic,
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T, 
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  qtl.hm.svm <- qtl.hm.svm + ylab('Nightly Rate')
+ 
+  ggMultiPlots(qtl.hm, qtl.hm.svm, cols=2)
+  
+```
+
+### Submarkets
+
+To gain a deeper understanding of the differences in short-term preference, we break the data down across a variety of characteristics and examine the preferability metrics in these submarkets. First, we bifurcate our data into houses and apartments.  Within the houses, 17.5\% of the properties are short-term preferable, while for the apartment that figure is nearly double at 30.5\%. Plotting the changes in short-term preferability against occupancy rates shows considerable similarity between houses and apartments (Figure 12).  The only measurable difference is in that for houses a properties occupancy rate needs to be about in a higher quantile (by about 10) than apartments to show the same likelihood of short-term preference as apartment.  Or, in other words, a given house needs to outperform its peers by a greater extent than an apartment to achieve short term preferenc.e 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='Preferency vs Occ. Rates: By Type'}
+
+  apt.id <- which(str.data.ic$type == 'Apartment')
+  house.id <- which(str.data.ic$type == 'House')
+  type.data.ic <- str.data.ic
+
+  ptrocc <- abbPrefPlot(type.data.ic,
+                         x.field='occ.rate',
+                         split.field='type',
+                         smooth=TRUE,
+                         smooth.span=.5 ,
+                         spl.col=c('black', 'grey40'))
+  
+  ptr.occ <- ggplot(ptrocc$data,
+                    aes(x=x.var, y=Var, group=ID, color=ID)) +  
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate') +
+    scale_color_manual(values=c('black', 'grey60'),
+                       name='') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom') + 
+    ggtitle('Raw Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+  
+
+  type.data.ic$occ.qtl[apt.id] <- makeWtdQtl(type.data.ic$occ.rate[apt.id],
+                                      return.type='rank')
+  type.data.ic$occ.qtl[house.id] <- makeWtdQtl(
+    type.data.ic$occ.rate[house.id], return.type='rank')
+  
+  type.data.ic$rate.qtl[apt.id] <- makeWtdQtl(type.data.ic$med.rate[apt.id],
+                                  return.type='rank')
+  type.data.ic$rate.qtl[house.id] <- makeWtdQtl(
+    type.data.ic$med.rate[house.id], return.type='rank')
+  
+  ptqocc <- abbPrefPlot(type.data.ic,
+                         x.field='occ.qtl',
+                         split.field='type',
+                         smooth=TRUE,
+                         smooth.span=.5 ,
+                         spl.col=c('black', 'grey40'))
+    
+  ptq.occ <- ggplot(ptqocc$data,
+                    aes(x=x.var, y=Var, group=ID, color=ID)) +  
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate (Quantile)') +
+    scale_color_manual(values=c('black', 'grey60'),
+                       name='') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25th', '50th', '75th', '100th')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom') + 
+    ggtitle('Quantile Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+   
+  ggMultiPlots(ptr.occ, ptq.occ, cols=2)
+
+```
+
+Extending this analysis to also include nightly rates shows a similar situation (Figure 13). For houses (left panel) there are very few combinations of occupancy rate and nightly rate that offer a greater than even likelihood of short-term preference.  As an example, a median nightly rate requires a 90\% occupancy rate. The market for apartment (right panel) is more forgiving and occupancy rates as low as the 60th percentile can equate to a greater than even chance of short-term prefence is coupled with nightly rates near the top of the market.  A median nightly rate requires a 70\% occupancy rate for short-term prefernce likelihood. 
+
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Quantile Rates: By Type'}
+
+### UPDATE THE QTL VALUES
+
+  house.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type ==
+                                          'House', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5])) +
+  theme(legend.position='none') +
+  annotate("text", x = 50, y = 50, label = "Houses", size=9)
+
+  apt.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type ==
+                                          'Apartment', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+  annotate("text", x = 50, y = 50, label = "Apartments", size=9)
+
+  ggMultiPlots(house.hm.svm, apt.hm.svm, cols=2)
 
 
-<!-- ### Occupancy Rates -->
-
-<!-- Occupancy rates are one of the most important components in determining the profitability of short-term rentals. Unfortunately, these are also the most difficult factor to estimate or impute. Below we shows (left-panel, Figure 14) the percentage of properties for which short-term rental is more profitable versus the occupancy rate.  We see that likelihood of short-term rental being a better option increases sharply with occupancy rate up until about 75\% occupancy.  For occupancy rates less than 50\%, long-term rental is more likely to be the better option.  The decrease in profitabilty after 75\% occupancy is likely due to: 1) small sample sizes in this tail of the data; and 2) that lowering overall nightly rates too low simply to boost occupancy can result in lower overall revenue. -->
-
-<!-- As the distribution of occupancy rates is not uniform (Figure 14, right panel), the initial plot may be misleading as to the frequency of short-term rentals being more profitable than long term. In Figure 15, we transform the x-axis to represent the quantile of the full distribution of occupancy rates. By doing so, we see that, in general, properties need to be in the upper 1/3 of occupancy rates across the entire market in order to have a equal likelihood of being more profitable as a short-term rental than as a more traditional long term one. -->
-
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
-
-<!--   rawocc.pplot <- makePrefPlot(abb.revs, -->
-<!--                                x.field='occ.rate', -->
-<!--                                y.field='abb.act', -->
-<!--                                     smooth=TRUE, -->
-<!--                                smooth.span=.75) -->
-<!--   rawocc.pplot <- rawocc.pplot + -->
-<!--     xlab('\nOccupancy Rate') + -->
-<!--     ylab('\n% of Properties where \nAirbnb is more profitable') + -->
-<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
-<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
-<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
-<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
-<!--     scale_color_manual(values=sm.col) + -->
-<!--     ggtitle('Tenure Profitability vs \n Occupancy Rate') + -->
-<!--     theme(legend.position='none', -->
-<!--           plot.title = element_text(hjust = 0.5)) + -->
-<!--     coord_cartesian(ylim=c(0,1)) + -->
-<!--     geom_hline(aes(yintercept=.5)) -->
+```
 
 
-<!-- ``` -->
 
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
 
-<!--   dens.plot <- ggplot(abb.revs, aes(x=occ.rate)) + -->
-<!--     geom_density(alpha=.3, fill=1) + -->
-<!--     scale_color_manual(values=sm.col) + -->
-<!--     scale_fill_manual(values=sm.col) + -->
-<!--     scale_x_continuous(breaks=seq(0, 1, by=.25), -->
-<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
-
-<!--     ylab('\nFrequency of Occurance') + -->
-<!--     xlab('\nOccupancy Rate') + -->
-<!--     ggtitle('Distribution of \n Occupancy Rates') + -->
-<!--     theme(legend.position='none', -->
-<!--           plot.title = element_text(hjust = 0.5), -->
-<!--           axis.line=element_blank(), -->
-<!--           axis.text.y=element_blank(), -->
-<!--           axis.ticks.y=element_blank()) -->
-<!-- ``` -->
-
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='Probability of Short Term Pref. vs Occ. Rate'} -->
-
-<!--   ggMultiPlots(rawocc.pplot, dens.plot, cols=2) -->
-
-<!-- ``` -->
-
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
-
-<!--   abb.revs$occ.qtl <- makeWtdQtl(abb.revs$occ.rate, -->
-<!--                                       return.type='rank') -->
-<!--   abb.revs$rate.qtl <- makeWtdQtl(abb.revs$med.rate, -->
-<!--                                   return.type='rank') -->
-
-<!--   ## Make quartile location plot -->
-
-<!--   qtlocc.pplot <- makePrefPlot(abb.revs, -->
-<!--                                x.field='occ.qtl', -->
-<!--                                y.field='abb.act', -->
-<!--                                smooth=TRUE, -->
-<!--                                smooth.span=.55) -->
-<!--   qtlocc.pplot <- qtlocc.pplot + -->
-<!--     xlab('\nQuantile of Occupancy Rate') + -->
-<!--     ylab('\n% of Properties where \n Airbnb is more profitable') + -->
-<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
-<!--                        labels=c('0', '25th', '50th', '75th', '100th')) + -->
-<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
-<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
-<!--     scale_color_manual(values=sm.col) + -->
-<!--     theme(legend.position='none') + -->
-<!--     coord_cartesian(ylim=c(0,1))+ -->
-<!--     geom_hline(aes(yintercept=.5)) -->
-
-<!-- ``` -->
-
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=4, fig.height=3, fig.align='center', fig.cap='Probability of Short Term Pref. vs Occ. Rate Quantile'} -->
-
-<!--   qtlocc.pplot -->
-
-<!-- ``` -->
-
-<!-- Along with occupancy rates, the other important consideration is the nightly rate.  High occupancy rates with low nightly rates may not be any better than lower occupancy rate with a higher nightly rate.  In Figure 16 (left panel) we plot nightly rates versus occupancy rates.  We then divide the area of the scatter plot into 400 equal areas (20 x 20) and color each based on which is more common in the area, short term or long term revenue.  The transparency is related to the total count of actual market properties falling into that area. -->
-
-<!-- The general trend is what is expected, i.e. that higher rates and occupancies, ceteris paribus, means more profitability for short term rentals.  This relationship is not a perfectly linear because the long-term rental revenue varies greatly based on the characteristics of the property.  While the left panel of Figure 16 helps show the general pattern is does leave many indeterminate areas.  In order to better delimit the situations where short-term rentals are more profitable we turn to a support vector machine (SVM) algorithm. -->
-
-<!-- An SVM can be used as a classifier to delineate the boundaries between two (or more) classes of observations.  In this case, we delineate the boundary (right panel) between situations where long-term rentals are more profitable (red) and where short term are (green).  In order to avoid an overly broad straight line delineation we use a polynomial fitting technique. While this process does provide more flexible fit in the area of high data density, it also has the side effect of creating somewhat counter intuitive results in areas of low data (such as the far upper right corner.)  Overall, from the SVM model we see that the short-term preference begins at about 30\% occupancy rate, regardless of nightly rate.  As the occupancy rate increases, the required nighly rate decreases, down to near $100 once occupancies hit 65\% or greater. -->
-
-<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center', fig.cap='Analysis of Raw Rates: Metro Level'} -->
-
-<!--  ggMultiPlots(rate.hm, rate.hm.svm, cols=2) -->
-
-<!-- ``` -->
-
-<!-- Both the occupancy rates and the nightly rates are not uniformly distributed and therefore the plots in Figure 16 may be misleading.  We convert both axis to quantiles and replot both in Figure 17.  Here we see a more even distibution of points across the figures.  Additionally, a more reasonable SVM breakdown occurs as well.  The right panel shows that in order for the likelihood of a property to be more profitable in short-term rental to be above 50\% the lowest occupancy rate it can have is 40\%, if the nightly rate is in the top 95th percentile of the market.  For example, if we drop the nightly rate to the median, the occupancy rate need to be at the 60th percentile. -->
 
 <!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Quantile Rates: Metro Level'} -->
 
-<!--  ggMultiPlots(qtl.hm, qtl.hm.svm, cols=2) -->
+<!-- ### UPDATE THE QTL VALUES -->
+
+
+
+<!--   core.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
+<!--                                           'city-core', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T,  -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none') +  -->
+<!--     ylab('') + -->
+<!--     xlab('') +  -->
+<!--   annotate("text", x = 50, y = 50, label = "City-Core", size=9) -->
+
+
+<!--     city.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
+<!--                                           'city', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T,  -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none')+  -->
+<!--     ylab('') + -->
+<!--     xlab('')+  -->
+<!--   annotate("text", x = 50, y = 50, label = "City", size=9) -->
+
+
+<!--       sub.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
+<!--                                           'suburban', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T,  -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none')+  -->
+<!--     ylab('') + -->
+<!--     xlab('')+  -->
+<!--   annotate("text", x = 50, y = 50, label = "Suburban", size=9) -->
+
+
+<!--       rural.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
+<!--                                           'rural', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T,  -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none')+  -->
+<!--     ylab('') + -->
+<!--     xlab('')+  -->
+<!--   annotate("text", x = 50, y = 50, label = "Rural", size=9) -->
+
+
+<!--       beach.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
+<!--                                           'beach', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T,  -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none')+  -->
+<!--     ylab('') + -->
+<!--     xlab('')+  -->
+<!--   annotate("text", x = 50, y = 50, label = "Beach", size=9) -->
+
+
+
+
+
+<!-- #### Geographic Submarkets -->
+
+<!-- We break the data down further by geographic submarket and property type and compare the results (quantile) in Table 6.  In the Actual (observed) revenues, the probabilty of short-term preference is highest in the core area of the city and lowest in the city, beach and suburban areas.  Interestingly, the rural area has a higher probably than all other but the core.  This is likely explained by the fact that there are few rural properties and many of these are clustered near rural tourists activities like the Yarra Valley wine region which see a high demand for lodging (Figure 8).  -->
+
+<!-- In the core and the city, apartments offer a higher probability than homes, the reverse is true in the suburban and rural areas. In the lower density areas it appears that tourists may prefer larger and more spacious dwellings compared to long-term renters who may experience long commutes from these fringe locations. -->
+
+<!-- Looking at the 'fitted' and 'svm area' figures we see a trend that the svm values are higher than the actual observed probabilities for the core apartment and lower for nearly all of the rest of the categories.  This finding suggests that for all but the core apartments, those properties that are more profitable as short-term cluster tightly in the area (the combination of nightly rate and occupancy rate) that are preferable for a short-term strategy. In other words, there is well defined combination or situation in which these properties can be more profitable short-term than in a long-term lease.  The opposite is true of the city core apartments. Here, the area of the plots occupied by short term preference is larger than the total proporation, suggesting that a wide variety of combinations of nightly rates and occupancy rates will result in a short term preference. -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='Probability of Short Term Pref. vs Occ. Rate'} -->
+<!--   sm.col <- abb.col[c(1, 3, 6, 5, 2)] -->
+<!--   str.data.ic$pref <- str.data.ic$str.ext.pref -->
+
+<!--   rawocc <- abbPrefPlot(str.data.ic, -->
+<!--                          x.field='occ.rate', -->
+<!--                          split.field='sub.mrkt', -->
+<!--                          smooth=TRUE, -->
+<!--                          smooth.span=.35 , -->
+<!--                          spl.col=sm.col) -->
+
+<!--   str.data.ic$occ.qtl <- makeWtdQtl(str.data.ic$occ.rate,  -->
+<!--                                       return.type='rank')  -->
+<!--   str.data.ic$rate.qtl <- makeWtdQtl(str.data.ic$med.rate,  -->
+<!--                                   return.type='rank')  -->
+<!--   qtlocc <- abbPrefPlot(str.data.ic, -->
+<!--                                x.field='occ.qtl', -->
+<!--                                split.field='sub.mrkt', -->
+<!--                                smooth=TRUE, -->
+<!--                                smooth.span=.75) -->
+
+<!--    raw.data <- rawocc$data -->
+<!--    qtl.data <- qtlocc$data -->
+
+<!--    raw.data$type <- 'Raw Occ. Rate' -->
+<!--    qtl.data$type <- 'Qtl. Occ. Rate' -->
+<!--    raw.data$type <- factor(raw.data$type,  -->
+<!--                            levels=c('Raw Occ. Rate', 'Qtl. Occ. Rate')) -->
+<!--    rq.data <- rbind(raw.data, qtl.data)  -->
+
+<!--   ## Make quartile location plot -->
+
+<!--   rq.pplot <- ggplot(rq.data, -->
+<!--                      aes(x=x.var, y=Var, group=ID, color=ID)) + -->
+<!--                 stat_smooth(se=FALSE, size=2, span=.7) + -->
+<!--                 xlab('\nOccupancy Rate') + -->
+<!--                 scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                                    labels=c('0%', '25%', '50%', '75%', -->
+<!--                                             '100%')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     scale_colour_manual(values=sm.col, -->
+<!--                         name='') + -->
+<!--     theme(legend.position='bottom') + -->
+<!--     facet_wrap(~type) -->
+
+<!--   rq.pplot -->
+
 
 <!-- ``` -->
 
-<!-- ### Market Summary -->
+<!-- ```{r message=FALSE, warning=FALSE, results='asis', comment=FALSE, cache=TRUE, echo=FALSE, fig.cap='Geographic Submarket Preferability'} -->
 
-<!-- Finally, we summarize the entire market by looking at three metrics: -->
+<!--  # Make Basic comparison table -->
+<!--   pref.table <- abbCreateCompTable(ic.df=str.data.ic, -->
+<!--                                    split.field='sub.mrkt') -->
 
-<!-- 1. Actual: The percentage of properties in the market in which short-term (Airbnb) generates more revenue -->
-<!-- 2. Fitted: The percentage of properties (when plotted by occupancy rate and nightly rate) that fall in the SVM area considered profitable -->
-<!-- 3. SVM Area: The percentage of the total area in the SVM plot that represents a situation where the short-term rental is more profitable. -->
+<!--  # Convert to wide format for output -->
+<!--   pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var') -->
 
-<!-- None of these metrics on their own is perfect.  The 'actual' measure responds directly to the sample of the current market and may not be as useful to a potential investor. The 'fitted' and 'svm area' metric minimize some bias from the sample, but suffer from forcing all observations into a binary condition (there are no 'gray' areas) and the 'svm area' metric may be biases by large areas of the scatterplot that have few actual observations.  This latter issue is partially limited by plotting by quantile, but, nonetheless still exists. -->
+<!--  # Limit to the extrapolated pref type -->
+<!--   pref.table <- pref.table[pref.table$rev.type == 'Extrapolated', ] -->
+<!--   pref.table[,1] <- c('City-Core', 'City', 'Suburban', 'Rural', 'Beach') -->
+<!--   pref.table[,2] <- pref.table[,2]*100 -->
 
-<!-- We calculate each for the raw rates as well as for the quantile situation.  These are show in Table 4.  Overall, 31.4\% of the observed Airbnb properties raised more actual revenue from short-term lending than the estimated long-term revenue that they would have gained.  Analyzing these by raw rates in the SVM, we find that a nearly identical 31.4\% fall within the contiguous area of short-term preference and this area takes up 40.6% of the total plotted area.  When we scale the plots by quantile, we find that 37.2\% of all observations fall in the short-term preference area and that this area takes up 37.8\% of the total plotted area.  As the difference between the fitted and the svm area is considerably smaller in the quantile approach, there is less bias from outlying, empty areas. -->
-
-<!-- ```{r, results="asis", comment=FALSE,  echo=FALSE} -->
-
-<!-- names(market.ratio) <- c('Property Type', 'Actual', 'Fitted', 'SVM Area') -->
-<!-- print(xtable(market.ratio, caption='Metro Level: Short-Term Preference Analysis\n', -->
-<!--        digits=3), -->
-<!--        include.rownames=FALSE, -->
-<!--       caption.placement='top') -->
-
+<!--   names(pref.table) <- c('Sub-Market', '% Short Term Preferable') -->
+<!--   options(xtable.comment = FALSE) -->
+<!--   print(xtable(pref.table[,1:2], caption='Geographic Submarket Preferability\n', -->
+<!--                digits=1), -->
+<!--                include.rownames=FALSE, -->
+<!--                caption.placement='top') -->
 
 <!-- ``` -->
 
-<!-- ### Submarkets -->
 
-<!-- A major concern about the above analysis is that the estimated rents, rates, days on market and occupancy rates are estimated globally.  As a result, there is the likelihood of significant bias within certain submarkets.  Below, we break down the results by type (apartment vs house), by geographic market (five geographic submarkets listed above) and by type and submarket.   -->
+<!-- broken down by the five geographic submarkets -- City-Core, City, Suburban, Rural and beach. Looking at different market segments such as property type, host type and home characteristics will follow. -->
 
-<!-- #### Property Type -->
+<!-- Within the City-Core, approximately one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to one in four for beach and rural properties, one in six for other city location and about one in nine for suburban locations.   -->
 
-<!-- First, we bifurcate our data into houses and apartments.  We then rerun the entire analysis described above for the house and the apartment markets separately. Table 5 and Figures 18 (houses) and 19 (apartments) illustrate the metrics for these two sub-markets.  The raw probability data shows that over 33% of apartments are more profitable in short term leasing as opposed to just 22% of houses.  Figures 18 and 19 show the quantile preference plots both in the raw and with the SVM categorization.  As is evident from these plots, the likely of short-term rental being more profitable is much greater in the apartment market than in the house market.  For apartments, a 60th rate and a 60th percentile occupancy rate has a better than 50% chance of being more profitable in a short term leasing strategy than a long term one.  In fact, so long as an apartment is in the top 1/4 of occupancy rates, it is more profitable in a short term strategy at almost any price point.  Houses, on the other hand, need either very high rates or very high occupancies to justify a short-term rental.   -->
 
-<!-- The large differences between the `SVM Area' figures and the Actual and Fitted speaks to two points about the data.  First, the difference between the SVM Area and the Fitted number highlight the fact that even when transforming the axes into quantile, the data are still not uniformly distributed across the 2-dimensional space of the plot.  This means that not all areas of the plot have equal weights in the Fitted value.  Second, the Actual and SVM Area figures deviate because of the binary nature of the SVM process.  For example, in many of the short-term preference in the apartment SVM plot there are some long-term preference data points, but just fewer than 50% of total, whereas in the long-term preference areas on the left hand side of the plot nearly all of the points are long-term preference.  The results of the SVM process are the result of a sort of 'gerrymandering' where a clustering by one faction and a dispersal by another can create a result that is not representative of the underlying base population.  Despite this fact, we feel that the SVM Area values are useful for the owner in our scenario because they provide both a value and visual guide that present the possibilities of being more profitable with a short-term strategy, not just what the current distribution of such properties are.  -->
+<!-- ```{r, fig.width=8, fig.height=8, echo=FALSE, fig.cap='xxx'} -->
+
+<!--   ggMultiPlots(core.hm.svm, city.hm.svm, sub.hm.svm, -->
+<!--                rural.hm.svm, beach.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+
 
 
 <!-- ```{r, results="asis", echo=FALSE, fig.cap='Preference Analysis: By Property Type'} -->
@@ -779,13 +1050,6 @@ We will begin our analysis by making a comparison of the short and long-term mar
 
 <!-- ``` -->
 
-<!-- #### Geographic Submarkets -->
-
-<!-- We break the data down further by geographic submarket and property type and compare the results (quantile) in Table 6.  In the Actual (observed) revenues, the probabilty of short-term preference is highest in the core area of the city and lowest in the city, beach and suburban areas.  Interestingly, the rural area has a higher probably than all other but the core.  This is likely explained by the fact that there are few rural properties and many of these are clustered near rural tourists activities like the Yarra Valley wine region which see a high demand for lodging (Figure 8).  -->
-
-<!-- In the core and the city, apartments offer a higher probability than homes, the reverse is true in the suburban and rural areas. In the lower density areas it appears that tourists may prefer larger and more spacious dwellings compared to long-term renters who may experience long commutes from these fringe locations. -->
-
-<!-- Looking at the 'fitted' and 'svm area' figures we see a trend that the svm values are higher than the actual observed probabilities for the core apartment and lower for nearly all of the rest of the categories.  This finding suggests that for all but the core apartments, those properties that are more profitable as short-term cluster tightly in the area (the combination of nightly rate and occupancy rate) that are preferable for a short-term strategy. In other words, there is well defined combination or situation in which these properties can be more profitable short-term than in a long-term lease.  The opposite is true of the city core apartments. Here, the area of the plots occupied by short term preference is larger than the total proporation, suggesting that a wide variety of combinations of nightly rates and occupancy rates will result in a short term preference. -->
 
 <!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Quantile Market Summary; Property Type by Submarket'} -->
 
@@ -828,7 +1092,7 @@ We will begin our analysis by making a comparison of the short and long-term mar
 
 <!-- ``` -->
 
-<!-- ## Explaining Preference -->
+## Explaining Preference
 
 <!-- The analyses above show that, overall, just less than 1 out of every 3 Airbnb'd properties was actually  more profitable as a short-term rental then it would have been if rented long-term over the course of the year.  This proportion, however, varied by location and property type.  While illustrative, the above do not fully control for property characteristics or owner actions -- which are a key component of short-term rental success.  To better understand which factors are related to a higher likelihood of short-term preference, we develop a set of logistic regression models below. -->
 
