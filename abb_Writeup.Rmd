@@ -831,266 +831,218 @@ Extending this analysis to also include nightly rates shows a similar situation 
 
 ```
 
+#### By Geography
+
+Next, we divide the data by the five geographic sub-market shown in Figure 6. Within the City-Core, approximately one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to one in four for beach and rural properties, one in six for other city location and about one in nine for suburban locations. 
+
+```{r message=FALSE, warning=FALSE, results='asis', comment=FALSE, cache=TRUE, echo=FALSE, fig.cap='Geographic Submarket Preferability'}
+
+ # Make Basic comparison table
+  pref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                   split.field='sub.mrkt')
+
+ # Convert to wide format for output
+  pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var')
+
+ # Limit to the extrapolated pref type
+  pref.table <- pref.table[pref.table$rev.type == 'Extrapolated', ]
+  pref.table[,1] <- c('City-Core', 'City', 'Suburban', 'Rural', 'Beach')
+  pref.table[,2] <- pref.table[,2]*100
+
+  names(pref.table) <- c('Sub-Market', '% Short Term Preferable')
+  options(xtable.comment = FALSE)
+  print(xtable(pref.table[,1:2], caption='Geographic Submarket Preferability\n',
+               digits=1),
+               include.rownames=FALSE,
+               caption.placement='top')
+
+```
+
+There is a noticable variability in the relationship between occupancy rates and short-term prefernce across the submarkets. For raw rates (Figure 14, left panel), rural properties can acheive short-term preference with lower occupancies than the other areas. This may be due to the relatively low long-term rental rates in the more rural areas coupled with high short-term rates for homes in wine country or near the mountainous terrain east of the city. Transforming to quantiles, we see that the city-core properties can reach short-term preference at a much lower occupancy rate than the other, with suburban and city as the most difficult markets.  
+
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Quantile Rates: Metro Level'} 
+
+  cc.id <- which(str.data.ic$sub.mrkt == 'city-core')
+  city.id <- which(str.data.ic$sub.mrkt == 'city')
+  sub.id <- which(str.data.ic$sub.mrkt == 'suburban')
+  rural.id <- which(str.data.ic$sub.mrkt == 'rural')
+  beach.id <- which(str.data.ic$sub.mrkt == 'beach')
+  
+  subm.data.ic <- str.data.ic
+
+  subm.data.ic$occ.qtl[cc.id] <- makeWtdQtl(subm.data.ic$occ.rate[cc.id],
+                                      return.type='rank')
+  subm.data.ic$rate.qtl[cc.id] <- makeWtdQtl(subm.data.ic$med.rate[cc.id],
+                                  return.type='rank')
+  
+  subm.data.ic$occ.qtl[city.id] <- makeWtdQtl(
+      subm.data.ic$occ.rate[city.id], return.type='rank')
+  subm.data.ic$rate.qtl[city.id] <- makeWtdQtl(
+    subm.data.ic$med.rate[city.id], return.type='rank')
+  
+  subm.data.ic$occ.qtl[sub.id] <- makeWtdQtl(subm.data.ic$occ.rate[sub.id],
+                                      return.type='rank')
+  subm.data.ic$rate.qtl[sub.id] <- makeWtdQtl(subm.data.ic$med.rate[sub.id],
+                                  return.type='rank')
+  
+  subm.data.ic$occ.qtl[rural.id] <- makeWtdQtl(subm.data.ic$occ.rate[rural.id],
+                                      return.type='rank')
+  subm.data.ic$rate.qtl[rural.id] <- makeWtdQtl(subm.data.ic$med.rate[rural.id],
+                                  return.type='rank')
+  
+  subm.data.ic$occ.qtl[beach.id] <- makeWtdQtl(subm.data.ic$occ.rate[beach.id],
+                                      return.type='rank')
+  subm.data.ic$rate.qtl[beach.id] <- makeWtdQtl(subm.data.ic$med.rate[beach.id],
+                                  return.type='rank')
+  
+```
+
+```{r, fig.width=9, fig.height=4, message=FALSE, warning=FALSE, echo=FALSE, fig.cap='Analysis of Quantile Rates: Metro Level'} 
+
+  sm.col <- abb.col[c(1, 3, 6, 5, 2)] 
+  smrocc <- abbPrefPlot(subm.data.ic,
+                         x.field='occ.rate',
+                         split.field='sub.mrkt',
+                         smooth=TRUE,
+                         smooth.span=.5 ,
+                         spl.col=sm.col)
+  
+  smr.occ <- ggplot(smrocc$data,
+                    aes(x=x.var, y=Var, group=ID, color=ID)) +  
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate') +
+    scale_color_manual(values=sm.col,
+                       name='') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom') + 
+    ggtitle('Raw Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+
+
+  smqocc <- abbPrefPlot(subm.data.ic,
+                         x.field='occ.qtl',
+                         split.field='sub.mrkt',
+                         smooth=TRUE,
+                         smooth.span=.5 ,
+                         spl.col=sm.col)
+    
+  smq.occ <- ggplot(smqocc$data,
+                    aes(x=x.var, y=Var, group=ID, color=ID)) +  
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate (Quantile)') +
+    scale_color_manual(values=sm.col,
+                       name='') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25th', '50th', '75th', '100th')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom') + 
+    ggtitle('Quantile Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+   
+  ggMultiPlots(smr.occ, smq.occ, cols=2)
+```
+
+Plotting out the nigthly rate versus occupancy rate heat maps for all five geographic submarkets tells a similar story.  The 'City-Core' market offers the most potential for short term prefernce with suburban and city the least.  The rural market achieves very sold short-term preference for the most expensive home, again likely those with special amenities or links to the wine region.  Beach properties do not perform as well as might be expected in the short term market, however, it should be kept in mind that the winter climate in Melbourne is not conducive to beach activity and therefore short-term beach properties may suffer during winter months. 
+
+```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Quantile Rates: Metro Level'}
+
+  core.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
+                                          'city-core', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none') +
+    ylab('') +
+    xlab('') +
+  annotate("text", x = 50, y = 50, label = "City-Core", size=9)
+
+
+    city.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
+                                          'city', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+    ylab('') +
+    xlab('')+
+  annotate("text", x = 50, y = 50, label = "City", size=9)
+
+
+      sub.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
+                                          'suburban', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+    ylab('') +
+    xlab('')+
+  annotate("text", x = 50, y = 50, label = "Suburban", size=9)
+
+
+      rural.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
+                                          'rural', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+    ylab('') +
+    xlab('')+
+  annotate("text", x = 50, y = 50, label = "Rural", size=9)
+
+
+      beach.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
+                                          'beach', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+    ylab('') +
+    xlab('')+
+  annotate("text", x = 50, y = 50, label = "Beach", size=9)
+
+```
+
+```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='xxx'}
+
+  ggMultiPlots(core.hm.svm, city.hm.svm, sub.hm.svm,
+               rural.hm.svm, beach.hm.svm, cols=2)
+
+```
 
 
-
-
-<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Quantile Rates: Metro Level'} -->
-
-<!-- ### UPDATE THE QTL VALUES -->
-
-
-
-<!--   core.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
-<!--                                           'city-core', ], -->
-<!--                    x.field='occ.qtl', -->
-<!--                    y.field='rate.qtl', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T,  -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=T, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
-<!--   theme(legend.position='none') +  -->
-<!--     ylab('') + -->
-<!--     xlab('') +  -->
-<!--   annotate("text", x = 50, y = 50, label = "City-Core", size=9) -->
-
-
-<!--     city.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
-<!--                                           'city', ], -->
-<!--                    x.field='occ.qtl', -->
-<!--                    y.field='rate.qtl', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T,  -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=T, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
-<!--   theme(legend.position='none')+  -->
-<!--     ylab('') + -->
-<!--     xlab('')+  -->
-<!--   annotate("text", x = 50, y = 50, label = "City", size=9) -->
-
-
-<!--       sub.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
-<!--                                           'suburban', ], -->
-<!--                    x.field='occ.qtl', -->
-<!--                    y.field='rate.qtl', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T,  -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=T, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
-<!--   theme(legend.position='none')+  -->
-<!--     ylab('') + -->
-<!--     xlab('')+  -->
-<!--   annotate("text", x = 50, y = 50, label = "Suburban", size=9) -->
-
-
-<!--       rural.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
-<!--                                           'rural', ], -->
-<!--                    x.field='occ.qtl', -->
-<!--                    y.field='rate.qtl', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T,  -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=T, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
-<!--   theme(legend.position='none')+  -->
-<!--     ylab('') + -->
-<!--     xlab('')+  -->
-<!--   annotate("text", x = 50, y = 50, label = "Rural", size=9) -->
-
-
-<!--       beach.hm.svm <- abbHeatMap(str.data.ic[str.data.ic$sub.mrkt ==  -->
-<!--                                           'beach', ], -->
-<!--                    x.field='occ.qtl', -->
-<!--                    y.field='rate.qtl', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T,  -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=T, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
-<!--   theme(legend.position='none')+  -->
-<!--     ylab('') + -->
-<!--     xlab('')+  -->
-<!--   annotate("text", x = 50, y = 50, label = "Beach", size=9) -->
-
-
-
-
-
-<!-- #### Geographic Submarkets -->
-
-<!-- We break the data down further by geographic submarket and property type and compare the results (quantile) in Table 6.  In the Actual (observed) revenues, the probabilty of short-term preference is highest in the core area of the city and lowest in the city, beach and suburban areas.  Interestingly, the rural area has a higher probably than all other but the core.  This is likely explained by the fact that there are few rural properties and many of these are clustered near rural tourists activities like the Yarra Valley wine region which see a high demand for lodging (Figure 8).  -->
-
-<!-- In the core and the city, apartments offer a higher probability than homes, the reverse is true in the suburban and rural areas. In the lower density areas it appears that tourists may prefer larger and more spacious dwellings compared to long-term renters who may experience long commutes from these fringe locations. -->
-
-<!-- Looking at the 'fitted' and 'svm area' figures we see a trend that the svm values are higher than the actual observed probabilities for the core apartment and lower for nearly all of the rest of the categories.  This finding suggests that for all but the core apartments, those properties that are more profitable as short-term cluster tightly in the area (the combination of nightly rate and occupancy rate) that are preferable for a short-term strategy. In other words, there is well defined combination or situation in which these properties can be more profitable short-term than in a long-term lease.  The opposite is true of the city core apartments. Here, the area of the plots occupied by short term preference is larger than the total proporation, suggesting that a wide variety of combinations of nightly rates and occupancy rates will result in a short term preference. -->
-
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='Probability of Short Term Pref. vs Occ. Rate'} -->
-<!--   sm.col <- abb.col[c(1, 3, 6, 5, 2)] -->
-<!--   str.data.ic$pref <- str.data.ic$str.ext.pref -->
-
-<!--   rawocc <- abbPrefPlot(str.data.ic, -->
-<!--                          x.field='occ.rate', -->
-<!--                          split.field='sub.mrkt', -->
-<!--                          smooth=TRUE, -->
-<!--                          smooth.span=.35 , -->
-<!--                          spl.col=sm.col) -->
-
-<!--   str.data.ic$occ.qtl <- makeWtdQtl(str.data.ic$occ.rate,  -->
-<!--                                       return.type='rank')  -->
-<!--   str.data.ic$rate.qtl <- makeWtdQtl(str.data.ic$med.rate,  -->
-<!--                                   return.type='rank')  -->
-<!--   qtlocc <- abbPrefPlot(str.data.ic, -->
-<!--                                x.field='occ.qtl', -->
-<!--                                split.field='sub.mrkt', -->
-<!--                                smooth=TRUE, -->
-<!--                                smooth.span=.75) -->
-
-<!--    raw.data <- rawocc$data -->
-<!--    qtl.data <- qtlocc$data -->
-
-<!--    raw.data$type <- 'Raw Occ. Rate' -->
-<!--    qtl.data$type <- 'Qtl. Occ. Rate' -->
-<!--    raw.data$type <- factor(raw.data$type,  -->
-<!--                            levels=c('Raw Occ. Rate', 'Qtl. Occ. Rate')) -->
-<!--    rq.data <- rbind(raw.data, qtl.data)  -->
-
-<!--   ## Make quartile location plot -->
-
-<!--   rq.pplot <- ggplot(rq.data, -->
-<!--                      aes(x=x.var, y=Var, group=ID, color=ID)) + -->
-<!--                 stat_smooth(se=FALSE, size=2, span=.7) + -->
-<!--                 xlab('\nOccupancy Rate') + -->
-<!--                 scale_x_continuous(breaks=seq(0, 100, by=25), -->
-<!--                                    labels=c('0%', '25%', '50%', '75%', -->
-<!--                                             '100%')) + -->
-<!--     ylab('\nSTR Preferability %') + -->
-<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
-<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
-<!--     scale_colour_manual(values=sm.col, -->
-<!--                         name='') + -->
-<!--     theme(legend.position='bottom') + -->
-<!--     facet_wrap(~type) -->
-
-<!--   rq.pplot -->
-
-
-<!-- ``` -->
-
-<!-- ```{r message=FALSE, warning=FALSE, results='asis', comment=FALSE, cache=TRUE, echo=FALSE, fig.cap='Geographic Submarket Preferability'} -->
-
-<!--  # Make Basic comparison table -->
-<!--   pref.table <- abbCreateCompTable(ic.df=str.data.ic, -->
-<!--                                    split.field='sub.mrkt') -->
-
-<!--  # Convert to wide format for output -->
-<!--   pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var') -->
-
-<!--  # Limit to the extrapolated pref type -->
-<!--   pref.table <- pref.table[pref.table$rev.type == 'Extrapolated', ] -->
-<!--   pref.table[,1] <- c('City-Core', 'City', 'Suburban', 'Rural', 'Beach') -->
-<!--   pref.table[,2] <- pref.table[,2]*100 -->
-
-<!--   names(pref.table) <- c('Sub-Market', '% Short Term Preferable') -->
-<!--   options(xtable.comment = FALSE) -->
-<!--   print(xtable(pref.table[,1:2], caption='Geographic Submarket Preferability\n', -->
-<!--                digits=1), -->
-<!--                include.rownames=FALSE, -->
-<!--                caption.placement='top') -->
-
-<!-- ``` -->
-
-
-<!-- broken down by the five geographic submarkets -- City-Core, City, Suburban, Rural and beach. Looking at different market segments such as property type, host type and home characteristics will follow. -->
-
-<!-- Within the City-Core, approximately one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to one in four for beach and rural properties, one in six for other city location and about one in nine for suburban locations.   -->
-
-
-<!-- ```{r, fig.width=8, fig.height=8, echo=FALSE, fig.cap='xxx'} -->
-
-<!--   ggMultiPlots(core.hm.svm, city.hm.svm, sub.hm.svm, -->
-<!--                rural.hm.svm, beach.hm.svm, cols=2) -->
-
-<!-- ``` -->
-
-
-
-
-<!-- ```{r, results="asis", echo=FALSE, fig.cap='Preference Analysis: By Property Type'} -->
-
-<!--  type.table <- rbind(apt$mrkt.score, house$mrkt.score) -->
-<!--  type.table$property.type <- c('apartment', '', 'house', '') -->
-<!--  type.table <- type.table[,c(5,1:4)] -->
-<!--  names(type.table) <- c('Property Type', 'Actual', 'Fitted', 'SVM Area') -->
-<!--  print(xtable(type.table, caption='Short-term Preference Analysis: By Property Type\n', -->
-<!--        digits=3), -->
-<!--        include.rownames=FALSE, hline.after=c(-1,0,2,4), -->
-<!--        caption.placment='top') -->
-
-
-<!-- ``` -->
-
-
-<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center', , fig.cap='Analysis of Quantile Rates: Houses'} -->
-
-<!-- ggMultiPlots(house$qtl.hm, house$qtl.hm.svm, cols=2) -->
-
-<!-- ``` -->
-
-<!-- ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center', , fig.cap='Analysis of Quantile Rates: Apartment'} -->
-
-<!-- ggMultiPlots(apt$qtl.hm, apt$qtl.hm.svm, cols=2) -->
-
-<!-- ``` -->
-
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Quantile Market Summary; Property Type by Submarket'} -->
-
-<!-- sm.ms <- rbind.fill(lapply(sm.results, function(x) x$mrkt.score[2,])) -->
-<!-- sm.ms.apt <- rbind.fill(lapply(smt.results[1:5], function(x) x$mrkt.score[2,])) -->
-<!-- sm.ms.house <- rbind.fill(lapply(smt.results[6:10], function(x) x$mrkt.score[2,])) -->
-
-<!-- smt.table <- data.frame(sub.market=c('sub-market','beach', 'city', 'core', 'rural', -->
-<!--                                      'suburban', 'all'), -->
-<!--                         actual.all=c('all', round(sm.ms$actual[c(5,2,1,4,3)],2), -->
-<!--                                      round(market.ratio[2,2],2)), -->
-<!--                         actual.apt=c('apt', round(sm.ms.apt$actual, 2), -->
-<!--                                      round(type.table[2,3],2)), -->
-<!--                         actual.house=c('house', round(sm.ms.house$actual, 2), -->
-<!--                                        round(type.table[4,3],2)), -->
-<!--                         fitted.all=c('all',round(sm.ms$fitted[c(5,2,1,4,3)],2), -->
-<!--                                      round(market.ratio[2,3],2)), -->
-<!--                         fitted.apt=c('apt', round(sm.ms.apt$fitted,2), -->
-<!--                                      round(type.table[2,4],2)), -->
-<!--                         fitted.house=c('house', round(sm.ms.house$fitted,2), -->
-<!--                                        round(type.table[4,4],2)), -->
-<!--                         svmarea.all=c('all', round(sm.ms$svm[c(5,2,1,4,3)],2), -->
-<!--                                       round(market.ratio[2,4],2)), -->
-<!--                         svmarea.apt=c('apt', round(sm.ms.apt$svm,2), -->
-<!--                                       round(type.table[2,5],2)), -->
-<!--                         svmarea.house=c('house', round(sm.ms.house$svm,2), -->
-<!--                                         round(type.table[4,5],2))) -->
-
-<!-- smt.table <- smt.table[c(1, 4, 3, 2, 6, 5, 7),] -->
-<!-- names(smt.table) <- c('', '', 'actual', '', '', 'fitted', '', '', -->
-<!--                       'svm area', '') -->
-<!-- smt.full <- xtable(smt.table, -->
-<!--                    caption='Short-Term Preference Analysis: Disaggregated\n') -->
-<!-- align(smt.full) <- 'll|rrr|rrr|rrr' -->
-<!-- print(smt.full,  -->
-<!--        include.rownames=FALSE,  -->
-<!--        hline.after=c(-1,0,1,6,7,7), -->
-<!--                    caption.placement='top') -->
-
-
-<!-- ``` -->
 
 ## Explaining Preference
 
