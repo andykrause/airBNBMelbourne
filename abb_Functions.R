@@ -971,6 +971,9 @@ makeSVM <- function(svm.data,
   # Create XY data
   xy.data <- cbind(svm.data[,x.field], svm.data[,y.field])
   
+  # Hack if all 0s
+  if(sum(svm.data[,z.field]) == 0) svm.data[1,z.field] <- 1
+  
   # Specificy SVM
   svm.obj <- ksvm(x=xy.data,
                   y=svm.data[,z.field],
