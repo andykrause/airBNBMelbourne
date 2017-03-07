@@ -1273,6 +1273,44 @@ Finally, in Model 3 we add in host behavior or policies. Allowing a greater numb
 Look at difference if using potential revenue
 
 -- Show differences in global numbers and heat maps
+
+53.3%
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx'}
+
+  pot.data.ic <- str.data.ic
+
+  pot.data.ic$occ.qtl <- makeWtdQtl(pot.data.ic$pot.occ.rate, return.type='rank')
+  
+  pqtl.hm <- abbHeatMap(pot.data.ic,
+                x.field='occ.qtl',
+                y.field='rate.qtl',
+                pref.field='str.pot.pref',
+                svm=F, 
+                alpha.count=T,
+                add.points=T,
+                fill.colors=c(abb.col[1], abb.col[5]))
+  pqtl.hm <- pqtl.hm + ylab('Nightly Rate (Qtl)')
+  
+  
+  pqtl.hm.svm <- abbHeatMap(pot.data.ic,
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.pot.pref',
+                   svm=T, 
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  pqtl.hm.svm <- pqtl.hm.svm + ylab('Nightly Rate (Qtl)')
+  
+```
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preferencexxx', fig.lp='xxxx'}
+
+  ggMultiPlots(pqtl.hm, pqtl.hm.svm, cols=2)
+
+``` 
+ 
 -- Re-do the logistic models with potential revenue
 
 ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx'}
@@ -1348,9 +1386,189 @@ Look at difference if using potential revenue
 
 ```
 
+Ext is what is happening, potential is what could happening
+
 #### Host Classification
 
 Look at difference if breaking down by host type
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Make Basic comparison table
+  pref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                   split.field='host.type')
+
+ # Convert to wide format for output
+  pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var')
+
+ # Limit to the extrapolated pref type
+  pref.table <- pref.table[pref.table$rev.type == 'Extrapolated', ]
+    
+```
+
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx'}
+
+  host.data.ic <- str.data.ic
+
+  ps <- which(str.data.ic$host.type == 'Profit Seeker')
+  os <- which(str.data.ic$host.type == 'Opportunistic Sharer')
+  mu <- which(str.data.ic$host.type == 'Multi-Platform User')
+  un <- which(str.data.ic$host.type == 'Unknown')
+
+  host.data.ic$occ.qtl[ps] <- makeWtdQtl(
+      host.data.ic$occ.rate[ps], return.type='rank')
+  host.data.ic$rate.qtl[ps] <- makeWtdQtl(
+    host.data.ic$med.rate[ps], return.type='rank')
+  
+  host.data.ic$occ.qtl[os] <- makeWtdQtl(
+      host.data.ic$occ.rate[os], return.type='rank')
+  host.data.ic$rate.qtl[os] <- makeWtdQtl(
+    host.data.ic$med.rate[os], return.type='rank')
+
+  host.data.ic$occ.qtl[mu] <- makeWtdQtl(
+      host.data.ic$occ.rate[mu], return.type='rank')
+  host.data.ic$rate.qtl[mu] <- makeWtdQtl(
+    host.data.ic$med.rate[mu], return.type='rank')
+
+  host.data.ic$occ.qtl[un] <- makeWtdQtl(
+      host.data.ic$occ.rate[un], return.type='rank')
+  host.data.ic$rate.qtl[un] <- makeWtdQtl(
+    host.data.ic$med.rate[un], return.type='rank')
+
+```    
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx55'}
+
+  ps.raw.hm.svm <- abbHeatMap(host.data.ic[ps, ],
+                   x.field='occ.rate',
+                   y.field='med.rate',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=F,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  ps.raw.hm.svm <- ps.raw.hm.svm + ylab('Nightly Rate')
+
+  ps.qtl.hm.svm <- abbHeatMap(host.data.ic[ps, ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  ps.qtl.hm.svm <- ps.qtl.hm.svm + ylab('Nightly Rate (Qtl)')
+
+```
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx44'}
+
+ggMultiPlots(ps.raw.hm.svm, ps.qtl.hm.svm, cols=2)
+
+```
+
+  
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx33'}
+
+  os.raw.hm.svm <- abbHeatMap(host.data.ic[os, ],
+                   x.field='occ.rate',
+                   y.field='med.rate',
+                   pref.field='str.ext.pref',
+                   svm=T, 
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=F,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  os.raw.hm.svm <- os.raw.hm.svm + ylab('Nightly Rate')
+  
+  os.qtl.hm.svm <- abbHeatMap(host.data.ic[os, ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T, 
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  os.qtl.hm.svm <- os.qtl.hm.svm + ylab('Nightly Rate (Qtl)')
+  
+```
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx22'}
+
+ggMultiPlots(os.raw.hm.svm, os.qtl.hm.svm, cols=2)
+
+```
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx11'}
+
+  mu.raw.hm.svm <- abbHeatMap(host.data.ic[mu, ],
+                   x.field='occ.rate',
+                   y.field='med.rate',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=F,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  mu.raw.hm.svm <- mu.raw.hm.svm + ylab('Nightly Rate')
+
+  mu.qtl.hm.svm <- abbHeatMap(host.data.ic[mu, ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  mu.qtl.hm.svm <- mu.qtl.hm.svm + ylab('Nightly Rate (Qtl)')
+
+```
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx1'}
+
+ggMultiPlots(mu.raw.hm.svm, mu.qtl.hm.svm, cols=2)
+
+```
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx2'}
+
+  un.raw.hm.svm <- abbHeatMap(host.data.ic[un, ],
+                   x.field='occ.rate',
+                   y.field='med.rate',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=F,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  un.raw.hm.svm <- un.raw.hm.svm + ylab('Nightly Rate')
+
+  un.qtl.hm.svm <- abbHeatMap(host.data.ic[un, ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.ext.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  un.qtl.hm.svm <- un.qtl.hm.svm + ylab('Nightly Rate (Qtl)')
+
+```
+
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx23'}
+
+ggMultiPlots(un.raw.hm.svm, un.qtl.hm.svm, cols=2)
+
+```
+
+
+
 -- Show new numbers and heat maps
 -- Re-do logistic models, extrapolate but divided by hosts
 
@@ -1360,6 +1578,7 @@ Note that ability to examine different facets of the data is coming to an intera
 
 <!-- ## Discussion -->
 
+vertical SVM lines suggest occ rate is biggest issue.  
 <!-- <!-- Although it gathers considerable interest in both economic and public policy circles, analyses of Airbnb market and their comparison to more traditional long-term leasing strategies remains relatively unaddressed.  This work attempts to fill this void.  --> 
 
 <!-- The Airbnb market is Melbourne is rapidly expanding, as total listings on the portal have jumped from around 7,000 in 2014 to more than 20,000 in August 2016.  However, of this total, only 6,600 or so of the properties are entire homes or apartments that were listed as available for at least one day during the September 1, 2015 to August 31, 2016 time frame.  Of these, only 4,400 are common bed/bath configurations with non-outlying rates and were booked for at least one night over the period of study. Overall, the Airbnb market is very small relative to the long-term market. We caution future researchers and policy analysts to look deeply at initial estimates of Airbnb counts as many of the listings on the market are either room shares and/or not active.     -->
