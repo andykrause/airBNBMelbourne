@@ -514,135 +514,6 @@ While this simple analysis does not control for location and product differences
 
 &nbsp;
 
-#### Classifying Hosts
-
-As the difference between extrapolated and potential revenue suggests, many short-term hosts are not listing their properties full-time.  There may be, therefore, different types of hosts operating in the Airbnb market. from anecdotal evidence, there are at least two types of hosts in the market: 1) Those that lease out their properties all the time in the name of profit maximization (Profit Seekers); and 2) Those that lease out their property when very infrequently, for example when they are away on vacation (Opportunistic Sharers).
-
-If these are the dominant two forms of hosts in the market, then a distribution of properties by the percent of time which they are blocked shoudl be very bi-modal with profit seekers on the left and opportunistic sharers on the right. The left hand panel of figure 9 shows that this breakdown hold somewhat, with peaks of hosts at each end, but that there are also a considerable number of hosts who block their properties some of the time.  
-
-There is also a third potential host type, that of the host who utilizies multiple platforms, of which Airbnb may just be one, to list their short-term property. A potential method to identify these hosts is to look at the number of individual periods of blocked days.  A host using multiple platforms will likely have many, small periods of blocked days on Airbnb as they will block out those days in which reservations are made on other platforms. We test to see if this is a meaningful metric by plotting the total count of blocked periods versus the percentage of blocked days in the right panel of Figure 9. We do find many host with a large number of blocked periods, but, unfortunately, no true pattern emerges.  
-
-&nbsp;
-
-```{r build_blockfreq, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
-
-  host.block.freq <- ggplot(str.data, aes(x=block.rate)) + 
-  geom_density(fill=str.col, color=str.col) +
-  ylab('Frequency\n') + 
-  xlab('\n% of Time Property is Blocked') +
-  scale_x_continuous(breaks=seq(0,1,.2),
-                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
-    ggtitle('Host Block Rate Frequency\n') +
-    theme(plot.title = element_text(hjust = 0.5)) +
-    theme(axis.text.y=element_blank(),
-          axis.ticks.y=element_blank())
-```
-
-```{r build_blockrate, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
-
-  block.rate.period <- ggplot(str.data, aes(x=block.rate, y=nbr.block*extr.par)) + 
-  geom_point(fill=str.col, color=str.col, size=.2) +
-  ylab('Nbr of Blocked Periods\n') + 
-  xlab('\n% of Time Property is Blocked') +
-  scale_x_continuous(breaks=seq(0, 1, .2),
-                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
-    ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
-    theme(plot.title = element_text(hjust = 0.5)) 
-
-```
-
-```{r plot_hostblock, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.caption='Host Blocking Tendencies', fig.lp='hostblock'}
-
-ggMultiPlots(host.block.freq, block.rate.period, cols=2)
-
-```
-
-&nbsp;
-
-Attempts to divide the hosts up with unsupervised^[As there are no official host types we could not run more reliable supervised models.] clustering algorithms -- including the use of more variables -- failed to produce robust categories.  As a more subjective approach, we have divided the hosts up into four categories based on the original two variables considered: block percentage and number of blocked periods. Profit seekers are those host who have blocked percentages less than 25\% of the time.  Opportunistic Sharers have blocked their properties at least 75\% of the time.  Within those two extremes, we consider users who have at least 12 blocked periods during a year to be 'Multi-Platform Users' and the remaining set to be 'Unknown'.  See Figure 10 for a breakdown of these group by the two variables. 
-
-&nbsp;
-
-```{r calc_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
-
-str.data$blockpertime <- round(str.data$nbr.block * str.data$extr.par, 1)
-
-str.data$host.type <- 'Unknown'
-str.data$host.type[str.data$blockpertime > 12] <- 'Multi-Platform User'
-str.data$host.type[str.data$block.rate <= .25] <- 'Profit Seeker'
-str.data$host.type[str.data$block.rate >= .75] <- 'Opportunistic Sharer'
-str.data$host.type <- factor(str.data$host.type,
-                             levels=c('Profit Seeker', 'Opportunistic Sharer', 
-                                      'Multi-Platform User', 'Unknown'))
-```
-
-```{r build_hostbase, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
-
-base.host <- ggplot(str.data, 
-                    aes(x=block.rate, y=blockpertime)) + 
-                geom_point(alpha=.7, size=.4, shape=16, color='gray70') +
-                ylab('# Blckd Periods\n') + 
-                xlab('\n% of Time Property is Blocked') +
-                ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
-                scale_x_continuous(breaks=seq(0, 1, .2),
-                                   labels=c('0%', '20%', '40%', 
-                                            '60%', '80%', '100%')) +
-                #scale_color_manual(values=c(abb.col[2], abb.col[4], 
-                #                            abb.col[7], abb.col[9])) + 
-                theme(legend.position='bottom',
-                      legend.title = element_blank(),
-                      plot.title = element_text(hjust = 0.5))+
-                guides(colour = guide_legend(override.aes = list(size=3,                                                                       alpha=1)))
-
-```
-
-```{r build_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
-  
-ps.host <- base.host + 
-  geom_point(data=str.data[str.data$host.type == 'Profit Seeker', ], size=.4)  +
-  ggtitle('Profit Seekers')
-os.host <- base.host + 
-  geom_point(data=str.data[str.data$host.type == 'Opportunistic Sharer', ], 
-             size=.4)  +
-  ggtitle('Opportunistic Sharer')
-mu.host <- base.host + 
-  geom_point(data=str.data[str.data$host.type == 'Multi-Platform User', ], 
-             size=.4)  +
-  ggtitle('Multi-Platform User')
-un.host <- base.host + 
-  geom_point(data=str.data[str.data$host.type == 'Unknown', ], size=.4)  +
-  ggtitle('Unknown')
-
-```
-
-```{r plot_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.caption='Host Categories', fig.lp='hosttypes'}
-
-ggMultiPlots(ps.host, mu.host, os.host, un.host, cols=2)
-  
-```
-
-&nbsp;
-
-Profit Seekers make up 43\% of the hosts, with Opportunistic Sharers capturing 18\% and Multi-Platform Users 10\%.  The remainder 'Unknown' category contains just over 28\% of all properties. The classification of these hosts is not convincing enough to base our entire analytical process on so we will use these breakdowns to add context to the results and to test the sensitivity of our results to the assumptions underlying the extrapolated and potential revenue calculations.   
-
-&nbsp;
-
-```{r plot_hostbar, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.caption='Host Type Counts', fig.lp='hostbar'}
-
-host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
-  geom_bar() +
-  scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
-  theme(legend.position='none') +
-  ylab('Frequency\n') + 
-  xlab('\nHost Type') +
-  ggtitle('Short Term Host Types') + 
-  theme(plot.title = element_text(hjust = 0.5))
-
-host.type.bar
-
-```
-
-&nbsp;
 
 ## Comparison
 
@@ -1161,13 +1032,13 @@ ln(\frac{STPref}{1-STPref}) = \beta_{0} + \beta_{1} PType +
 
 where $GPR$ is the total number of guests allowed per bedroom^[Hosts set the total number of guests.  We have normalized this by bedroom to avoid co-linearity in our model with the bedroom variables.], $MinStay$ is the minimum number of nights that a stay may have and $CancelPolicy$ is the difficulty with which a booking may be cancelled.  We have grouped the cancellation policies into three groups, Flexible (24 hour notice), Moderate (5 day notice) and Strict (50\% refund, 7, 30 or 60 day notice required).
 
-The results of all three models are shown in Table 7. For $PType$ apartments are the reference category,  for $BedBath$, 2Bed/2Bath is the reference category, for $Submrkt$ the Core is the reference category and for $CancelPolicy$ moderate is the reference category.  As the additional variables are added, the model fit diagnostics steadily increase, suggesting that the increased complexity of the models adds to the quality of the fit.
+The results of all three models are shown in Table 4. For $PType$ apartments are the reference category,  for $BedBath$, 1 Bed / 1Bath is the reference category, for $Submrkt$ the City-Core is the reference category and for $CancelPolicy$ `Moderate' is the reference category.  As the additional variables are added, the model fit diagnostics steadily increase, suggesting that the increased complexity of the models adds to the quality of the fit.
 
-In Model 1, we see that when controlling for structural characteristics, Houses have a significantly lower probability of being more profitable in the short-term than apartments.  Small 1Bed/1Bath properties have a lower probability of being preferable in the short term than the reference class (2Bed/2Bath), while larger 3Bed/2Bath and 4Bed/2Bath have much higher probability of short term preference.
+In Model 1, we see that when controlling for structural characteristics, Houses have a significantly lower probability of being more profitable in short-term leasing than apartments. There is very little significant difference between 1 bed / 1 bath units and the remaining categories, with the exception of 2 bed / 2 bath. This could be due to the fact that 2 bed / 2 bath units may be very attractive in the long-term market as they are a useful product for two, non-family roomates to share.  Additionally, short-term tenants may not appreciate (pay) for the second bathroom as extra bathrooms are less of amenity on holiday than in day-to-day living. 
 
-Adding the submarket variables (Model 2) shows that all areas have a much lower probability of short-term prefernce when compared to the core (the reference category) when controlling for structural characteristics.  These findings mirror those found above in Table 9.  The coefficients for the structural characteristics change little from Model 1 to Model 2, speaking the robustness of those estimates.
+Adding the submarket variables (Model 2) shows that all areas have a much lower probability of short-term prefernce when compared to the City Core(the reference category) when controlling for structural characteristics.  The difference between the Rural and City-Core is not significant, however,  The coefficients for the structural characteristics change little from Model 1 to Model 2, speaking the robustness of those estimates. The coefficient for House properties does decrease significantly in magnitude when adding the geographic submarkets.  This is likely due to the fact that houses are concentrated more heavily in City and Suburban areas than in the City-Core and some of the impact of House is being mediated by the geographic submarkets. 
 
-Finally, in Model 3 we add in host behavior or policies. Allowing a greater number of guests per bedroom results in a higher probability of short-term preference.  This variable may be operating a proxy for additional sleeping spaces which allow for a higher nightly rate, ceteris paribus, to be charged.  The greater the minimum stay, the lower the probability of short-term preference.  Longer minimum stay may equate to lower occupancy rates as one or two night travelers are exempted from the property.  Owners with longer minimum stays may be looking to minimize costs such as cleaning and administration.  Flexible cancellation policies result in a lower probability of short-term preference, while a Strict policy has a weak, but positive relationship with short-term preference.  Strict policies do help maintain revenues, but may also scare off some potential guests.  Strict cancellation may be a luxury for the best and highly desired properties on the market and, within our model, may be acting as a proxy for some unobserved measure of quality or demand.
+Finally, in Model 3 we add in host behavior or policies. Allowing a greater number of guests per bedroom results in a higher probability of short-term preference.  This variable may be operating a proxy for additional sleeping spaces which allow for a higher nightly rate, ceteris paribus, to be charged.  The greater the minimum stay, the lower the probability of short-term preference.  Longer minimum stay may equate to lower occupancy rates as one or two night travelers are exempted from the property.  Owners with longer minimum stays may be looking to minimize costs such as cleaning and administration.  Flexible cancellation policies result in a lower probability of short-term preference, while a Strict policy has a weak, but positive relationship with short-term preference.  Strict policies do help maintain revenues, but may also scare off some potential guests.  Strict cancellation may be a luxury for the best and highly desired properties on the market and, within our model, may be acting as a proxy for some unobserved measure of quality or demand while a flexible cancellation may be signalling the opposite.
 
 &nbsp;
 
@@ -1268,13 +1139,40 @@ Finally, in Model 3 we add in host behavior or policies. Allowing a greater numb
 
 ### Sensitivity Tests
 
+To test if the above results are influence by the assumptions we have made throughout this analysis, we perform two sets of sensitivity tests.  First, we examine how the results changes if potential revenue, not observed revenue, of the short-term properties is used in the comparisons.  Second, we categorize the hosts, split the data and re-analyze the performance of properties based on hypothetical motivations and actions of the hosts. 
+
 #### Potential Revenue 
 
-Look at difference if using potential revenue
+The above uses the observed^[Extrapolated out in cases of Airbnb properties on the market for less than a year] revenue in the comparisons with the imputed long-term revenue.  Doing so may underestimate the possible revenue -- what may matter most to the hypothetical buyer in our scenario -- due to the treatment of blocked days.  If we, instead, assume that blocked days could be leased out on the short-term market at the same overall occupancy rate as the unblocked (observed) days we can produce a potential revenue figure. Note that it is possible (likely?) that the large oversupply of available units onto the market that would happen if no properties blocked their units would decrease both prices and occupancy rates.  We do not attempt to correct for this likelihood, rather we offer these figures as high end estimates. 
 
--- Show differences in global numbers and heat maps
+Using the potential revenue, 53.3% of all properties are short-term preferable.  Breaking that down by type and by geographic submarket shows similar finding to the actual revenue analysis above.  Apartments have a higher short-term preference than do Houses and City-Core properties dominate the other geographic regions.  One notable difference here is that the Rural properties perform rather poorly under a potential revenue scenario, relatively speaking, suggesting that they may be operating near their peak in the current condition. 
 
-53.3%
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx'}
+
+ # Make Basic comparison table
+  tpref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                    split.field='type')
+
+  tpref.table <- tpref.table[tpref.table$rev.type == 'Potential', ]
+  spref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                    split.field='sub.mrkt')
+
+  spref.table <- spref.table[spref.table$rev.type == 'Potential', ]
+  st.table <- rbind(tpref.table, spref.table)
+  st.table[,2] <- st.table[,2]*100
+  names(st.table) <- c('Sub-Market', '% Short Term Preferable')
+  options(xtable.comment = FALSE)
+  print(xtable(st.table[,1:2], 
+               caption='Potential Revenue Preferability\n',
+               digits=1),
+               include.rownames=FALSE,
+               caption.placement='top',
+               hline.after=c(-1, 0, 2, 7, 7))
+
+```
+
+Examining the SVM heat maps for the entire metro region under the Actual revenue (left panel, Figure 19) and the Potential revenue (right panel) show the large increase in possible occupancy rate and nightly rate combination that lead to short-term preference.  Under a potential revenue scenario, a median occupancy rate and median nightly rate is results in greater than 50\% chance of short-term preference.  Even with very low nightly rates (10th percentile), an occupancy rate around the 65th percentile will achieve short-term prefernce likelihood. 
+  
 ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx'}
 
   pot.data.ic <- str.data.ic
@@ -1301,17 +1199,21 @@ Look at difference if using potential revenue
                    add.points=T,
                    quantile=T,
                    fill.colors=c(abb.col[1], abb.col[5]))
-  pqtl.hm.svm <- pqtl.hm.svm + ylab('Nightly Rate (Qtl)')
+  pqtl.hm.svm <- pqtl.hm.svm + ylab('Nightly Rate (Qtl)')+
+  annotate("text", x = 50, y = 50, label = "Potential", size=9)
+  
+  qtl.hm.svm.p <- qtl.hm.svm +
+  annotate("text", x = 50, y = 50, label = "Actual", size=9)
   
 ```
 
 ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preferencexxx', fig.lp='xxxx'}
 
-  ggMultiPlots(pqtl.hm, pqtl.hm.svm, cols=2)
+  ggMultiPlots(qtl.hm.svm.p, pqtl.hm.svm, cols=2)
 
 ``` 
  
--- Re-do the logistic models with potential revenue
+Our final test of the potential revenue is to re-run the logistic regression models using short-term preference in the potential case as the dependent variable. Generally speaking, the results from the new series of models (Table 6) are qualitatively similar to those derived in teh Actual revenue case (Table 4).  The overall magnitude of the coefficient for House (vs Apartments) is lowered in the Potential case, suggesting that houses may be blocked off more that Apartments.  The product types (bed/bath) show similar trends, though with larger discounts for the 2 Bed / 1 Bath and 2 Bed/2 Bath units.  Likewise the geographic submarkets and host policies show similar effects in terms of direction with some slight deviations in magnitude. 
 
 ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx'}
 
@@ -1386,224 +1288,272 @@ Look at difference if using potential revenue
 
 ```
 
-Ext is what is happening, potential is what could happening
+Overall, the choice of revenue type, Actual or Potential, does affect some of the conclusions to be derived from the results above.  As expected, under the Potential case there are more properties (50\% vs 27\%) that exhibit short-term preference.  Under the scenario, the possibilities of increasing revenue by moving from long to short term leasing appear much better.  Again, however, we have not attempted to measure or estimate how this flood of properties onto the market (due to the elimation of blocked days) would impact overall market dynamics.  Suffice it to say that it would like drive down occupancies and maybe price, therefore leading to a decrease in short-term preference likelihood.
+
+In explaining the drivers of short-term preference, the logistic regression models do not change materially with the switch in dependent variable.  This suggests that the underlying drivers of short-term preference remain relatively constant regardless of the choice of revenue estimate, only the base probability of short-term preference increases.  
+
+More broadly speaking, we explain the differences between the two revenue estimates as follows:  The actual revenue case shows what is happening in the market while the potential revenue case highlights what a given property owner may be able to achieve if they are willing to open their property for leasing for the entire calendar year and the remainder of the market does not do so. 
 
 #### Host Classification
 
-Look at difference if breaking down by host type
+As hinted at above in the Actual versus Potential comparison and as indicated in the logistic regression models in Tables 5 and 6, host behavior may be an important determinant of achieving short-term preference.  Additionally, as the difference between extrapolated and potential revenue suggests, many short-term hosts are not listing their properties full-time.  There may be, therefore, different types of hosts operating in the Airbnb market. from anecdotal evidence, there are at least two types of hosts in the market: 1) Those that lease out their properties all the time in the name of profit maximization (Profit Seekers); and 2) Those that lease out their property when very infrequently, for example when they are away on vacation (Opportunistic Sharers).
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+If these are the dominant two forms of hosts in the market, then a distribution of properties by the percent of time which they are blocked shoudl be very bi-modal with profit seekers on the left and opportunistic sharers on the right. The left hand panel of figure 9 shows that this breakdown hold somewhat, with peaks of hosts at each end, but that there are also a considerable number of hosts who block their properties some of the time.  
+
+There is also a third potential host type, that of the host who utilizies multiple platforms, of which Airbnb may just be one, to list their short-term property. A potential method to identify these hosts is to look at the number of individual periods of blocked days.  A host using multiple platforms will likely have many, small periods of blocked days on Airbnb as they will block out those days in which reservations are made on other platforms. We test to see if this is a meaningful metric by plotting the total count of blocked periods versus the percentage of blocked days in the right panel of Figure 9. We do find many host with a large number of blocked periods, but, unfortunately, no true pattern emerges.  
+
+&nbsp;
+
+```{r build_blockfreq, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+
+  host.block.freq <- ggplot(str.data, aes(x=block.rate)) + 
+  geom_density(fill=str.col, color=str.col) +
+  ylab('Frequency\n') + 
+  xlab('\n% of Time Property is Blocked') +
+  scale_x_continuous(breaks=seq(0,1,.2),
+                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    ggtitle('Host Block Rate Frequency\n') +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(axis.text.y=element_blank(),
+          axis.ticks.y=element_blank())
+```
+
+```{r build_blockrate, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+
+  block.rate.period <- ggplot(str.data, aes(x=block.rate, y=nbr.block*extr.par)) + 
+  geom_point(fill=str.col, color=str.col, size=.2) +
+  ylab('Nbr of Blocked Periods\n') + 
+  xlab('\n% of Time Property is Blocked') +
+  scale_x_continuous(breaks=seq(0, 1, .2),
+                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+
+```
+
+```{r plot_hostblock, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.caption='Host Blocking Tendencies', fig.lp='hostblock'}
+
+ggMultiPlots(host.block.freq, block.rate.period, cols=2)
+
+```
+
+&nbsp;
+
+Attempts to divide the hosts up with unsupervised^[As there are no official host types we could not run more reliable supervised models.] clustering algorithms -- including the use of more variables -- failed to produce robust categories.  As a more subjective approach, we have divided the hosts up into four categories based on the original two variables considered: block percentage and number of blocked periods. Profit seekers are those host who have blocked percentages less than 25\% of the time.  Opportunistic Sharers have blocked their properties at least 75\% of the time.  Within those two extremes, we consider users who have at least 12 blocked periods during a year to be 'Multi-Platform Users' and the remaining set to be 'Unknown'.  See Figure 10 for a breakdown of these group by the two variables. 
+
+&nbsp;
+
+```{r calc_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+
+str.data$blockpertime <- round(str.data$nbr.block * str.data$extr.par, 1)
+
+str.data$host.type <- 'Unknown'
+str.data$host.type[str.data$blockpertime > 12] <- 'Multi-Platform User'
+str.data$host.type[str.data$block.rate <= .25] <- 'Profit Seeker'
+str.data$host.type[str.data$block.rate >= .75] <- 'Opportunistic Sharer'
+str.data$host.type <- factor(str.data$host.type,
+                             levels=c('Profit Seeker', 'Opportunistic Sharer', 
+                                      'Multi-Platform User', 'Unknown'))
+```
+
+```{r build_hostbase, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+
+base.host <- ggplot(str.data, 
+                    aes(x=block.rate, y=blockpertime)) + 
+                geom_point(alpha=.7, size=.4, shape=16, color='gray70') +
+                ylab('# Blckd Periods\n') + 
+                xlab('\n% of Time Property is Blocked') +
+                ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+                scale_x_continuous(breaks=seq(0, 1, .2),
+                                   labels=c('0%', '20%', '40%', 
+                                            '60%', '80%', '100%')) +
+                #scale_color_manual(values=c(abb.col[2], abb.col[4], 
+                #                            abb.col[7], abb.col[9])) + 
+                theme(legend.position='bottom',
+                      legend.title = element_blank(),
+                      plot.title = element_text(hjust = 0.5))+
+                guides(colour = guide_legend(override.aes = list(size=3,                                                                       alpha=1)))
+
+```
+
+```{r build_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
+  
+ps.host <- base.host + 
+  geom_point(data=str.data[str.data$host.type == 'Profit Seeker', ], size=.4)  +
+  ggtitle('Profit Seekers')
+os.host <- base.host + 
+  geom_point(data=str.data[str.data$host.type == 'Opportunistic Sharer', ], 
+             size=.4)  +
+  ggtitle('Opportunistic Sharer')
+mu.host <- base.host + 
+  geom_point(data=str.data[str.data$host.type == 'Multi-Platform User', ], 
+             size=.4)  +
+  ggtitle('Multi-Platform User')
+un.host <- base.host + 
+  geom_point(data=str.data[str.data$host.type == 'Unknown', ], size=.4)  +
+  ggtitle('Unknown')
+
+```
+
+```{r plot_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.caption='Host Categories', fig.lp='hosttypes'}
+
+ggMultiPlots(ps.host, mu.host, os.host, un.host, cols=2)
+  
+```
+
+&nbsp;
+
+Profit Seekers make up 43\% of the hosts, with Opportunistic Sharers capturing 18\% and Multi-Platform Users 10\%.  The remainder 'Unknown' category contains just over 28\% of all properties. The classification of these hosts is not convincing enough to base our entire analytical process on so we will use these breakdowns to add context to the results and to test the sensitivity of our results to the assumptions underlying the extrapolated and potential revenue calculations.   
+
+&nbsp;
+
+```{r plot_hostbar, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.caption='Host Type Counts', fig.lp='hostbar'}
+
+host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
+  geom_bar() +
+  scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
+  theme(legend.position='none') +
+  ylab('Frequency\n') + 
+  xlab('\nHost Type') +
+  ggtitle('Short Term Host Types') + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+host.type.bar
+
+```
+
+&nbsp;
+
+Looking at the differences in short-term preference under both revenue cases, we see large variation in short-term preference between host types in the Actual case and a much smaller variation in the Potential case, as expected. There is little change for the 'Profit Seekers' as most of these hosts already operating with few blocked days.  For the other three sets, considerable gains could be had with a more aggresive leasing approach. As the potential figures are somewhat similar here, we will only examine the differences in the Actual number going forward. 
+
+```{r results='asis', message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
 
  # Make Basic comparison table
-  pref.table <- abbCreateCompTable(ic.df=str.data.ic,
-                                   split.field='host.type')
-
- # Convert to wide format for output
-  pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var')
+  apref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                    split.field='host.type')
 
  # Limit to the extrapolated pref type
-  pref.table <- pref.table[pref.table$rev.type == 'Extrapolated', ]
+  hpref.table <- apref.table[apref.table$rev.type == 'Extrapolated', ]
+  phpref.table <- apref.table[apref.table$rev.type == 'Potential', ]
+  hpref.table <- hpref.table[,1:2]
+  hpref.table[,3] <- phpref.table[,2]
+  hpref.table[,2] <- hpref.table[,2]*100
+  hpref.table[,3] <- hpref.table[,3]*100
+  
+  names(hpref.table) <- c('Host Type', '% STP - Actual', '% STP - Potential')
+  options(xtable.comment = FALSE)
+  print(xtable(hpref.table, 
+               caption='Host Type Preferability\n',
+               digits=1),
+               include.rownames=FALSE,
+               caption.placement='top')
     
 ```
 
+Table 9 compares logistic models results from three of the host types.  The Opportunistic Sharers show no instances of short-term preference and therefore could not be estimated.  The left hand column, that of the Profit-Seekers, is the most representative of a sample of property owners that are seeking to maximize revenue.  Overall, the coefficients from this sub-sample match up well to the results from the entire sample shown in Table 5.  In short, the conclusions are the same: small, apartments in the central city with short minimal stays, inflexible cancelation policies and a high guest limit offer the highest probability of short-term preference.  The models for the multi-platform users (middle panel) and the Unknowns (right) are not as clear as the Profit-Seekers but do suggest overall similar dynamics.  
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx'}
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference'}
 
-  host.data.ic <- str.data.ic
+ h1 <- as.data.frame(summary(host.models[[1]])$coefficients)
+ h2 <- as.data.frame(summary(host.models[[3]])$coefficients)
+ h3 <- as.data.frame(summary(host.models[[4]])$coefficients)
 
-  ps <- which(str.data.ic$host.type == 'Profit Seeker')
-  os <- which(str.data.ic$host.type == 'Opportunistic Sharer')
-  mu <- which(str.data.ic$host.type == 'Multi-Platform User')
-  un <- which(str.data.ic$host.type == 'Unknown')
-
-  host.data.ic$occ.qtl[ps] <- makeWtdQtl(
-      host.data.ic$occ.rate[ps], return.type='rank')
-  host.data.ic$rate.qtl[ps] <- makeWtdQtl(
-    host.data.ic$med.rate[ps], return.type='rank')
+ h1sig <- makeStatSig(h1[,4])
+ h2sig <- makeStatSig(h2[,4])
+ h3sig <- makeStatSig(h3[,4])
+ 
+ h1$table.coef <- paste0(ifelse(h1$Estimate>0, ' ', ''), 
+                         sprintf('%.3f', round(h1$Estimate,3)),
+                         h1sig)
+ h2$table.coef <- paste0(ifelse(h2$Estimate>0, ' ', ''),
+                         sprintf('%.3f',round(h2$Estimate,3)),
+                         h2sig)
+ h3$table.coef <- paste0(ifelse(h3$Estimate>0, ' ', ''),
+                         sprintf('%.3f',round(h3$Estimate,3)),
+                         h3sig)
+ 
+ hfull.table <- as.data.frame(cbind(rep('x', nrow(h1)), h1$table.coef,
+                                    h2$table.coef, h3$table.coef))
+ names(hfull.table) <- c('Variable', 'Profit-Seekers', "Multi-Platform", "Unknown")
+ hfull.table$Variable <- c('Intercept', 'House (Type)', '2 Bed & 1 Bath',
+                          '2 Bed & 2 Bath', '3 Bed & 1 Bath', '3 Bed & 2 Bath',
+                          '4 Bed & 2 Bath', 'City (Submarket)',
+                          'Suburban (Submarket)', 'Rural (Submarket)', 
+                          'Beach (Submarket)', 'Guests per Bedroom', 
+                          'Minimum Stay', 'Flexible Cancel', 'Strict Cancel')
+ 
+ ## Create model diagnostics  
   
-  host.data.ic$occ.qtl[os] <- makeWtdQtl(
-      host.data.ic$occ.rate[os], return.type='rank')
-  host.data.ic$rate.qtl[os] <- makeWtdQtl(
-    host.data.ic$med.rate[os], return.type='rank')
-
-  host.data.ic$occ.qtl[mu] <- makeWtdQtl(
-      host.data.ic$occ.rate[mu], return.type='rank')
-  host.data.ic$rate.qtl[mu] <- makeWtdQtl(
-    host.data.ic$med.rate[mu], return.type='rank')
-
-  host.data.ic$occ.qtl[un] <- makeWtdQtl(
-      host.data.ic$occ.rate[un], return.type='rank')
-  host.data.ic$rate.qtl[un] <- makeWtdQtl(
-    host.data.ic$med.rate[un], return.type='rank')
-
-```    
-
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx55'}
-
-  ps.raw.hm.svm <- abbHeatMap(host.data.ic[ps, ],
-                   x.field='occ.rate',
-                   y.field='med.rate',
-                   pref.field='str.ext.pref',
-                   svm=T,
-                   alpha.count=F,
-                   add.points=T,
-                   quantile=F,
-                   fill.colors=c(abb.col[1], abb.col[5]))
-  ps.raw.hm.svm <- ps.raw.hm.svm + ylab('Nightly Rate')
-
-  ps.qtl.hm.svm <- abbHeatMap(host.data.ic[ps, ],
-                   x.field='occ.qtl',
-                   y.field='rate.qtl',
-                   pref.field='str.ext.pref',
-                   svm=T,
-                   alpha.count=F,
-                   add.points=T,
-                   quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))
-  ps.qtl.hm.svm <- ps.qtl.hm.svm + ylab('Nightly Rate (Qtl)')
-
-```
-
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx44'}
-
-ggMultiPlots(ps.raw.hm.svm, ps.qtl.hm.svm, cols=2)
-
-```
-
+  # Extract diagnostics
+  hstr.dx <- logDx(host.models[[1]], str.data.ic, str.data.ic$str.ext.pref)
+  hsm.dx <- logDx(host.models[[3]], str.data.ic, str.data.ic$str.ext.pref)
+  hhost.dx <- logDx(host.models[[4]], str.data.ic, str.data.ic$str.ext.pref)
   
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx33'}
-
-  os.raw.hm.svm <- abbHeatMap(host.data.ic[os, ],
-                   x.field='occ.rate',
-                   y.field='med.rate',
-                   pref.field='str.ext.pref',
-                   svm=T, 
-                   alpha.count=F,
-                   add.points=T,
-                   quantile=F,
-                   fill.colors=c(abb.col[1], abb.col[5]))
-  os.raw.hm.svm <- os.raw.hm.svm + ylab('Nightly Rate')
+  # Create diagnostic table
+  hdiag.table <- data.frame(Variable=c('', 'Diagnostics', 'AIC', 'LogLik',
+                                      'AUC'),
+                           Str.Model=c('', '', round(hstr.dx$AIC,0), 
+                                       round(hstr.dx$logLik, 0),
+                                       round(as.numeric(hstr.dx$auc@y.values),
+                                             3)),
+                           Sm.Model=c('', '', round(hsm.dx$AIC,0), 
+                                      round(hsm.dx$logLik, 0),
+                                      round(as.numeric(hsm.dx$auc@y.values), 3)),
+                           Host.Model=c('', '', round(hhost.dx$AIC,0), 
+                                        round(hhost.dx$logLik, 0),
+                                        round(as.numeric(hhost.dx$auc@y.values),
+                                              3)))
+  names(hdiag.table) <- c('Variable', 'Profit-Seekers', "Multi-Platform", "Unknown")
   
-  os.qtl.hm.svm <- abbHeatMap(host.data.ic[os, ],
-                   x.field='occ.qtl',
-                   y.field='rate.qtl',
-                   pref.field='str.ext.pref',
-                   svm=T, 
-                   alpha.count=F,
-                   add.points=T,
-                   quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))
-  os.qtl.hm.svm <- os.qtl.hm.svm + ylab('Nightly Rate (Qtl)')
+ ## Combine into full table of coef and diags
+  #full.table[,2] <- gsub(" ", "&nbsp;", full.table[,2], fixed=TRUE)
   
-```
+ hfull.table <- rbind(hfull.table, hdiag.table)
+ 
+ xh.full <- xtable(hfull.table,
+                  caption='Logistic Modeling Results\n')
+ align(xh.full) <- 'lllll'
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx22'}
-
-ggMultiPlots(os.raw.hm.svm, os.qtl.hm.svm, cols=2)
-
-```
-
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx11'}
-
-  mu.raw.hm.svm <- abbHeatMap(host.data.ic[mu, ],
-                   x.field='occ.rate',
-                   y.field='med.rate',
-                   pref.field='str.ext.pref',
-                   svm=T,
-                   alpha.count=F,
-                   add.points=T,
-                   quantile=F,
-                   fill.colors=c(abb.col[1], abb.col[5]))
-  mu.raw.hm.svm <- mu.raw.hm.svm + ylab('Nightly Rate')
-
-  mu.qtl.hm.svm <- abbHeatMap(host.data.ic[mu, ],
-                   x.field='occ.qtl',
-                   y.field='rate.qtl',
-                   pref.field='str.ext.pref',
-                   svm=T,
-                   alpha.count=F,
-                   add.points=T,
-                   quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))
-  mu.qtl.hm.svm <- mu.qtl.hm.svm + ylab('Nightly Rate (Qtl)')
+ print(xh.full,
+       include.rownames=FALSE,
+       hline.after=c(-1,0,15,20,20),
+       caption.placement='top')
 
 ```
-
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx1'}
-
-ggMultiPlots(mu.raw.hm.svm, mu.qtl.hm.svm, cols=2)
-
-```
-
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx2'}
-
-  un.raw.hm.svm <- abbHeatMap(host.data.ic[un, ],
-                   x.field='occ.rate',
-                   y.field='med.rate',
-                   pref.field='str.ext.pref',
-                   svm=T,
-                   alpha.count=F,
-                   add.points=T,
-                   quantile=F,
-                   fill.colors=c(abb.col[1], abb.col[5]))
-  un.raw.hm.svm <- un.raw.hm.svm + ylab('Nightly Rate')
-
-  un.qtl.hm.svm <- abbHeatMap(host.data.ic[un, ],
-                   x.field='occ.qtl',
-                   y.field='rate.qtl',
-                   pref.field='str.ext.pref',
-                   svm=T,
-                   alpha.count=F,
-                   add.points=T,
-                   quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))
-  un.qtl.hm.svm <- un.qtl.hm.svm + ylab('Nightly Rate (Qtl)')
-
-```
-
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx23'}
-
-ggMultiPlots(un.raw.hm.svm, un.qtl.hm.svm, cols=2)
-
-```
-
-
-
--- Show new numbers and heat maps
--- Re-do logistic models, extrapolate but divided by hosts
-
-Note that ability to examine different facets of the data is coming to an interactive website soon.
 
 \pagebreak
 
-<!-- ## Discussion -->
+## Discussion
 
-vertical SVM lines suggest occ rate is biggest issue.  
-<!-- <!-- Although it gathers considerable interest in both economic and public policy circles, analyses of Airbnb market and their comparison to more traditional long-term leasing strategies remains relatively unaddressed.  This work attempts to fill this void.  --> 
+Although it gathers considerable interest in both economic and public policy circles, analyses of Airbnb market and their comparison to more traditional long-term leasing strategies remains relatively unaddressed.  This work attempts to fill this void.
 
-<!-- The Airbnb market is Melbourne is rapidly expanding, as total listings on the portal have jumped from around 7,000 in 2014 to more than 20,000 in August 2016.  However, of this total, only 6,600 or so of the properties are entire homes or apartments that were listed as available for at least one day during the September 1, 2015 to August 31, 2016 time frame.  Of these, only 4,400 are common bed/bath configurations with non-outlying rates and were booked for at least one night over the period of study. Overall, the Airbnb market is very small relative to the long-term market. We caution future researchers and policy analysts to look deeply at initial estimates of Airbnb counts as many of the listings on the market are either room shares and/or not active.     -->
+The Airbnb market is Melbourne is rapidly expanding, as total listings on the portal have jumped from around 7,000 in 2014 to more than 20,000 in August 2016.  However, of this total, only 6,600 or so of the properties are entire homes or apartments that were listed as available for at least one day during the September 1, 2015 to August 31, 2016 time frame.  Of these, only 4,400 are common bed/bath configurations with non-outlying rates and were booked for at least one night over the period of study. Overall, the Airbnb market is very small relative to the long-term market. We caution future researchers and policy analysts to look deeply at initial estimates of Airbnb counts as many of the listings on the market are either room shares and/or not active.
 
-<!-- Comparing annual revenues from the two leasing strategies shows that revenues from more traditional long-term rentals are, on average, higher and much less variable than those from the Airbnb market (Figure 10).  However, there is long right tail to the distibution of short-term revenues suggesting that some owners are doing better, and occasionally much better, on Airbnb than they would on the long-term market. This univariate comparison of revenues does not tell the entire story, as the Airbnb market does not have the same spatial distribution as the long-term market (Figure 8).  Short-term leasing is much more common in the central areas of the city, with small clusters showing up in suburban beach locations and rural tourist destinations like the Yarra Valley wine district.  -->
+Comparing annual revenues from the two leasing strategies shows that revenues from more traditional long-term rentals are, on average, higher and much less variable than those from the Airbnb market (Figure 10).  However, there is long right tail to the distibution of short-term revenues suggesting that some owners are doing better, and occasionally much better, on Airbnb than they would on the long-term market. This univariate comparison of revenues does not tell the entire story, as the Airbnb market does not have the same spatial distribution as the long-term market (Figure 8).  Short-term leasing is much more common in the central areas of the city, with small clusters showing up in suburban beach locations and rural tourist destinations like the Yarra Valley wine district.
 
-<!-- To control for these differences, we set out to make direct comparison of short and long term revenues on both the short and long term market observations. The shared information that is available on both sets of properties is limited. Our initial work found estimating long term rental values and tenant search times for the short term properties to be feasible with these data constraints while the opposite is much more difficult. In other words, there appear to by many unobserved variables (presense of wi-fi, parking and laundry facilities) and/or none-property specific characteristics (such as minimum stays, pet policies, number of allowed guests, cancellation policies) that influence short term nightly rates and occupancy rates.  As a result, we were not able to accurately estimate likely short-term rates for the long-term observations.   -->
+To control for these differences, we set out to make direct comparison of short and long term revenues on both the short and long term market observations. The shared information that is available on both sets of properties is limited. Our initial work found estimating long term rental values and tenant search times for the short term properties to be feasible with these data constraints while the opposite is much more difficult. In other words, there appear to by many unobserved variables (presense of wi-fi, parking and laundry facilities) and/or none-property specific characteristics (such as minimum stays, pet policies, number of allowed guests, cancellation policies) that influence short term nightly rates and occupancy rates.  As a result, we were not able to accurately estimate likely short-term rates for the long-term observations.
 
-<!-- In looking only at the short-term observation with estimated long-term rents we found that approximately one in three Airbnb properties brought in more revenue with its short term strategy than it would have with a long-term approach. As expected, this probability is not equal across space, property type or property size (bed and bath count).  Apartments are much more likely than houses to be more profitable as a short term rental.  Core city properties are more likely than other properties to prefer a short-term strategy, as are larger properties versus smaller ones.  For instance, 45\% of apartments in the city core generated more revenue on Airbnb than they likely would have on the long term market.  Examining only apartments with at least three bedrooms and two baths that figure increases to 60\%. -->
+In looking only at the short-term observation with estimated long-term rents we found that approximately one in three Airbnb properties brought in more revenue with its short term strategy than it would have with a long-term approach. As expected, this probability is not equal across space, property type or property size (bed and bath count).  Apartments are much more likely than houses to be more profitable as a short term rental.  Core city properties are more likely than other properties to prefer a short-term strategy, as are larger properties versus smaller ones.  For instance, 35\% of apartments in the city core generated more revenue on Airbnb than they likely would have on the long term market while only 8\% of suburban houses did. Looking at potential revenues -- through eliminating the impact of blocked days -- increases the overall likelihood of short-term preference considerably. 
 
-<!-- The nightly rates and total occupancies drive the profitability of short-term leasing.  As the nightly rate vs. occupancy rate heat maps and SVM plots (Figures 16, 17, 18 and 19) show, even with very high nightly rates, owners would need to achieve an occupancy rate of at least the median in market (around 40\%) in order to achieve a better than 50\% probability of being more profitable in a short-term strategy than a long term one. A 40\% occupancy rate means bookings at least three days out of every week all year long. In Melbourne summers this may be an easy feat as tourist numbers swell, but doing so on a cold week in July likely proves more difficult.    -->
+The nightly rates and total occupancies drive the profitability of short-term leasing.  As the nightly rate vs. occupancy rate heat maps and SVM plots (Figures 16, 17, 18 and 19) show, even with very high nightly rates, owners would need to achieve an occupancy rate of at least the 75th percentile in market (around 40\%) in order to achieve a better than 50\% probability of being more profitable in a short-term strategy than a long term one. A 40\% occupancy rate means bookings at least three days out of every week all year long. In Melbourne summers this may be an easy feat as tourist numbers swell, but doing so on a cold week in July likely proves more difficult. The verticalness of the divide between short and long term preference in the SVM plots suggests that occupancy rate is critical to reaching short-term preference in most markets. 
 
-<!-- The logistic regression models than we estimate show that most of the finding from the univariate and bivariate analyses done earlier are validated (Table 7).  Large apartments in the central city are the best bet for generating greater revenues through short term leasing.  We also test for the impact of host behavior on the probability of short term preference.  We find that more flexibility around the number of guests and the minimum stay increase the probability of short-term preference, while the reverse is true of cancellation policies (more strict equals higher short term preference probability).  As a host, it appears to be best to do what you can to attract bookings and then make it difficult for those bookings to be cancelled.     -->
+The logistic regression models than we estimate show that most of the finding from the univariate and bivariate analyses done earlier are validated (Table 7).  Small apartments in the central city are the best bet for generating greater revenues through short term leasing.  We also test for the impact of host behavior on the probability of short term preference.  We find that more flexibility around the number of guests and the minimum stay increase the probability of short-term preference, while the reverse is true of cancellation policies (more strict equals higher short term preference probability).  As a host, it appears to be best to do what you can to attract bookings and then make it difficult for those bookings to be cancelled.
 
-<!-- ### Limitations and Future Research -->
+Testing for the sensitivity of the initial results through consideration of potential revenue figures and by dividing the sample up by likely host motivation, we find the qualitative finding to be generally robust.  While the use of potential revenue does increase the base probability of short-term preference, the same factors -- small, inner city apartment with low minimum stays, strict cancellation and liberal guest capacity -- explain a higher likelihood of short-term preference.  
 
-<!-- There are a number of limitations to this research.  There are few shared property characterstics between the two datasets, which make cross-estimating rents and rates difficult, especially from the short-term market.  Part of the difficulty in estimating potential short-term rates for long-term properties is that the short term market appears to be heavily influenced by non-property specific factors such as the leasing policies (minimum stay, number of guests, etc.) themselves.  Future research should focus both on building better models to explain (and ultimately predict) short term rates and occupancies as well as to understand the impact of policies such as strict cancellation or no pets on the short term market.  It is likely that this work is being done proprietarily by Airbnb.com itself and other complementary firms such as AirDNA.com, our data provider.   -->
+In short, about 1/4 of current Airbnb properties are outperforming their potential in the long-term market.  If owners all operated as profit maximizers this figure could be closer to 50\% or slightly higher, if the overall demand for short-term rental could match the assumed supply increase in such a case.  
 
-<!-- Additionally, we have opted to make comparisons between short and long-term strategies by cross estimating likely rates and rents.  Alternatively, a matching procedure could be employed that would match like properties between the two markets and use comparisons between the two as evidence of potential short and long-term revenues.   -->
+### Limitations and Future Research
 
-<!-- In this work, we have made the assumption that, over the course of a year, the general maintenance costs (excluding basic janitorial) are identical between short and long-term leasing options.  We have done so as we were unable to location any evidence to suggest that one was higher than the other.  This may be a limitation of our study and could prove to be an avenue of future research.   -->
+There are a number of limitations to this research.  There are few shared property characterstics between the two datasets, which make cross-estimating rents and rates difficult, especially from the short-term market.  Part of the difficulty in estimating potential short-term rates for long-term properties is that the short term market appears to be heavily influenced by non-property specific factors such as the leasing policies (minimum stay, number of guests, etc.) themselves.  Future research should focus both on building better models to explain (and ultimately predict) short term rates and occupancies as well as to understand the impact of policies such as strict cancellation or no pets on the short term market.  It is likely that this work is being done proprietarily by Airbnb.com itself and other complementary firms such as AirDNA.com, our data provider.
 
-<!-- Beyond airBNB.com other short-term platforms exist (e.g. www.homeaway.com). This project doesn't take into account that individual properties may be advertised and rented out through different platforms. These are additional revenue streams that are not take into account and might increase the occupancy and revenue for short-term rentals. -->
+Additionally, we have opted to make comparisons between short and long-term strategies by cross estimating likely rates and rents.  Alternatively, a matching procedure could be employed that would match like properties between the two markets and use comparisons between the two as evidence of potential short and long-term revenues.
 
-<!-- Finally, our analysis looks at a single year, beginning in September (spring) and ending in August in which the property owner is given a binary option of either short or long term leasing strategy.  In reality, the possibilities may not be so rigid.  For example,given the fact that Melbourne's large university student population (many of whom are international) require housing during Autumn, Winter and Spring, while tourist swell in the summer months, an enterprising owner maybe able to pair long term leasing during the off-season with short-term leasing during peak times to maximize revenues.  In general, the rise of Airbnb and related portals give properties owners more options, and therefore more opportunities, to maximize returns on their property.  Future research should expand our scenario to look at more than just a single binary option over a fixed period.  We feel there may be significant opportunities for new ventures in industry to exploit the changing market for housing.    -->
+In this work, we have made the assumption that, over the course of a year, the general maintenance costs (excluding basic janitorial) are identical between short and long-term leasing options.  We have done so as we were unable to location any evidence to suggest that one was higher than the other.  This may be a limitation of our study and could prove to be an avenue of future research.
+
+Beyond airBNB.com other short-term platforms exist (e.g. www.homeaway.com). This project doesn't take into account that individual properties may be advertised and rented out through different platforms. These are additional revenue streams that are not take into account and might increase the occupancy and revenue for short-term rentals. We do suggest that, due to block patterns, a number of host do appear to be employing this approach but cannot confirm the extend to which this is actually happening. 
+
+Finally, our analysis looks at a single year, beginning in September (spring) and ending in August in which the property owner is given a binary option of either short or long term leasing strategy.  In reality, the possibilities may not be so rigid.  For example,given the fact that Melbourne's large university student population (many of whom are international) require housing during Autumn, Winter and Spring, while tourist swell in the summer months, an enterprising owner maybe able to pair long term leasing during the off-season with short-term leasing during peak times to maximize revenues.  In general, the rise of Airbnb and related portals give properties owners more options, and therefore more opportunities, to maximize returns on their property.  Future research should expand our scenario to look at more than just a single binary option over a fixed period.  We feel there may be significant opportunities for new ventures in industry to exploit the changing market for housing.
 
 \pagebreak
 
@@ -1623,3 +1573,167 @@ vertical SVM lines suggest occ rate is biggest issue.
 <!-- ## Future Research -->
 
 <!-- - Does time of purchase (which month) matter? -->
+
+
+
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx'} -->
+
+<!--   host.data.ic <- str.data.ic -->
+
+<!--   ps <- which(str.data.ic$host.type == 'Profit Seeker') -->
+<!--   os <- which(str.data.ic$host.type == 'Opportunistic Sharer') -->
+<!--   mu <- which(str.data.ic$host.type == 'Multi-Platform User') -->
+<!--   un <- which(str.data.ic$host.type == 'Unknown') -->
+
+<!--   host.data.ic$occ.qtl[ps] <- makeWtdQtl( -->
+<!--       host.data.ic$occ.rate[ps], return.type='rank') -->
+<!--   host.data.ic$rate.qtl[ps] <- makeWtdQtl( -->
+<!--     host.data.ic$med.rate[ps], return.type='rank') -->
+
+<!--   host.data.ic$occ.qtl[os] <- makeWtdQtl( -->
+<!--       host.data.ic$occ.rate[os], return.type='rank') -->
+<!--   host.data.ic$rate.qtl[os] <- makeWtdQtl( -->
+<!--     host.data.ic$med.rate[os], return.type='rank') -->
+
+<!--   host.data.ic$occ.qtl[mu] <- makeWtdQtl( -->
+<!--       host.data.ic$occ.rate[mu], return.type='rank') -->
+<!--   host.data.ic$rate.qtl[mu] <- makeWtdQtl( -->
+<!--     host.data.ic$med.rate[mu], return.type='rank') -->
+
+<!--   host.data.ic$occ.qtl[un] <- makeWtdQtl( -->
+<!--       host.data.ic$occ.rate[un], return.type='rank') -->
+<!--   host.data.ic$rate.qtl[un] <- makeWtdQtl( -->
+<!--     host.data.ic$med.rate[un], return.type='rank') -->
+
+<!-- ```     -->
+
+<!-- For the profit-seekers,  -->
+
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx55'} -->
+
+<!--   ps.raw.hm.svm <- abbHeatMap(host.data.ic[ps, ], -->
+<!--                    x.field='occ.rate', -->
+<!--                    y.field='med.rate', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=F, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   ps.raw.hm.svm <- ps.raw.hm.svm + ylab('Nightly Rate') -->
+
+<!--   ps.qtl.hm.svm <- abbHeatMap(host.data.ic[ps, ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   ps.qtl.hm.svm <- ps.qtl.hm.svm + ylab('Nightly Rate (Qtl)') -->
+
+<!-- ``` -->
+
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx44'} -->
+
+<!-- ggMultiPlots(ps.raw.hm.svm, ps.qtl.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx33'} -->
+
+<!--   os.raw.hm.svm <- abbHeatMap(host.data.ic[os, ], -->
+<!--                    x.field='occ.rate', -->
+<!--                    y.field='med.rate', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T,  -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=F, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   os.raw.hm.svm <- os.raw.hm.svm + ylab('Nightly Rate') -->
+
+<!--   os.qtl.hm.svm <- abbHeatMap(host.data.ic[os, ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T,  -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   os.qtl.hm.svm <- os.qtl.hm.svm + ylab('Nightly Rate (Qtl)') -->
+
+<!-- ``` -->
+
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx22'} -->
+
+<!-- ggMultiPlots(os.raw.hm.svm, os.qtl.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx11'} -->
+
+<!--   mu.raw.hm.svm <- abbHeatMap(host.data.ic[mu, ], -->
+<!--                    x.field='occ.rate', -->
+<!--                    y.field='med.rate', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=F, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   mu.raw.hm.svm <- mu.raw.hm.svm + ylab('Nightly Rate') -->
+
+<!--   mu.qtl.hm.svm <- abbHeatMap(host.data.ic[mu, ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   mu.qtl.hm.svm <- mu.qtl.hm.svm + ylab('Nightly Rate (Qtl)') -->
+
+<!-- ``` -->
+
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx1'} -->
+
+<!-- ggMultiPlots(mu.raw.hm.svm, mu.qtl.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx2'} -->
+
+<!--   un.raw.hm.svm <- abbHeatMap(host.data.ic[un, ], -->
+<!--                    x.field='occ.rate', -->
+<!--                    y.field='med.rate', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=F, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   un.raw.hm.svm <- un.raw.hm.svm + ylab('Nightly Rate') -->
+
+<!--   un.qtl.hm.svm <- abbHeatMap(host.data.ic[un, ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.ext.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   un.qtl.hm.svm <- un.qtl.hm.svm + ylab('Nightly Rate (Qtl)') -->
+
+<!-- ``` -->
+
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx23'} -->
+
+<!-- ggMultiPlots(un.raw.hm.svm, un.qtl.hm.svm, cols=2) -->
+
+<!-- ``` -->
