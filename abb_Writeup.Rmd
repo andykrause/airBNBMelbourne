@@ -121,37 +121,37 @@ Overall, the extant literature on short-term rentals is limited, but growing.  O
 
 ## Method
 
-We approach answering the question of whether to pursue a short- or long-term leasing strategy by creating and assessing a scenario likely to be faced by a recent purchaser of a property.  More specifically, we examine the following case:
+We approach answering the question of whether it is more profitable to pursue a short- or long-term leasing strategy by creating and assessing a scenario likely to be faced by a recent purchaser of a property.  More specifically, we examine the following case:
 
 * An investor purchases a property in Melbourne, Australia on September 1, 2015.
 * They are looking to maximize the net revenue over the 12-month period from September 1, 2015 to August 31, 2016.
-* The choices are 1) traditional year long rental (long term), or: 2) short-term, nightly Airbnb-type rental.
-* Only direct monetary revenues and costs are considered, others such as liquidity and inconvenience are not considered.
-* As most long-term rentals use a leasing agency, we will assume use of an agency. 
+* The choices are 1) traditional year long rental (long-term), or: 2) short-term, nightly Airbnb-type rental.
+* Only direct monetary revenues and costs are considered, others such as liquidity and inconvenience are ignored.
+* As most long-term rentals in Melbourne use a leasing agency, we will assume use of an agency. 
 
-We will not, a priori, specify a location or property type for the scenario as we hypothesize that the preference of a short-term rental over a long-term one will vary by the location and property characteristics. The extent to which location, property type and property characteristics impact the probabilit of short-term preference are examined in the results section. 
+We will not, a priori, specify a location or property type for the scenario as we hypothesize that the preference of a short-term rental over a long-term one will vary by the location and property characteristics. The extent to which location, property type and property characteristics impact the probability of short-term preference are examined in the results section. 
 
-Australia implements a particular tax policy, often termed `negative gearing', that allows for favourable tax treatment to real estate investors who experience greater costs than revenues on investment properties^[See @fane2004negative for a complete explanation of negative gearing.] To date, this policy only applies to long-term rental properties.  While this policy can influence the net revenue (post tax) of a property, the negative gearing policy requires knowledge of the investor's personal income situation.  As we do not have access to this information in the marketplace, we will not be considering any effects of this policy in our analysis here.
+Australia implements a particular tax policy, often termed `negative gearing', that allows for favourable tax treatment to real estate investors who experience greater costs than revenues on investment properties.^[See @fane2004negative for a complete explanation of negative gearing.] To date, this policy only applies to long-term rental properties.  While this policy can influence the net revenue (post tax) of a property, the negative gearing policy requires knowledge of the investor's personal income situation.  As we do not have access to this information in the marketplace, we will not be considering any effects of this policy in our analysis here.
 
-One benefit of a short-term rental may be the ability to adjust the nightly rate over the course of the year to reflect changing demand and market trends. As future market trends are unknown at the time of purchase and the decision of long- vs short-term leasing strategy is asymetrically irreversable (can go from short to long, but not long to short), we make our comparisons using a fixed nightly (short-term) rate to respresent the most likely state of knowledge for our hypothetical investor on September 1, 2015. Both long-term rents and short-term rates and occupancy structures will be based on the market conditions as of this date.
+One benefit of a short-term rental may be the ability to adjust the nightly rate over the course of the year to reflect changing demand and market trends. As future market trends are unknown at the time of purchase and, within the span of 12 months, the decision of long- vs short-term leasing strategy is asymetrically irreversable (can go from short to long, but not long to short), we make our comparisons using a fixed nightly (short-term) rate to respresent the most likely state of knowledge for our hypothetical investor on September 1, 2015. Both long-term rents and short-term rates and occupancy structures will be based on the market conditions as of this date.
 
 We do not directly observe properties that are utilized in both a short- and long-term leasing strategy. Therefore, comparisons are done based on estimated or imputed revenues. Most specifically, we will estimate the long-term revenue for observations of properties currently listed on a short-term rental portal (Airbnb). Initially, we attempted to also estimate short-term rental revenue for long-term properties but found the process of imputing occupancy rates and nightly rate structures too inaccurate to provide valid comparisons.
 
 ### Comparison
 
-In this scenario we compare the observed 12-month revenues from short-term rental properties with their hypothetical long-term rental revenues.  We define revenue here as the gross revenue minus the direct costs associated with each of the two tenure possibilities. Costs which are equivalent between the two strategies are ignored.  
+In this scenario we compare the observed 12-month revenues from short-term rental properties with their hypothetical long-term rental revenues.  We define revenue here as the gross revenue minus the direct costs associated with each of the two tenure possibilities. Costs which are equivalent between the two strategies are ignored. For short-term properties the net revenue is expressed as: 
 
 \begin{equation}
-Rev_{ST} = RevG_{ST} - C_{ST}
+RevN_{ST} = RevG_{ST} - C_{ST}
 \end{equation}
 
-The gross short-term revenue is expressed by:
+where the gross short-term revenue, $RevG_{ST}$, is expressed as:
 
 \begin{equation}
 RevG_{ST} = Rate_{N} * O_{Total}
 \end{equation}
 
-where $Rate_{N}$ is the average nightly rate and $O_{Total}$ are the total number of occupancies (bookings) over the 12-month period. For long-term revenues:
+where $Rate_{N}$ is the average nightly rate and $O_{Total}$ are the total number of occupancies (bookings) over the 12-month period. For long-term rentals the net revenue, $Rev_{LT}$, is defined as:
 
 \begin{equation}
 Rev_{LT} = RevG_{LT} - C_{LT}
@@ -163,23 +163,23 @@ Where $Rev_{LT}$ is the net revenue for a long-term rental, $RevG_{LT}$ is the g
 RevG_{LT} = Rent_{M} * (12 - C_{S})
 \end{equation}
 
-where $Rent_{M}$ is the nominal monthly rent and $C_{S}$ are search costs defined in terms of the time (in months) spent to find a long-term tenant.
+where $Rent_{M}$ is the nominal monthly rent and $C_{S}$ are search costs defined in terms of the time (in months) spent to find a long-term tenant.^[Note that such cost are considered here at the revenue stage because they are specific to the revenue generation process and not to the on-going maintenance of the tenancy or property.]
 
-We have limited our consideration of costs in this case to be those undergone during a single year of ownership.  Broadly speaking, these fall into four categories long-term rental and five for short-term properties.  Long-term costs are summarized as:
+We have limited our consideration of costs in this case to be those undergone during a single year of ownership.  Broadly speaking, these fall into four categories for long-term rental and five for short-term properties.  Long-term costs are summarized as:
 
 \begin{equation}
 C_{LT} = T + M + F + L
 \end{equation}
 
-where $T$ are tax related expenses, $M$ are general maintenance expenses, $F$ are financing costs and $L$ are leasing agency fees. Short-term properies experience three of the same costs ($T$, $M$ and $F$) plus additional janitorial costs $J$ between each of the short-term occupants as well as property utility costs, $U$ over the course of the year.
+where $T$ are tax related expenses, $M$ are general maintenance expenses, $F$ are financing costs and $L$ are leasing agency fees. Short-term properies experience three of the same costs ($T$, $M$ and $F$) plus additional janitorial costs, $J$, between each of the short-term occupants as well as property utility costs, $U$, over the course of the year.
 
 \begin{equation}
 C_{ST} = T + M + F + J + U
 \end{equation}
 
-As our scenario compares a hypothetical and particular owner over the course of a single  year the tax $T$ and $F$ costs are identical between the two leasing strategy and therefore cancel out. General maintenance $M$ expenses may differ between the two strategies, and an argument could be made for either to be higher. Long-term renters spend more time in the property over the course of the year and bring their own appliances^[White goods are usually not supplied in the Australian rental market.] and furniture which may damage the home. They are also more likely to affix items to the structure.  Conversely, short-term rentals are usually furnished and the occupants have less incentive not to be evicted as their damage is not often uncovered until after they have left^[Note that Airbnb's rating policy may help protect hosts as bad guests can be flagged on the platform.].  Both arguments are meritous and we were unable to find any evidence to support maintenance costs being higher in short or long term rentals. As a result we have made the assumption that the maintenance costs will be identical, and they too cancel out.
+As our scenario compares a hypothetical and particular owner over the course of a single  year the tax $T$ and $F$ costs are identical between the two leasing strategy and therefore cancel out. General maintenance $M$ expenses may differ between the two strategies, and an argument could be made for either to be higher. Long-term renters spend more time in the property over the course of the year and bring their own appliances^[White goods are usually not supplied in the Australian rental market.] and furniture which may damage the home. They are also more likely to affix items to the structure.  Conversely, short-term rentals are usually furnished and the occupants have less incentive not to be evicted as their damage is not often uncovered until after they have left^[Note that Airbnb's rating policy may help protect hosts as bad guests can be flagged on the platform.].  Both arguments are meritous and we were unable to find any evidence to support maintenance costs being higher in short- or long-term rentals. As a result we have made the assumption that the maintenance costs will be identical, and they too cancel out.
 
-Leasing costs $L$ are the fees paid to the rental agency to find and manage tenants over the life of the lease.  In Melbourne, rates generally range from 5\% to 7\% per annum.  We have assumed leasing costs of 6\% of the total gross revenue of the long-term lease contract. 
+Leasing costs $L$ are the fees paid to the rental agency to find and manage tenants over the life of the long-term lease.  In Melbourne, rates generally range from 5\% to 7\% per annum.  We have assumed leasing costs of 6\% of the total gross revenue of the long-term lease contract. 
 
 Janitorial costs, $J$, cover the costs to 'turn-over' the property between occupants.  For a short-term leasing strategy, these costs can be experienced every day or two, depending on the minimum length of stay and the total number of occupancies over the course of the year. Our data for short-term rentals comes from the Airbnb platform.  In addition to the nightly rate that an occupant pays to the owner there is also a separate 'cleaning fee' that is attached, as is a booking fee to Airbnb^[This fee could be considered analogous to the leasing fees $L$ that long-term rentals pay]. Some hosts add additional 'linen' fees to cover costs of laundering.  While it may be advantageous for hosts in competitive markets to underquote their cleaning fees to keep occupancies up, we have no evidence to suggest that owners are exhibiting such behavior. As a result of janitorial fees being a separate line item and directly paid by the occupants they can also be ignored in the comparative analysis below as they are direct.
 
@@ -189,7 +189,7 @@ Finally, there are utility costs, $U$, that are borne by the property owner in a
 U = (4.5 * B * 1.7) * O
 \end{equation}
 
-We will consider short-term rental (STR) strategy to be prefable to long-term rental (LTR) strategy if the following inequality holds:
+We will consider short-term rental (STR) leasting strategy to be prefable to long-term rental (LTR) strategy if the following inequality holds:
 
 \begin{equation}
 Rev_{ST} > Rev_{LT}
@@ -200,6 +200,8 @@ More specifically, if:
 \begin{equation}
 (Rate_{N} * O_{Total}) - U > (Rent_{M} * (12 - C_{S})) - L
 \end{equation}
+
+Though the analysis we will refer to any situations where the short-term net revenue exceeds the long-term net revenue as 'Short-Term Preferable' or a situation of 'Short-Term Preference'.  For the purposes of this study we consider this a binary position leading to a binary decision of which leasing strategy to follow. 
 
 ## Data
 
