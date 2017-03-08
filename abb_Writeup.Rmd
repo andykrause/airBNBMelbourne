@@ -467,19 +467,19 @@ print(xtable(clean.table, caption='Data Cleaning Summary\n',
 
 #### Revenue Calculations
 
-Calculations of revenue for the observed and hypothetical long-term rentals are straightforward, weekly rent -- real or imputed -- times 52 minus search cost time and agency fees.  For the short-term rental it is somewhat more complicated.  First, we must deal with those properties that were not listed for the entire 12 month period.  Our data cleaning eliminated all properties that were listed for less than six months, however, it would be incorrect to compare the revenue of a property listed on Airbnb for seven months with the hypothetical annual revenue from a long term rental.  
+Within the remainder of this report when we refer to revenues we mean the net revenues from equations 1 and 3, respectively. Calculations of revenue for the observed and hypothetical long-term rentals are straightforward, weekly rent -- real or imputed -- times 52 minus search cost time and agency fees.  For the short-term rentals it is somewhat more complicated.  First, we must deal with those properties that were not listed for the entire 12-month period.  Our data cleaning eliminated all properties that were listed for less than six months, however, it would be incorrect to compare the revenue of a property listed on Airbnb for seven months with the hypothetical annual revenue from a long-term rental.  
 
 Second, many of the short term properties have a significant number of blocked days, days in which the property was not offered on Airbnb.  Here too, there is a problem with comparing observed revenues from a property with a 40\% block rate with a hypothetical year long revenue stream, especially if the property was leased out on other portal during those blocked days.  And, even if we knew that the blocked days were simply due to the host wanting to use the property themselves during that time, this deduction in revenue should not necessarily apply to the hypothetical investor in our examined scenario.  In short, in either case, the actual observed short-term revenue would be biased on the low end compared to what a revenue maximizing owner would be likely able to accomplish.  
 
 As a result, we have calculated three separate revenues values for the short-term properties:
 
-1. \textbf{Actual ($REV_a$)}: Observed bookings multiplied by median nightly rate
-2. \textbf{Extrapolated ($REV_e$)}: Observed bookings extrapolated to a full year^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] based on observed occupancy rate multiplied by median nightly rate
-3. \textbf{Potential ($REV_p$)}: Observed occupancy rate of non-blocked days multiplied by 366 multiplied by median nightly rate 
+1. Observed ($REV_o$)}: Observed bookings multiplied by median nightly rate
+2. Actual ($REV_a$)}: Observed bookings extrapolated to a full year representing the likely actual revenue if the property had been listed all year long.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] based on observed occupancy rate multiplied by median nightly rate
+3. Potential ($REV_p$)}: Observed occupancy rate of non-blocked days multiplied by 366 multiplied by median nightly rate 
 
-Below we chart the distribution of the Extrapolated ($REV_e$) and Potential ($REV_p$) Short Term revenues against a distribution of the oserved long term revenues for the long term properties. Revenues from the long-term rentals are for more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year (Figure 8).  Extrapolated short term revenues range from neglible to highs of greater than \$80,000, with many of the properties showing very limited (less than \$10,000) revenue. The range of the distribution for the Potential Short Term revenue is similar, however, the distribution itself is much flatter, with many more properties showing potential incomes in the \$20,000 to \$40,000 range. 
+As the observed calculation systematically under counts the revenue from properties that were not on the Airbnb portal for the entire year we disregard it going forward and consider the Actual revenue metric to be a better measure of actual market performance. We chart the distribution of the Actual ($REV_a$) and Potential ($REV_p$) short-term revenues against a distribution of the observed long term revenues for the long term properties. Revenues from the long-term rentals are far more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year (Figure 8).  Actual short-term revenues range from neglible to highs of greater than \$80,000, with many of the properties showing very limited (less than \$10,000) revenue. The range of the distribution for the Potential short-term revenue is similar, however, the distribution itself is much flatter, with many more properties showing potential incomes in the \$20,000 to \$40,000 range. 
 
-While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not.  When looking at potential revenues, however, a great deal more may have the potential to produce more revenue.  The high number of very low yield Airbnb properties in the Extrapoted condition suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing^[Do note that we have not considered any overall market demand issues when analyzing potential revenue.].
+While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not.  When looking at potential revenues, however, a great deal more may have the potential to produce more revenue.  The high number of very low yield Airbnb properties in the Actual condition suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing^[Do note that we have not considered any overall market demand issues when analyzing potential revenue.].
 
 &nbsp;
 
@@ -517,11 +517,11 @@ While this simple analysis does not control for location and product differences
 &nbsp;
 
 
-## Comparison
+### Comparison
 
-In this section we compare net revenues between long and short term rental options.  As mentioned above, there are no direct matches between the datasets. In other words, we have not directly observed a property which has been in a long-term rental followed by short-term or vice versa.  We will, instead, make the comparisons between the two by imputing likely long-term rental revenues for the observed short-term properties and then comparing the observed revenues to the imputed revenues.
+In this section we compare net revenues between long- and short-term rental options.  As mentioned above, there are no direct matches between the datasets. In other words, we have not directly observed a property which has been in a long-term rental followed by short-term rental or vice versa.  We will, instead, make the comparisons between the two by imputing likely long-term rental revenues for the observed short-term properties and then comparing the measured net revenues of the short-term properties to their estimated imputed long-term revenues. We first focus on using the Actual measure of net revenue for the short-term properties as discussed above.  We save discussion and analysis of the Potential revenue for the sensitivity tests later in the study. 
 
-We make our imputations via a hedonic price models. We model the long-term market with the long-term data and then use this model to predict or impute the likely long-term rental for the short term properties. We use the following model specification:
+We make our imputations via hedonic price models. We model the long-term market with the long-term data and then use this model to predict or impute the likely long-term weekly rental prices for the short-term properties. We use the following model specification:
 
 \begin{equation}
   \label{eq:test}
@@ -530,11 +530,9 @@ ln(RentLT_{i}) = \beta_{1} BedBath_{i} + \gamma_{2} Suburb_{i} + \tau_{3} Time_{
 
 where $ln(RentLT_{i})$ is the natural log of the weekly rent, *BedBath* is the bedroom/bathroom combination, *Suburb* is a fixed effect for the location of the property, *Time* is the month of rental and $\epsilon$ a random error term.
 
-We then compare the projected net revenue of the short-term properties to their observed revenues, both Extrapolated ($REV_e$) and Potential ($REV_p$), to judge the likelihood of short-term preference.  
+Realizing that the imputed long-term rental values may be more accurate when estimated at smaller scales, we impute long-term rental rates at submarket level, specifically by type, bed/bath and geographic area. In other words, we separately estimate LTR rents for Apartments with 1bed/1bath in the city core, Apartments with 1bed/1bath in the beach submarket, etc. for all combinations of type, bed/bath and geographic area. We then combine the results from all estimates back into a single dataset that contains all of the short-term rentals. 
 
-Realizing that the imputed long term rental values may be more accurate when estimated at smaller scales, we impute long term rental rates at submarket level, specifically by type, bed/bath and geographic area.  In other words, we separately estimate LTR rents for Apartments with 1bed/1bath in the city core, Apartments with 1bed/1bath in the beach submarket, etc. for all combinations of type, bed/bath and geographic area. We then combine the results form all estimates back into a single dataset that contains all of the short-term rentals. 
-
-### Results
+## Results
 
 We will begin our analysis by making a comparison of the short and long-term markets at the metropolitan level.  Of our sample of 5,783 short-term rental units, 1,600 or 27.7\% of those units recorded a net revenue greater than what would likely have been garnered in the long-term market.  
 
