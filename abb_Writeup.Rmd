@@ -1,7 +1,7 @@
 ---
 title: "Should I Airbnb My Property?"
 author: "Andy Krause and Gideon Aschwanden"
-date: "February 17, 2017"
+date: "March 10, 2017"
 output:
   pdf_document: default
   html_document: default
@@ -99,9 +99,9 @@ bibliography: abb.bib
 
 ## Introduction
 
-With the rise of Airbnb and other self-hosting accommodation platforms^[Flipkey.com, VRBO.com, Homeaway.com, Tripping.com as examples.], it is easier than ever for property owners and investors to consider short-term rental (STR) as a potential use for a revenue generating residential property. Should they though? Or rather, is it more profitable to do so when compared to a more traditional long term rental (LTR)? Are certain types of properties and certain locations, if any, more likely to show a preference for (in terms of profitability) short term leasing strategy over long-term.
+With the rise of Airbnb and other self-hosting accommodation platforms^[Flipkey.com, VRBO.com, Homeaway.com, Tripping.com, Stayz.com.au as examples.], it is easier than ever for property owners and investors to consider short-term rental (STR) as a potential leasing strategy for a revenue generating residential property. Should they though? Or rather, is it more profitable to do so when compared to a more traditional long-term rental (LTR)? And further, are certain types of properties in specific locations more likely to show a preference for a short-term leasing strategy over long-term one.
 
-To address these questions and to provide some guidance to potential and current investors and owners, we examine the residential rental market, both short- and long-term in Melbourne, Australia. Melbourne has a thriving short-term rental market with over 20,000 total properties listed on the Airbnb portal, the source of our short-term market data. We adopt a scenario-based approach that compares potential annual revenues for properties under both a short-term rental (STR) and a long-term rental (LTR) situation. We break the results down by property types (apartments vs houses), product type (e.g. 1 bed/1 bath) and by location (geographic submarket).  Our results shows that the feasibility of a greater return through a short term rental -- what we have termed ``Short Term Preference'' -- is dependent on property type, product and location.  In short, the answer to whether or not a owner or investor should opt for a short-term leasing strategy: it depends.  
+To address these questions and to provide some guidance to potential and current investors and owners, we examine the short- and long-term residential rental market in Melbourne, Australia. Melbourne has a thriving short-term rental market with over 20,000 total properties listed on the Airbnb portal, the source of our short-term market data. We adopt a scenario-based approach that compares observed annual revenues for short-term rental (STR) properties with an estimate of their expected long-term rental revenues. Our results show that the feasibility of a greater return through a short term rental -- what we have termed ``Short Term Preference'' -- is dependent on property type, product, location and host policies.  In short, the answer to whether or not a owner or investor should opt for a short-term leasing strategy: it depends.  
 
 ## Literature Review
 
@@ -321,21 +321,21 @@ Location is an important determinant in both the short- and long-term rental mar
 
 &nbsp;
 
-```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.width=4, fig.cap='Melbourne Submarkets', fig.lp='submap'}
+<!-- ```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.width=4, fig.cap='Melbourne Submarkets', fig.lp='submap'} -->
 
- load(paste0(fig.path, 'suburbMap.RData'))
+<!--  load(paste0(fig.path, 'suburbMap.RData')) -->
 
- loc.map <- loc.map +     
-   theme(axis.title.y=element_blank(),
-         axis.text.y=element_blank(),
-         axis.ticks.y=element_blank(),
-         axis.title.x=element_blank(),
-         axis.text.x=element_blank(),
-         axis.ticks.x=element_blank())
+<!--  loc.map <- loc.map +      -->
+<!--    theme(axis.title.y=element_blank(), -->
+<!--          axis.text.y=element_blank(), -->
+<!--          axis.ticks.y=element_blank(), -->
+<!--          axis.title.x=element_blank(), -->
+<!--          axis.text.x=element_blank(), -->
+<!--          axis.ticks.x=element_blank()) -->
 
- loc.map 
- 
-```
+<!--  loc.map  -->
+
+<!-- ``` -->
 
 &nbsp;
 
@@ -375,30 +375,30 @@ Before assigning submarkets to the long term property we must remedy the fact th
 
 &nbsp;
 
-```{r plot_locations, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5.5, fig.height=9, fig.cap='Location Maps', fig.lp='locmaps'}
+<!-- ```{r plot_locations, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5.5, fig.height=9, fig.cap='Location Maps', fig.lp='locmaps'} -->
 
-  load(paste0(fig.path, 'ltrMap.RData'))
-  load(paste0(fig.path, 'strMap.RData'))
+<!--   load(paste0(fig.path, 'ltrMap.RData')) -->
+<!--   load(paste0(fig.path, 'strMap.RData')) -->
 
-  str.map <- str.map +
-   theme(axis.title.y=element_blank(),
-         axis.text.y=element_blank(),
-         axis.ticks.y=element_blank(),
-         axis.title.x=element_blank(),
-         axis.text.x=element_blank(),
-         axis.ticks.x=element_blank())
+<!--   str.map <- str.map + -->
+<!--    theme(axis.title.y=element_blank(), -->
+<!--          axis.text.y=element_blank(), -->
+<!--          axis.ticks.y=element_blank(), -->
+<!--          axis.title.x=element_blank(), -->
+<!--          axis.text.x=element_blank(), -->
+<!--          axis.ticks.x=element_blank()) -->
 
-  ltr.map <- ltr.map +
-   theme(axis.title.y=element_blank(),
-         axis.text.y=element_blank(),
-         axis.ticks.y=element_blank(),
-         axis.title.x=element_blank(),
-         axis.text.x=element_blank(),
-         axis.ticks.x=element_blank())
-  
-  ggMultiPlots(str.map, ltr.map, cols=1)
+<!--   ltr.map <- ltr.map + -->
+<!--    theme(axis.title.y=element_blank(), -->
+<!--          axis.text.y=element_blank(), -->
+<!--          axis.ticks.y=element_blank(), -->
+<!--          axis.title.x=element_blank(), -->
+<!--          axis.text.x=element_blank(), -->
+<!--          axis.ticks.x=element_blank()) -->
 
-```
+<!--   ggMultiPlots(str.map, ltr.map, cols=1) -->
+
+<!-- ``` -->
 
 &nbsp;
 
