@@ -746,8 +746,7 @@ Extending this analysis to include nightly rates shows a similar situation (\aut
 
 ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='\\label{smhm}Analysis of Percentile Rates: By Type'}
 
-### UPDATE THE QTL VALUES
-
+ 
   house.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type ==
                                           'House', ],
                    x.field='occ.qtl',
@@ -789,9 +788,7 @@ Extending this analysis to include nightly rates shows a similar situation (\aut
 
 #### By Geography
 
-Next, we divide the data by the five geographic sub-market shown in Figure 6. Within the City-Core, approximately one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to one in four for beach and rural properties, one in six for other city location and about one in nine for suburban locations. 
-
-&nbsp;
+Next, we divide the data into the five geographic sub-market shown in \autoref{pointmaps}. Within the City-Core, approximately one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to one in four for beach and rural properties, one in six for other city location and about one in nine for suburban locations. 
 
 ```{r message=FALSE, warning=FALSE, results='asis', comment=FALSE, cache=TRUE, echo=FALSE, fig.cap='Geographic Submarket Preferability'}
 
@@ -816,13 +813,11 @@ Next, we divide the data by the five geographic sub-market shown in Figure 6. Wi
 
 ```
 
-&nbsp;
-
-There is a noticable variability in the relationship between occupancy rates and short-term prefernce across the submarkets. For raw rates (Figure 14, left panel), rural properties can acheive short-term preference with lower occupancies than the other areas. This may be due to the relatively low long-term rental rates in the more rural areas coupled with high short-term rates for homes in wine country or near the mountainous terrain east of the city. Transforming to quantiles, we see that the city-core properties can reach short-term preference at a much lower occupancy rate than the other, with suburban and city as the most difficult markets.  
+There is a noticable variability in the relationship between occupancy rates and short-term preference across the submarkets. For raw rates (\autoref{smocc}, left panel), rural properties can acheive short-term preference with lower occupancies than the other areas. This may be due to the relatively low long-term rental rates in the more rural areas coupled with high short-term rates for homes in wine country or near the mountainous terrain east of the city. Transforming to percentiles, we see that the city-core properties can reach short-term preference at a much lower occupancy rate than the others, with suburban and city as the most difficult markets.  
 
 &nbsp;
 
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Quantile Rates: Metro Level'} 
+```{r, fig.width=8, fig.height=4, echo=FALSE} 
 
   cc.id <- which(str.data.ic$sub.mrkt == 'city-core')
   city.id <- which(str.data.ic$sub.mrkt == 'city')
@@ -859,7 +854,7 @@ There is a noticable variability in the relationship between occupancy rates and
   
 ```
 
-```{r, fig.width=9, fig.height=4, message=FALSE, warning=FALSE, echo=FALSE, fig.cap='Analysis of Quantile Rates: Metro Level'} 
+```{r, fig.width=9, fig.height=4, message=FALSE, warning=FALSE, echo=FALSE, fig.cap='\\label{smocc}Analysis of Quantile Rates: Metro Level'} 
 
   sm.col <- abb.col[c(1, 3, 6, 5, 2)] 
   smrocc <- abbPrefPlot(subm.data.ic,
@@ -914,7 +909,7 @@ There is a noticable variability in the relationship between occupancy rates and
 
 &nbsp;
 
-Plotting out the nigthly rate versus occupancy rate heat maps for all five geographic submarkets tells a similar story.  The 'City-Core' market offers the most potential for short term prefernce with suburban and city the least.  The rural market achieves very sold short-term preference for the most expensive home, again likely those with special amenities or links to the wine region.  Beach properties do not perform as well as might be expected in the short term market, however, it should be kept in mind that the winter climate in Melbourne is not conducive to beach activity and therefore short-term beach properties may suffer during winter months. 
+Plotting out the nightly rate versus occupancy rate heat maps for all five geographic submarkets (\autoref{smhmps}) tells a similar story.  The 'City-Core' market offers the most potential for short term preference with suburban and city the least.  The rural market achieves very solid short-term preference for the most expensive homes, again likely those with special amenities or links to the wine region.  Beach properties do not perform as well as might be expected in the short term market, however, it should be kept in mind that the winter climate in Melbourne is not conducive to beach activity and therefore short-term beach properties may suffer during winter months. 
 
 &nbsp;
 
@@ -1001,7 +996,7 @@ Plotting out the nigthly rate versus occupancy rate heat maps for all five geogr
 
 ```
 
-```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='xxx'}
+```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='\\label{smhmps}Geographic Submarket Heatmaps'}
 
   ggMultiPlots(core.hm.svm, city.hm.svm, sub.hm.svm,
                rural.hm.svm, beach.hm.svm, cols=2)
