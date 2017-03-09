@@ -1086,14 +1086,14 @@ Next we assign the suburb, SA1, city-core and beach designations to observations
  ## Add the submarket designations
 
   # Add individual classes
-  str.data$sub.mrkt <- 'rural'
-  str.data$sub.mrkt[str.data$sub.class == 'Middle'] <- 'suburban'
-  str.data$sub.mrkt[str.data$sub.class == 'Inner'] <- 'city'
-  str.data$sub.mrkt[str.data$suburb %in% core.suburbs] <- 'city-core'
-  str.data$sub.mrkt[str.data$beach == 1] <- 'beach'
+  str.data$geo.mrkt <- 'rural'
+  str.data$geo.mrkt[str.data$sub.class == 'Middle'] <- 'suburban'
+  str.data$geo.mrkt[str.data$sub.class == 'Inner'] <- 'city'
+  str.data$geo.mrkt[str.data$suburb %in% core.suburbs] <- 'city-core'
+  str.data$geo.mrkt[str.data$beach == 1] <- 'beach'
   
   # Order the factors properly
-  str.data$sub.mrkt <- factor(str.data$sub.mrkt, 
+  str.data$geo.mrkt <- factor(str.data$geo.mrkt, 
                               levels=c('city-core', 'city', 'suburban', 
                                         'rural', 'beach'))
   
@@ -1169,14 +1169,14 @@ Having fixed the missing lat/long issue, we then assign the suburb, SA1, city-co
  ## Add the submarket designations
 
   # Add individual classes
-  ltr.data$sub.mrkt <- 'rural'
-  ltr.data$sub.mrkt[ltr.data$sub.class == 'Middle'] <- 'suburban'
-  ltr.data$sub.mrkt[ltr.data$sub.class == 'Inner'] <- 'city'
-  ltr.data$sub.mrkt[ltr.data$suburb %in% core.suburbs] <- 'city-core'
-  ltr.data$sub.mrkt[ltr.data$beach == 1] <- 'beach'
+  ltr.data$geo.mrkt <- 'rural'
+  ltr.data$geo.mrkt[ltr.data$sub.class == 'Middle'] <- 'suburban'
+  ltr.data$geo.mrkt[ltr.data$sub.class == 'Inner'] <- 'city'
+  ltr.data$geo.mrkt[ltr.data$suburb %in% core.suburbs] <- 'city-core'
+  ltr.data$geo.mrkt[ltr.data$beach == 1] <- 'beach'
   
   # Order the factors properly
-  ltr.data$sub.mrkt <- factor(ltr.data$sub.mrkt, 
+  ltr.data$geo.mrkt <- factor(ltr.data$geo.mrkt, 
                               levels=c('city-core', 'city', 'suburban', 
                                         'rural', 'beach'))
   
@@ -1197,7 +1197,7 @@ The location of the short and long term rentals, colored by submarket, are shown
 
   str.map <- ggplot() +
     geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
-    geom_point(data=str.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.2,
+    geom_point(data=str.data, aes(x=longitude, y=latitude, color=geo.mrkt), size=.2,
                alpha=.2) +
     scale_color_manual(values=sm.col) +
     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
@@ -1228,7 +1228,7 @@ The location of the short and long term rentals, colored by submarket, are shown
 
   ltr.map <- ggplot() +
     geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
-    geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.1,
+    geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=geo.mrkt), size=.1,
                alpha=.1) +
     scale_color_manual(values=sm.col) +
     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
@@ -1280,11 +1280,11 @@ The chart below break down the relative frequency of short and long term rental 
   # Make Airbnb submarket map
   
   strtype.map <- ggplot() +
-    geom_bar(data=str.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
+    geom_bar(data=str.data, aes(x=geo.mrkt, fill=geo.mrkt)) +
     scale_fill_manual(values=sm.col) +
     facet_wrap(~type) +
     ylab('# of Properties\n') + xlab('')+
-    theme(legend.position = 'bottom',
+    theme(legend.position = 'bottom',gc()
           legend.title = element_blank(),
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank()) +
@@ -1294,7 +1294,7 @@ The chart below break down the relative frequency of short and long term rental 
   # Make Long term rental map
 
   ltrtype.map <- ggplot() +
-    geom_bar(data=ltr.data, aes(x=sub.mrkt, fill=sub.mrkt)) +
+    geom_bar(data=ltr.data, aes(x=geo.mrkt, fill=geo.mrkt)) +
     scale_fill_manual(values=sm.col) +
     facet_wrap(~type) +
     ylab('# of Properties\n') + xlab('')+
