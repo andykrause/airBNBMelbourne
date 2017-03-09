@@ -36,7 +36,6 @@ output: html_document
 
 ```
 
-
 ```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
   # Get computer names
@@ -100,7 +99,6 @@ Next, we source the necessary custom code files for the analysis.
 
 ```
 
-
 ```{r load_str_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   # Property Information
@@ -117,7 +115,8 @@ State gives energy costs at 330 (apt) to 520 (house).  For 2 person in apt that 
   str.data$avg.guests <- str.data$bedrooms * 1.5
 
   str.data$str.act.revenue <- ((str.data$bookings * str.data$med.rate) - 
-                                 (str.data$bookings * str.data$avg.guests * str.data$cpppd))
+                                 (str.data$bookings * str.data$avg.guests *
+                                    str.data$cpppd))
 
   str.data$extr.par <- 366 / str.data$total.days
 
@@ -132,8 +131,8 @@ State gives energy costs at 330 (apt) to 520 (house).  For 2 person in apt that 
     (366 - (366 * str.data$block.rate))) 
   
   str.data$str.pot.revenue <- ((str.data$pot.occ.rate * 366 * str.data$med.rate) - 
-                                 (str.data$pot.occ.rate * 366  * str.data$avg.guests *  
-                                    str.data$cpppd))
+                                 (str.data$pot.occ.rate * 366 * 
+                                    str.data$avg.guests * str.data$cpppd))
   
 
 ```
@@ -141,7 +140,44 @@ State gives energy costs at 330 (apt) to 520 (house).  For 2 person in apt that 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   ltr.data$ltr.revenue <- ltr.data$gross.revenue
+
 ```
+
+#### Compute revenue densities
+
+```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
+
+  stra.rev <- str.data[,c('bedrooms', 'str.ext.revenue')]
+  stra.rev$tenure <- 'Short-Term (Actual)   '
+  names(stra.rev)[2] <- 'revenue'
+  strp.rev <- str.data[,c('bedrooms', 'str.pot.revenue')]
+  strp.rev$tenure <- 'Short-Term (potential)   '
+  names(strp.rev)[2] <- 'revenue'
+  ltr.rev <- ltr.data[,c('bedrooms', 'ltr.revenue')]
+  ltr.rev$tenure <- 'Long-Term   '
+  names(ltr.rev)[2] <- 'revenue'
+  revdens.data <- rbind(stra.rev, strp.rev, ltr.rev)
+
+  ggplot(revdens.data, aes(x=revenue, fill=tenure, color=tenure)) +
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=c(ltr.col, abb.col[2], str.col)) +
+    scale_color_manual(values=c(ltr.col, abb.col[2], str.col)) +
+    #ggtitle('Annual Revenues by Tenure Type') +
+    xlab('\nAnnual Revenue') +
+    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
+                       labels=c('$0', '$20k', '$40k', '$60k'))+
+    theme(legend.position='none',
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y=element_blank()) +
+    coord_cartesian(xlim=c(0, 70000)) +
+    facet_wrap(~tenure)
+
+```
+
+
 
 ### Host types
 
@@ -394,70 +430,30 @@ We then turn this into a simple chart to see the differences
 
 Next, we plot the \% of properties that have short-term preference versus the occupancy rate
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+
+ ## Set Preference data field
 
   str.data.ic$pref <- str.data.ic$str.ext.pref
 
-  rawocc.pplot <- abbPrefPlot(str.data.ic,
-                               x.field='occ.rate',
-                               split.field='sub.mrkt',
-                               smooth=TRUE,
-                               smooth.span=.35 ,
-                              spl.col=sm.col)
-  rawocc.pplot$plot
-  
-
-```
-
-
-Looking at the distribution of occupancy rates, we that it is not uniform in any of the submarkets.  
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  ggplot(str.data.ic, aes(x=occ.rate, group=sub.mrkt, color=sub.mrkt, fill=sub.mrkt)) +
-    geom_density(alpha=.3) +
-    facet_wrap(~sub.mrkt) +
-    scale_color_manual(values=sm.col) +
-    scale_fill_manual(values=sm.col) +
-    scale_x_continuous(breaks=seq(0, 1, by=.5),
-                       labels=c('0%', '50%', '100%')) +
-    ylab('') +
-    xlab('Occupancy Rate') +
-    theme(legend.position='none',
-          axis.line=element_blank(),
-          axis.text.y=element_blank(),
-          axis.ticks=element_blank(),
-          axis.title.y=element_blank())
-
-```
-
-We then calculate quantile values for rates and replot the charts
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+ ## Calculate the percentile fields
 
   str.data.ic$occ.qtl <- makeWtdQtl(str.data.ic$occ.rate, 
                                       return.type='rank') 
   str.data.ic$rate.qtl <- makeWtdQtl(str.data.ic$med.rate, 
                                   return.type='rank') 
+
+ ## Calculate raw and percentile occupancies
+
+  rawocc.metro <- abbPrefPlot(str.data.ic,
+                         x.field='occ.rate',
+                         smooth=TRUE,
+                         smooth.span=.5)
   
-  ## Make quartile location plot
-  
-  qtlocc.pplot <- abbPrefPlot(str.data.ic,
-                               x.field='occ.qtl',
-                               split.field='sub.mrkt',
-                               smooth=TRUE,
-                               smooth.span=.75)
-  qtlocc.pplot <- qtlocc.pplot$plot +
-    xlab('\nQualtile of Occupancy Rate') +
-    ylab('\n% of Properties where Airbnb is more profitable') +
-    scale_x_continuous(breaks=seq(0, 100, by=25),
-                       labels=c('0', '25th', '50th', '75th', '100th')) +
-    scale_y_continuous(breaks=seq(0, 1, by=.25),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    scale_color_manual(values=sm.col)
-  
-  qtlocc.pplot
-  
+  qtlocc.metro <- abbPrefPlot(str.data.ic,
+                        x.field='occ.qtl',
+                        smooth=TRUE,
+                        smooth.span=.5)
 
 ```
 
@@ -983,7 +979,8 @@ names(all.mwl.surfs) <- c('pra', 'era', 'prp', 'pro', 'prm', 'pru',
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-save(clean.count, daily.data, listing.data, ltr.data, pref.table, pref.table.wide,
+save(clean.count, daily.data, listing.data, ltr.data, pref.table,
+     pref.table.wide, revdens.data, rawocc.metro, qtlocc.metro,
      s.subs, sssubs, str.data, str.data.ic, subs, all.mwl.coefs, all.mwl.surfs,
      core.suburbs, est.points, exch.rate, host.models, pref.models, prem.models,
      file=paste0(data.path, 'analyzed/analyzed_workspace.RData'))
