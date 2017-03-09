@@ -472,18 +472,7 @@ While this simple analysis does not control for location and product differences
 
 ```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='\\label{revdens}Comparison of Revenue Distributions', fig.lp='revdens'}
 
-  stra.rev <- str.data[,c('bedrooms', 'str.ext.revenue')]
-  stra.rev$tenure <- 'Short-Term (Actual)   '
-  names(stra.rev)[2] <- 'revenue'
-  strp.rev <- str.data[,c('bedrooms', 'str.pot.revenue')]
-  strp.rev$tenure <- 'Short-Term (potential)   '
-  names(strp.rev)[2] <- 'revenue'
-  ltr.rev <- ltr.data[,c('bedrooms', 'ltr.revenue')]
-  ltr.rev$tenure <- 'Long-Term   '
-  names(ltr.rev)[2] <- 'revenue'
-  revdens.data <- rbind(stra.rev, strp.rev, ltrrev)
-
-  ggplot(allr, aes(x=revenue, fill=tenure, color=tenure)) +
+  ggplot(revdens.data, aes(x=revenue, fill=tenure, color=tenure)) +
     geom_density(alpha=.5) +
     scale_fill_manual(values=c(ltr.col, abb.col[2], str.col)) +
     scale_color_manual(values=c(ltr.col, abb.col[2], str.col)) +
@@ -501,9 +490,6 @@ While this simple analysis does not control for location and product differences
     facet_wrap(~tenure)
 
 ```
-
-
-
 
 ### Comparison
 
@@ -528,18 +514,12 @@ Occupancy rates are one of the most important components in determining the prof
 
 As the distribution of occupancy rates is not uniform the initial plot may be misleading as to the frequency of short-term rentals being more profitable than long-term. In the right hand panel of \autoref{occpref} (right panel) we transform the x-axis to represent the percentile of the full distribution of occupancy rates. By doing so, we see that, in general, properties need to be in the upper 25th percentile of occupancy rates across the entire market in order to have a equal likelihood of being more profitable as a short-term rental than as a more traditional long-term one.  
 
+```{r plot_occ_metro, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{occpref}Probability of Short-Term Preference vs Occupancy Rate'}
 
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{occpref}Probability of Short-Term Preference vs Occupancy Rate'}
-
-  str.data.ic$pref <- str.data.ic$str.ext.pref
-
-  rawocc <- abbPrefPlot(str.data.ic,
-                         x.field='occ.rate',
-                         smooth=TRUE,
-                         smooth.span=.5)
+ ## Make plots  
   
-  rawocc <- ggplot(rawocc$data,
+  # Raw
+  raw.occ.metro <- ggplot(rawocc.metro$data,
                    aes(x=x.var, y=Var))+
     geom_point(alpha=.5, size=.4) +
     stat_smooth(se=FALSE, size=2, span=.5) +
@@ -553,17 +533,8 @@ As the distribution of occupancy rates is not uniform the initial plot may be mi
     ggtitle('Raw Rates') + 
     theme(plot.title = element_text(hjust = 0.5))
   
-  
-  str.data.ic$occ.qtl <- makeWtdQtl(str.data.ic$occ.rate, 
-                                      return.type='rank') 
-  str.data.ic$rate.qtl <- makeWtdQtl(str.data.ic$med.rate, 
-                                  return.type='rank') 
-  qtlocc <- abbPrefPlot(str.data.ic,
-                        x.field='occ.qtl',
-                        smooth=TRUE,
-                        smooth.span=.5)
-  
-  qtlocc <- ggplot(qtlocc$data,
+  # Quantile
+  qtl.occ.metro <- ggplot(qtlocc.metro$data,
                    aes(x=x.var, y=Var))+
     geom_point(alpha=.5, size=.4) +
     stat_smooth(se=FALSE, size=2, span=.5) +
@@ -576,11 +547,11 @@ As the distribution of occupancy rates is not uniform the initial plot may be mi
     theme(legend.position='none') + 
     ggtitle('Percentile Rates') + 
     theme(plot.title = element_text(hjust = 0.5))
-   
+  
+  # Make Plot
   ggMultiPlots(rawocc, qtlocc, cols=2)
+
 ```
-
-
 
 Along with occupancy rates, the other important consideration is the nightly rate.  High occupancy rates with low nightly rates may not be any better than lower occupancy rate with a higher nightly rate.  In Figure 10 (left panel) we plot nightly rates versus occupancy rates.  We then divide the area of the scatter plot into 400 equal areas (20 x 20) and color each based on which is more common in the area, short-term or long-term revenue.  The transparency is related to the total count of actual market properties falling into that area.
 
@@ -588,9 +559,9 @@ The general trend is what is expected; that is that higher rates and occupancies
 
 An SVM can be used as a classifier to delineate the boundaries between two (or more) classes of observations.  In this case, we delineate the boundary, \autoref{metrohm} (right panel) between situations where long-term rentals are more profitable (red) and where short-term are (green).  In order to avoid an overly broad straight line delineation we use a polynomial fitting technique. Overall, from the SVM model we see that the short-term preference begins at about 325% occupancy rate, regardless of nightly rate.  As the occupancy rate increases, the required nighly rate decreases, down to near $100 once occupancies hit 65\% or greater.
 
+```{r plot_svmr_metro, fig.width=8, fig.height=4, echo=FALSE, warning=FALSE, fig.align='center', fig.cap='\\label{metrohm}Analysis of Raw Rates: Metro Level'}
 
-
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.align='center', fig.cap='\\label{metrohm}Analysis of Raw Rates: Metro Level'}
+ ## Create the rate heat map
 
   rate.hm <- abbHeatMap(str.data.ic,
                 x.field='occ.rate',
@@ -602,6 +573,8 @@ An SVM can be used as a classifier to delineate the boundaries between two (or m
                 fill.colors=c(abb.col[1], abb.col[5]))
   rate.hm <- rate.hm + ylab('Nightly Rate')
 
+ ## Create raw SVM heatmap  
+  
   rate.hm.svm <- abbHeatMap(str.data.ic,
                             x.field='occ.rate',
                             y.field='med.rate',
@@ -612,17 +585,17 @@ An SVM can be used as a classifier to delineate the boundaries between two (or m
                             fill.colors=c(abb.col[1], abb.col[5]))
   rate.hm.svm <- rate.hm.svm + ylab('Nightly Rate')
   
+ ## Plot  
+  
   ggMultiPlots(rate.hm, rate.hm.svm, cols=2)
 
 ```
 
-
-
 Both the occupancy rates and the nightly rates are not uniformly distributed and therefore the plots in \autoref{metrohm} may be misleading.  We convert both axis to percentiles and replot both in \autoref{metrohmp}.  Here we see a more even distibution of points across the figures.  Additionally, a more reasonable SVM breakdown occurs as well.  The right panel shows that in order for the likelihood of a property to be more profitable in short-term rental to be above 50\% the lowest occupancy rate it can have at around the 60th percentile of the market it is in.  And that only holds if the nightly rate is in the top 95th percentile of the market.  For example, if we drop the nightly rate to the median, the occupancy rate needs to be at the 75th percentile or above.
 
+```{r plot_svmq_metro, fig.width=8, fig.height=4, echo=FALSE, fig.cap='\\label{metrohmp}Analysis of Percentile Rates: Metro Level'}
 
-
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='\\label{metrohmp}Analysis of Percentile Rates: Metro Level'}
+ ## Build percentile heatmap
 
   qtl.hm <- abbHeatMap(str.data.ic,
                 x.field='occ.qtl',
@@ -634,6 +607,8 @@ Both the occupancy rates and the nightly rates are not uniformly distributed and
                 fill.colors=c(abb.col[1], abb.col[5]))
   qtl.hm <- qtl.hm + ylab('Nightly Rate (Pcntl)') + xlab('Occupancy Rate (Pcntl)')
  
+ ## Build percentile SVM  
+  
   qtl.hm.svm <- abbHeatMap(str.data.ic,
                    x.field='occ.qtl',
                    y.field='rate.qtl',
@@ -645,11 +620,11 @@ Both the occupancy rates and the nightly rates are not uniformly distributed and
                    fill.colors=c(abb.col[1], abb.col[5]))
   qtl.hm.svm <- qtl.hm.svm + ylab('Nightly Rate (Pcntl)') + xlab('Occupancy Rate (Pcntl)')
  
+  ## Make Plots
+  
   ggMultiPlots(qtl.hm, qtl.hm.svm, cols=2)
   
 ```
-
-
 
 \pagebreak
 
@@ -657,20 +632,48 @@ Both the occupancy rates and the nightly rates are not uniformly distributed and
 
 To gain a deeper understanding of the differences in short-term preference, we break the data down across a variety of characteristics and examine the preferability metrics in these submarkets. First, we bifurcate our data into houses and apartments.  Within the houses, 17.5\% of the properties are short-term preferable, while for the apartment that figure is nearly double at 30.5\%. Plotting the changes in short-term preferability against occupancy rates shows considerable similarity between houses and apartments (\autoref{smocc}).  The only measurable difference is in that for houses a property's occupancy rate needs to be 10 percentiles higher than apartments to show the same likelihood of short-term preference as an apartment. Or, in other words, a given house needs to outperform its peers by a greater extent than an apartment to achieve short-term preference. 
 
+```{r build_occ_type, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
 
+ ## Create dataset
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{smocc}Preference vs Occ. Rates: By Type'}
-
-  apt.id <- which(str.data.ic$type == 'Apartment')
-  house.id <- which(str.data.ic$type == 'House')
   type.data.ic <- str.data.ic
 
+  # Id the types
+  apt.id <- which(str.data.ic$type == 'Apartment')
+  house.id <- which(str.data.ic$type == 'House')
+
+  # Recalculate the percentiles
+  type.data.ic$occ.qtl[apt.id] <- makeWtdQtl(type.data.ic$occ.rate[apt.id],
+                                      return.type='rank')
+  type.data.ic$occ.qtl[house.id] <- makeWtdQtl(
+    type.data.ic$occ.rate[house.id], return.type='rank')
+  
+  type.data.ic$rate.qtl[apt.id] <- makeWtdQtl(type.data.ic$med.rate[apt.id],
+                                  return.type='rank')
+  type.data.ic$rate.qtl[house.id] <- makeWtdQtl(
+    type.data.ic$med.rate[house.id], return.type='rank')
+    
+ ## Calc the occ rate numbers
+  
   ptrocc <- abbPrefPlot(type.data.ic,
                          x.field='occ.rate',
                          split.field='type',
                          smooth=TRUE,
                          smooth.span=.5 ,
                          spl.col=c('black', 'grey40'))
+  
+  ptqocc <- abbPrefPlot(type.data.ic,
+                         x.field='occ.qtl',
+                         split.field='type',
+                         smooth=TRUE,
+                         smooth.span=.5 ,
+                         spl.col=c('black', 'grey40'))
+  
+```
+
+```{r plot_occ_type, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{smocc}Preference vs Occ. Rates: By Type'}
+  
+ ## Build raw plot
   
   ptr.occ <- ggplot(ptrocc$data,
                     aes(x=x.var, y=Var, group=ID, color=ID)) +  
@@ -688,24 +691,8 @@ To gain a deeper understanding of the differences in short-term preference, we b
     ggtitle('Raw Rates') + 
     theme(plot.title = element_text(hjust = 0.5))
   
+ ## Build Percentile Plots
 
-  type.data.ic$occ.qtl[apt.id] <- makeWtdQtl(type.data.ic$occ.rate[apt.id],
-                                      return.type='rank')
-  type.data.ic$occ.qtl[house.id] <- makeWtdQtl(
-    type.data.ic$occ.rate[house.id], return.type='rank')
-  
-  type.data.ic$rate.qtl[apt.id] <- makeWtdQtl(type.data.ic$med.rate[apt.id],
-                                  return.type='rank')
-  type.data.ic$rate.qtl[house.id] <- makeWtdQtl(
-    type.data.ic$med.rate[house.id], return.type='rank')
-  
-  ptqocc <- abbPrefPlot(type.data.ic,
-                         x.field='occ.qtl',
-                         split.field='type',
-                         smooth=TRUE,
-                         smooth.span=.5 ,
-                         spl.col=c('black', 'grey40'))
-    
   ptq.occ <- ggplot(ptqocc$data,
                     aes(x=x.var, y=Var, group=ID, color=ID)) +  
     geom_point(alpha=.5, size=.4) +
@@ -721,15 +708,18 @@ To gain a deeper understanding of the differences in short-term preference, we b
     theme(legend.position='bottom') + 
     ggtitle('Percentile Rates') + 
     theme(plot.title = element_text(hjust = 0.5))
-   
+
+ ## Plot  
+     
   ggMultiPlots(ptr.occ, ptq.occ, cols=2)
 
 ```
 
 Extending this analysis to include nightly rates shows a similar situation (\autoref{smhm}). For houses (left panel) there are very few combinations of occupancy rate and nightly rate that offer a greater than even likelihood of short-term preference.  As an example, a median nightly rate requires a 90th percentile occupancy rate. The market for apartment (right panel) is more forgiving and occupancy rates as low as the 60th percentile can equate to a greater than even chance of short-term prefence is coupled with nightly rates near the top of the market.  A median nightly rate requires a 70th percentile occupancy rate for short-term preference likelihood. 
 
-```{r, fig.width=8, fig.height=3.5, echo=FALSE, fig.cap='\\label{smhm}Analysis of Percentile Rates: By Type'}
+```{r plot_svm_type, fig.width=8, fig.height=3.5, echo=FALSE, fig.cap='\\label{smhm}Analysis of Percentile Rates: By Type'}
 
+ ## Make House SVM Heatmap
  
   house.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type ==
                                           'House', ],
@@ -746,6 +736,7 @@ Extending this analysis to include nightly rates shows a similar situation (\aut
   ylab('Nightly Rate (Pcntl)') +
   xlab('Occupancy Rate (Pcntl)')
 
+ ## Make Apartment SVM Heat Map
 
   apt.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type ==
                                           'Apartment', ],
@@ -762,9 +753,9 @@ Extending this analysis to include nightly rates shows a similar situation (\aut
   ylab('Nightly Rate (Pcntl)') +
   xlab('Occupancy Rate (Pcntl)')
 
-
+ ## Plot
+  
   ggMultiPlots(house.hm.svm, apt.hm.svm, cols=2)
-
 
 ```
 
@@ -772,7 +763,7 @@ Extending this analysis to include nightly rates shows a similar situation (\aut
 
 Next, we divide the data into the five geographic sub-market shown in \autoref{pointmaps}. Within the City-Core, approximately one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to one in four for beach and rural properties, one in six for other city location and about one in nine for suburban locations. 
 
-```{r message=FALSE, warning=FALSE, results='asis', comment=FALSE, cache=TRUE, echo=FALSE, fig.cap='Geographic Submarket Preferability'}
+```{r table_geo, message=FALSE, warning=FALSE, results='asis', comment=FALSE, cache=TRUE, echo=FALSE, fig.cap='Geographic Submarket Preferability'}
 
  # Make Basic comparison table
   pref.table <- abbCreateCompTable(ic.df=str.data.ic,
@@ -783,31 +774,39 @@ Next, we divide the data into the five geographic sub-market shown in \autoref{p
 
  # Limit to the extrapolated pref type
   pref.table <- pref.table[pref.table$rev.type == 'Extrapolated', ]
-  pref.table[,1] <- c('City-Core', 'City', 'Suburban', 'Rural', 'Beach')
-  pref.table[,2] <- paste0(sprintf('%.1f', pref.table[,2]*100), '%')
+  pref.table[ ,1] <- c('City-Core', 'City', 'Suburban', 'Rural', 'Beach')
+  pref.table[ ,2] <- paste0(sprintf('%.1f', pref.table[ ,2] * 100), '%')
 
+ # Fix names  
   names(pref.table) <- c('Sub-Market', 'Short-Term Preferable')
   options(xtable.comment = FALSE)
-  print(xtable(pref.table[,1:2], caption='Geographic Submarket Preferability\n',
+  
+ ## Make printable table
+  
+  print(xtable(pref.table[,1:2], 
+               caption='Geographic Submarket Preferability\n',
                digits=1,
                align='llr'),
-               include.rownames=FALSE,
-               caption.placement='top')
+        include.rownames=FALSE,
+        caption.placement='top')
 
 ```
 
 There is a noticable variability in the relationship between occupancy rates and short-term preference across the submarkets. For raw rates (\autoref{smocc}, left panel), rural properties can acheive short-term preference with lower occupancies than the other areas. This may be due to the relatively low long-term rental rates in the more rural areas coupled with high short-term rates for homes in wine country or near the mountainous terrain east of the city. Transforming to percentiles, we see that the city-core properties can reach short-term preference at a much lower occupancy rate than the others, with suburban and city as the most difficult markets.  
+```{r build_occ_geo, fig.width=8, fig.height=4, echo=FALSE} 
 
-```{r, fig.width=8, fig.height=4, echo=FALSE} 
+ ## Build data
 
+  subm.data.ic <- str.data.ic
+
+  # Get IDs
   cc.id <- which(str.data.ic$sub.mrkt == 'city-core')
   city.id <- which(str.data.ic$sub.mrkt == 'city')
   sub.id <- which(str.data.ic$sub.mrkt == 'suburban')
   rural.id <- which(str.data.ic$sub.mrkt == 'rural')
   beach.id <- which(str.data.ic$sub.mrkt == 'beach')
   
-  subm.data.ic <- str.data.ic
-
+  # Recalc the percentiles
   subm.data.ic$occ.qtl[cc.id] <- makeWtdQtl(subm.data.ic$occ.rate[cc.id],
                                       return.type='rank')
   subm.data.ic$rate.qtl[cc.id] <- makeWtdQtl(subm.data.ic$med.rate[cc.id],
@@ -835,15 +834,29 @@ There is a noticable variability in the relationship between occupancy rates and
   
 ```
 
-```{r, fig.width=9, fig.height=4, message=FALSE, warning=FALSE, echo=FALSE, fig.cap='\\label{smocc}Analysis of Percentile Rates: Metro Level'} 
+```{r plot_occ_geo, fig.width=9, fig.height=4, message=FALSE, warning=FALSE, echo=FALSE, fig.cap='\\label{smocc}Analysis of Percentile Rates: Geographic Submarkets'} 
+
+ ## Set colors
 
   sm.col <- abb.col[c(1, 3, 6, 5, 2)] 
+  
+ ## Create plot data
+  
   smrocc <- abbPrefPlot(subm.data.ic,
-                         x.field='occ.rate',
+                        x.field='occ.rate',
+                        split.field='sub.mrkt',
+                        smooth=TRUE,
+                        smooth.span=.5 ,
+                        spl.col=sm.col)
+  
+  smqocc <- abbPrefPlot(subm.data.ic,
+                         x.field='occ.qtl',
                          split.field='sub.mrkt',
                          smooth=TRUE,
                          smooth.span=.5 ,
                          spl.col=sm.col)
+  
+ ## Make plot objects  
   
   smr.occ <- ggplot(smrocc$data,
                     aes(x=x.var, y=Var, group=ID, color=ID)) +  
@@ -861,14 +874,6 @@ There is a noticable variability in the relationship between occupancy rates and
     ggtitle('Raw Rates') + 
     theme(plot.title = element_text(hjust = 0.5))
 
-
-  smqocc <- abbPrefPlot(subm.data.ic,
-                         x.field='occ.qtl',
-                         split.field='sub.mrkt',
-                         smooth=TRUE,
-                         smooth.span=.5 ,
-                         spl.col=sm.col)
-    
   smq.occ <- ggplot(smqocc$data,
                     aes(x=x.var, y=Var, group=ID, color=ID)) +  
     geom_point(alpha=.5, size=.4) +
@@ -885,12 +890,17 @@ There is a noticable variability in the relationship between occupancy rates and
     ggtitle('Percentile Rates') + 
     theme(plot.title = element_text(hjust = 0.5))
    
+ ## Plot  
+  
   ggMultiPlots(smr.occ, smq.occ, cols=2)
+
 ```
 
 Plotting out the nightly rate versus occupancy rate heat maps for all five geographic submarkets (\autoref{smhmps}) tells a similar story.  The 'City-Core' market offers the most potential for short-term preference with suburban and city the least.  The rural market achieves very solid short-term preference for the most expensive homes, again likely those with special amenities or links to the wine region.  Beach properties do not perform as well as might be expected in the short-term market, however, it should be kept in mind that the winter climate in Melbourne is not conducive to beach activity and therefore short-term beach properties may suffer during winter months. 
 
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Percentile Rates: Metro Level'}
+```{r build_svm_geo, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Percentile Rates: Metro Level'}
+
+  # Build the SVM Heatmaps
 
   core.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
                                           'city-core', ],
@@ -901,14 +911,14 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))+
+                   fill.colors=c(abb.col[1], abb.col[5])) +
   theme(legend.position='none') +
     ylab('') +
     xlab('') +
   annotate("text", x = 50, y = 50, label = "City-Core", size=9)
 
 
-    city.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
+  city.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
                                           'city', ],
                    x.field='occ.qtl',
                    y.field='rate.qtl',
@@ -924,7 +934,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
   annotate("text", x = 50, y = 50, label = "City", size=9)
 
 
-      sub.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
+  sub.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
                                           'suburban', ],
                    x.field='occ.qtl',
                    y.field='rate.qtl',
@@ -940,7 +950,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
   annotate("text", x = 50, y = 50, label = "Suburban", size=9)
 
 
-      rural.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
+  rural.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
                                           'rural', ],
                    x.field='occ.qtl',
                    y.field='rate.qtl',
@@ -956,7 +966,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
   annotate("text", x = 50, y = 50, label = "Rural", size=9)
 
 
-      beach.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
+  beach.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$sub.mrkt ==
                                           'beach', ],
                    x.field='occ.qtl',
                    y.field='rate.qtl',
@@ -973,7 +983,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
 
 ```
 
-```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='\\label{smhmps}Geographic Submarket Heatmaps'}
+```{r plot_svm_geo, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='\\label{smhmps}Geographic Submarket Heatmaps'}
 
   ggMultiPlots(core.hm.svm, city.hm.svm, sub.hm.svm,
                rural.hm.svm, beach.hm.svm, cols=2)
@@ -1011,43 +1021,43 @@ where $GPR$ is the total number of guests allowed per bedroom^[Hosts set the tot
 The results of all three models are shown in Table 4. For $PType$ Apartments are the reference category,  for $BedBath$, 1 Bed / 1Bath is the reference category, for $Submrkt$ the City-Core is the reference category and for $CancelPolicy$ Moderate is the reference category.  As the additional variables are added, the model fit diagnostics steadily increase, suggesting that the increased complexity of the models adds to the quality of the fit.
 
 In Model 1, we see that when controlling for structural characteristics, Houses have a significantly lower probability of being more profitable in short-term leasing than apartments. There is very little significant difference between 1 bed / 1 bath units and the remaining categories, with the exception of 2 bed / 2 bath. This could be due to the fact that 2 bed / 2 bath units may be very attractive in the long-term market as they are a useful product for two, non-family roomates to share. Additionally, short-term tenants may not appreciate (pay) for the second bathroom as extra bathrooms are less of amenity during a short vacation stay than in day-to-day living. 
-
 Adding the submarket variables (Model 2) shows that all areas have a much lower probability of short-term prefernce when compared to the City Core (the reference category) when controlling for structural characteristics.  The difference between the Rural and City-Core is not significant, however. The coefficients for the structural characteristics change little from Model 1 to Model 2, speaking the robustness of those estimates. The coefficient for House properties does decrease significantly in magnitude when adding the geographic submarkets.  This is likely due to the fact that houses are concentrated more heavily in City and Suburban areas than in the City-Core and some of the impact of House is being mediated by the geographic submarkets. 
 
 Finally, in Model 3 we add in host behavior or policies. Allowing a greater number of guests per bedroom results in a higher probability of short-term preference.  This variable may be operating as proxy for additional sleeping spaces which allow for a higher nightly rate, ceteris paribus, to be charged.  The greater the minimum stay, the lower the probability of short-term preference.  Longer minimum stays may equate to lower occupancy rates as one or two night travelers are exempted from the property.  Owners with longer minimum stays may be looking to minimize costs such as cleaning and administration.  Flexible cancellation policies result in a lower probability of short-term preference, while a Strict policy has a weak, but positive relationship with short-term preference.  Strict policies do help maintain revenues, but may also scare off some potential guests.  Strict cancellation may be a luxury for the best and highly desired properties on the market and, within our model, may be acting as a proxy for some unobserved measure of quality or demand while a flexible cancellation may be signalling the opposite.
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short-Term Preference'}
+```{r log_model, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short-Term Preference'}
 
- m1 <- as.data.frame(summary(pref.models[[1]])$coefficients)
- m2 <- as.data.frame(summary(pref.models[[2]])$coefficients)
- m3 <- as.data.frame(summary(pref.models[[3]])$coefficients)
+ ## Extract data
 
- makeStatSig <- function(x){
-   x <- as.numeric(x)
-   y <- rep('***', length(x))
-   y[x>.01] <- '** '
-   y[x>.05] <- '*  '
-   y[x>.1] <- '   '
-   y
- }
- m1sig <- makeStatSig(m1[,4])
- m2sig <- makeStatSig(m2[,4])
- m3sig <- makeStatSig(m3[,4])
+  m1 <- as.data.frame(summary(pref.models[[1]])$coefficients)
+  m2 <- as.data.frame(summary(pref.models[[2]])$coefficients)
+  m3 <- as.data.frame(summary(pref.models[[3]])$coefficients)
+
+ ## Create vector with significance stars
  
- m1$table.coef <- paste0(ifelse(m1$Estimate>0, ' ', ''), 
-                         sprintf('%.3f', round(m1$Estimate,3)),
-                         m1sig)
- m2$table.coef <- paste0(ifelse(m2$Estimate>0, ' ', ''),
-                         sprintf('%.3f',round(m2$Estimate,3)),
-                         m2sig)
- m3$table.coef <- paste0(ifelse(m3$Estimate>0, ' ', ''),
-                         sprintf('%.3f',round(m3$Estimate,3)),
-                         m3sig)
+  m1sig <- makeStatSig(m1[ ,4])
+  m2sig <- makeStatSig(m2[ ,4])
+  m3sig <- makeStatSig(m3[ ,4])
  
- m1c <- c(m1$table.coef, rep(' ', nrow(m3)-nrow(m1)))
- m2c <- c(m2$table.coef, rep(' ', nrow(m3)-nrow(m2)))
- m3c <- m3$table.coef
+ ## Create coefficients for the table (with stars)  
+  
+  m1$table.coef <- paste0(ifelse(m1$Estimate>0, ' ', ''), 
+                          sprintf('%.3f', round(m1$Estimate,3)),
+                          m1sig)
+  m2$table.coef <- paste0(ifelse(m2$Estimate>0, ' ', ''),
+                          sprintf('%.3f',round(m2$Estimate,3)),
+                          m2sig)
+  m3$table.coef <- paste0(ifelse(m3$Estimate>0, ' ', ''),
+                          sprintf('%.3f',round(m3$Estimate,3)),
+                          m3sig)
  
+ ## Even out the lengths
+ 
+  m1c <- c(m1$table.coef, rep(' ', nrow(m3)-nrow(m1)))
+  m2c <- c(m2$table.coef, rep(' ', nrow(m3)-nrow(m2)))
+  m3c <- m3$table.coef
+ 
+ ##  Create the variable section of table 
  full.table <- as.data.frame(cbind(rep('x', length(m1c)), m1c, m2c, m3c))
  names(full.table) <- c('Variable', 'Model 1', "Model 2", "Model 3")
  full.table$Variable <- c('Intercept', 'House (Type)', '2 Bed & 1 Bath',
@@ -1058,19 +1068,6 @@ Finally, in Model 3 we add in host behavior or policies. Allowing a greater numb
                           'Minimum Stay', 'Flexible Cancel', 'Strict Cancel')
  
  ## Create model diagnostics  
-  
-  # Custom function
-  logDx <- function(log.model, data, resp.var){
-    
-    pred <- prediction(predict(log.model, data, type='response'), resp.var)
-    auc <- performance(pred, measure='auc')
-    ll <- logLik(log.model)
-    AIC <- AIC(log.model)
-    
-    return(list(AIC=AIC,
-                logLik=ll,
-                auc=auc))
-  }
   
   # Extract diagnostics
   str.dx <- logDx(pref.models[[1]], str.data.ic, str.data.ic$str.ext.pref)
@@ -1093,16 +1090,17 @@ Finally, in Model 3 we add in host behavior or policies. Allowing a greater numb
                                               3)))
   names(diag.table) <- c('Variable', 'Model 1', "Model 2", "Model 3")
   
- ## Combine into full table of coef and diags
-  #full.table[,2] <- gsub(" ", "", full.table[,2], fixed=TRUE)
+ ## Combine into full table
   
- full.table <- rbind(full.table, diag.table)
+  full.table <- rbind(full.table, diag.table)
  
- x.full <- xtable(full.table,
+  # XTable 
+  x.full <- xtable(full.table,
                   caption='Logistic Modeling Results\n')
- align(x.full) <- 'lllll'
+  align(x.full) <- 'lllll'
 
- print(x.full,
+  # Print
+  print(x.full,
        include.rownames=FALSE,
        hline.after=c(-1,0,15,20,20),
        caption.placement='top')
@@ -1119,19 +1117,27 @@ The above uses the Actual^[Extrapolated out in cases of Airbnb properties on the
 
 Using the potential revenue, 53.3% of all properties are short-term preferable.  Breaking that down by type and by geographic submarket (Table 5) shows similar findings, in terms of relative comparativeness, to the actual revenue analysis above.  Apartments have a higher short-term preference than do Houses and City-Core properties dominate the other geographic regions.  One notable difference here is that the Rural properties perform rather poorly under a potential revenue scenario, relatively speaking, suggesting that they may be operating near their peak in the current condition. 
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Potential Short-Term Preference'}
+```{r pot_table, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Potential Short-Term Preference'}
 
- # Make Basic comparison table
+ # Make Basic comparison table of type
   tpref.table <- abbCreateCompTable(ic.df=str.data.ic,
                                     split.field='type')
-
+ # Extract Potential Results
   tpref.table <- tpref.table[tpref.table$rev.type == 'Potential', ]
+  
+ # Make baseic comparison table of submarkets  
   spref.table <- abbCreateCompTable(ic.df=str.data.ic,
                                     split.field='sub.mrkt')
 
+ # Extract potential results  
   spref.table <- spref.table[spref.table$rev.type == 'Potential', ]
+  
+ # Combine and round  
   st.table <- rbind(tpref.table, spref.table)
   st.table[,2] <- paste0(sprintf('%.1f', st.table[,2]*100), '%') 
+  
+ ## Fix names and print  
+  
   names(st.table) <- c('Sub-Market', 'Short-Term Preferable')
   options(xtable.comment = FALSE)
   print(xtable(st.table[,1:2], 
@@ -1145,11 +1151,15 @@ Using the potential revenue, 53.3% of all properties are short-term preferable. 
 
 Examining the SVM heat maps for the entire metro region under the Actual revenue (left panel, \autoref{pothm}) and the Potential revenue (right panel) show the large increase in possible occupancy rate and nightly rate combinations that lead to short-term preference.  Under a potential revenue scenario, a median occupancy rate and median nightly rate is results in greater than 50\% chance of short-term preference.  Even with very low nightly rates (10th percentile), an occupancy rate around the 65th percentile will achieve short-term preference likelihood in the potential case. 
   
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE}
+```{r pot_svm, results='asis', echo=FALSE, message=FALSE, comment=FALSE}
+
+ ## create data and re-estimate the percentiles
 
   pot.data.ic <- str.data.ic
 
   pot.data.ic$occ.qtl <- makeWtdQtl(pot.data.ic$pot.occ.rate, return.type='rank')
+  
+ ## Make the pecentile heatmap  
   
   pqtl.hm <- abbHeatMap(pot.data.ic,
                 x.field='occ.qtl',
@@ -1161,6 +1171,7 @@ Examining the SVM heat maps for the entire metro region under the Actual revenue
                 fill.colors=c(abb.col[1], abb.col[5]))
   pqtl.hm <- pqtl.hm + ylab('Nightly Rate (Qtl)')
   
+ ## Make percentile SVM heatmap  
   
   pqtl.hm.svm <- abbHeatMap(pot.data.ic,
                    x.field='occ.qtl',
@@ -1175,12 +1186,14 @@ Examining the SVM heat maps for the entire metro region under the Actual revenue
     xlab('Occupancy Rate (Pcntl)') +
   annotate("text", x = 50, y = 50, label = "Potential", size=9)
   
+ ## Add annotations to previous SVM  
+  
   qtl.hm.svm.p <- qtl.hm.svm +
   annotate("text", x = 50, y = 50, label = "Actual", size=9)
   
 ```
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.height=3.5, fig.cap='\\label{pothm}Heatmaps of Short-Term Preference'}
+```{r plot_pot_svm, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.height=3.5, fig.cap='\\label{pothm}Heatmaps of Short-Term Preference'}
 
   ggMultiPlots(qtl.hm.svm.p, pqtl.hm.svm, cols=2)
 
@@ -1188,16 +1201,22 @@ Examining the SVM heat maps for the entire metro region under the Actual revenue
  
 Our final test of the potential revenue case is to re-run the logistic regression models using short-term preference in the potential case as the dependent variable. Generally speaking, the results from the new series of models (Table 6) are qualitatively similar to those derived in the Actual revenue case (Table 4).  The overall magnitude of the coefficient for House (vs Apartments) is lowered in the Potential case, suggesting that houses may be blocked off more that Apartments.  The product types (bed/bath) show similar trends, though with larger discounts for the 2 Bed / 1 Bath and 2 Bed/2 Bath units.  Likewise the geographic submarkets and host policies show similar effects in terms of direction of impact with some slight deviations in magnitude. 
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Potential Short-Term Preference'}
+```{r pot_logmodel, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Potential Short-Term Preference'}
 
- pm1 <- as.data.frame(summary(pref.models[[4]])$coefficients)
- pm2 <- as.data.frame(summary(pref.models[[5]])$coefficients)
- pm3 <- as.data.frame(summary(pref.models[[6]])$coefficients)
-
- pm1sig <- makeStatSig(pm1[,4])
- pm2sig <- makeStatSig(pm2[,4])
- pm3sig <- makeStatSig(pm3[,4])
+ ## Extract coefficients
  
+  pm1 <- as.data.frame(summary(pref.models[[4]])$coefficients)
+  pm2 <- as.data.frame(summary(pref.models[[5]])$coefficients)
+  pm3 <- as.data.frame(summary(pref.models[[6]])$coefficients)
+
+ ## Make Significance stars  
+  
+  pm1sig <- makeStatSig(pm1[,4])
+  pm2sig <- makeStatSig(pm2[,4])
+  pm3sig <- makeStatSig(pm3[,4])
+ 
+ ## Create Table coef vectors  
+  
  pm1$table.coef <- paste0(ifelse(pm1$Estimate>0, ' ', ''), 
                          sprintf('%.3f', round(pm1$Estimate,3)),
                          pm1sig)
@@ -1208,9 +1227,13 @@ Our final test of the potential revenue case is to re-run the logistic regressio
                          sprintf('%.3f',round(pm3$Estimate,3)),
                          pm3sig)
  
+ ## Snap to same length
+ 
  pm1c <- c(pm1$table.coef, rep(' ', nrow(pm3)-nrow(pm1)))
  pm2c <- c(pm2$table.coef, rep(' ', nrow(pm3)-nrow(pm2)))
  pm3c <- pm3$table.coef
+ 
+ ## Put together as variables table
  
  pfull.table <- as.data.frame(cbind(rep('x', length(pm1c)), pm1c, pm2c, pm3c))
  names(pfull.table) <- c('Variable', 'Model 1', "Model 2", "Model 3")
@@ -1243,17 +1266,21 @@ Our final test of the potential revenue case is to re-run the logistic regressio
                                         round(phost.dx$logLik, 0),
                                         round(as.numeric(phost.dx$auc@y.values),
                                               3)))
-  names(pdiag.table) <- c('Variable', 'Model 1', "Model 2", "Model 3")
+ ## Fix names
   
- ## Combine into full table of coef and diags
-  #full.table[,2] <- gsub(" ", "", full.table[,2], fixed=TRUE)
+  names(pdiag.table) <- c('Variable', 'Model 1', "Model 2", "Model 3")
+ 
+ # Bind together
   
  pfull.table <- rbind(pfull.table, pdiag.table)
+ 
+ # XTable
  
  px.full <- xtable(pfull.table,
                    caption='Logistic Modeling Results\n')
  align(px.full) <- 'lllll'
 
+ # Print
  print(px.full,
        include.rownames=FALSE,
        hline.after=c(-1, 0, 15, 20, 20),
@@ -1277,6 +1304,8 @@ There is also a third potential host type, that of the host who utilizies multip
 
 ```{r build_blockfreq, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
 
+  ## Create table of host block frequencies
+
   host.block.freq <- ggplot(str.data, aes(x=block.rate)) + 
   geom_density(fill=str.col, color=str.col) +
   ylab('Frequency\n') + 
@@ -1290,6 +1319,8 @@ There is also a third potential host type, that of the host who utilizies multip
 ```
 
 ```{r build_blockrate, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
+
+ ## Create scatter of block rate vs block periods
 
   block.rate.period <- ggplot(str.data, aes(x=block.rate, y=nbr.block*extr.par)) + 
   geom_point(fill=str.col, color=str.col, size=.2) +
@@ -1312,20 +1343,24 @@ Attempts to divide the hosts up with unsupervised^[As there are no official host
 
 ```{r calc_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
 
-str.data$blockpertime <- round(str.data$nbr.block * str.data$extr.par, 1)
+ ## Split Hosts into groups
 
-str.data$host.type <- 'Unknown'
-str.data$host.type[str.data$blockpertime > 12] <- 'Multi-Platform User'
-str.data$host.type[str.data$block.rate <= .25] <- 'Profit Seeker'
-str.data$host.type[str.data$block.rate >= .75] <- 'Opportunistic Sharer'
-str.data$host.type <- factor(str.data$host.type,
-                             levels=c('Profit Seeker', 'Opportunistic Sharer', 
-                                      'Multi-Platform User', 'Unknown'))
+  str.data$blockpertime <- round(str.data$nbr.block * str.data$extr.par, 1)
+
+  str.data$host.type <- 'Unknown'
+  str.data$host.type[str.data$blockpertime > 12] <- 'Multi-Platform User'
+  str.data$host.type[str.data$block.rate <= .25] <- 'Profit Seeker'
+  str.data$host.type[str.data$block.rate >= .75] <- 'Opportunistic Sharer'
+  str.data$host.type <- factor(str.data$host.type,
+                               levels=c('Profit Seeker', 'Opportunistic Sharer', 
+                                        'Multi-Platform User', 'Unknown'))
 ```
 
 ```{r build_hostbase, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
 
-base.host <- ggplot(str.data, 
+  # Create a background plot for the host location plots
+
+  base.host <- ggplot(str.data, 
                     aes(x=block.rate, y=blockpertime)) + 
                 geom_point(alpha=.7, size=.4, shape=16, color='gray70') +
                 ylab('# Blckd Periods\n') + 
@@ -1345,48 +1380,57 @@ base.host <- ggplot(str.data,
 
 ```{r build_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
   
-ps.host <- base.host + 
-  geom_point(data=str.data[str.data$host.type == 'Profit Seeker', ], size=.4)  +
-  ggtitle('Profit Seekers')
-os.host <- base.host + 
-  geom_point(data=str.data[str.data$host.type == 'Opportunistic Sharer', ], 
-             size=.4)  +
-  ggtitle('Opportunistic Sharer')
-mu.host <- base.host + 
-  geom_point(data=str.data[str.data$host.type == 'Multi-Platform User', ], 
-             size=.4)  +
-  ggtitle('Multi-Platform User')
-un.host <- base.host + 
-  geom_point(data=str.data[str.data$host.type == 'Unknown', ], size=.4)  +
-  ggtitle('Unknown')
+  ## Create individual host location plots
+
+  ps.host <- base.host + 
+    geom_point(data=str.data[str.data$host.type == 'Profit Seeker', ], size=.4)  +
+    ggtitle('Profit Seekers')
+
+  os.host <- base.host + 
+    geom_point(data=str.data[str.data$host.type == 'Opportunistic Sharer', ], 
+               size=.4)  +
+    ggtitle('Opportunistic Sharer')
+
+  mu.host <- base.host + 
+    geom_point(data=str.data[str.data$host.type == 'Multi-Platform User', ], 
+               size=.4)  +
+    ggtitle('Multi-Platform User')
+
+  un.host <- base.host + 
+    geom_point(data=str.data[str.data$host.type == 'Unknown', ], size=.4)  +
+    ggtitle('Unknown')
 
 ```
 
 ```{r plot_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.cap='\\label{hostcat}Host Categories', fig.lp='hosttypes'}
 
-ggMultiPlots(ps.host, mu.host, os.host, un.host, cols=2)
+  ggMultiPlots(ps.host, mu.host, os.host, un.host, cols=2)
   
 ```
 
 ```{r plot_hostbar, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.height=3, fig.width=4, fig.cap='\\label{htc}Host Type Counts'}
 
-host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
-  geom_bar() +
-  scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
-  theme(legend.position='none') +
-  ylab('Frequency\n') + 
-  xlab('\nHost Type') +
-  scale_x_discrete(labels=c('Profit','Sharer','Multi','Unk'))+
-  #ggtitle('short-term Host Types') + 
-  theme(plot.title = element_text(hjust = 0.5))
+ ## Build plot
 
-host.type.bar
+  host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
+    geom_bar() +
+    scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
+    theme(legend.position='none') +
+    ylab('Frequency\n') + 
+    xlab('\nHost Type') +
+    scale_x_discrete(labels=c('Profit','Sharer','Multi','Unk'))+
+    #ggtitle('short-term Host Types') + 
+    theme(plot.title = element_text(hjust = 0.5))
+
+ ## Plot
+
+  host.type.bar
 
 ```
 
 Looking at the differences in short-term preference under both revenue cases, we see large variation in short-term preference between host types in the Actual case and a much smaller variation in the Potential case, as expected. There is little change for the 'Profit Seekers' as most of these hosts are already operating with few blocked days.  For the other three sets, considerable gains could be had with a more aggresive leasing approach. As the potential figures are somewhat similar here, we will only examine the differences for host types in the Actual number going forward. 
 
-```{r results='asis', message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
+```{r host_table, results='asis', message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
 
  # Make Basic comparison table
   apref.table <- abbCreateCompTable(ic.df=str.data.ic,
@@ -1413,26 +1457,34 @@ Looking at the differences in short-term preference under both revenue cases, we
 
 Table 8 compares logistic models results from three of the host types.  The Opportunistic Sharers show no instances of short-term preference and therefore could not be estimated.  The left hand column, that of the Profit-Seekers, is the most representative of a sample of property owners that are seeking to maximize revenue.  Overall, the coefficients from this sub-sample match up well to the results from the entire sample shown in Table 5.  In short, the conclusions are the same: small apartments in the central city with short minimal stays, inflexible cancelation policies and a high guest limit offer the highest probability of short-term preference.  The models for the multi-platform users (middle panel) and the Unknowns (right) are not as clear as the Profit-Seekers but do suggest overall similar dynamics.  
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='\\label{logpot}Logistic Model Results of Potential Short-Term Preference'}
+```{r host_logmodel, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='\\label{logpot}Logistic Model Results of Potential Short-Term Preference'}
 
- h1 <- as.data.frame(summary(host.models[[1]])$coefficients)
- h2 <- as.data.frame(summary(host.models[[3]])$coefficients)
- h3 <- as.data.frame(summary(host.models[[4]])$coefficients)
+ ## Extract coefficients
 
- h1sig <- makeStatSig(h1[,4])
- h2sig <- makeStatSig(h2[,4])
- h3sig <- makeStatSig(h3[,4])
+   h1 <- as.data.frame(summary(host.models[[1]])$coefficients)
+   h2 <- as.data.frame(summary(host.models[[3]])$coefficients)
+   h3 <- as.data.frame(summary(host.models[[4]])$coefficients)
+
+ ## Build significance stars   
+
+   h1sig <- makeStatSig(h1[ ,4])
+   h2sig <- makeStatSig(h2[ ,4])
+   h3sig <- makeStatSig(h3[ ,4])
  
- h1$table.coef <- paste0(ifelse(h1$Estimate>0, ' ', ''), 
+ ## Create Table coefficients   
+   
+   h1$table.coef <- paste0(ifelse(h1$Estimate>0, ' ', ''), 
                          sprintf('%.3f', round(h1$Estimate,3)),
                          h1sig)
- h2$table.coef <- paste0(ifelse(h2$Estimate>0, ' ', ''),
+   h2$table.coef <- paste0(ifelse(h2$Estimate>0, ' ', ''),
                          sprintf('%.3f',round(h2$Estimate,3)),
                          h2sig)
- h3$table.coef <- paste0(ifelse(h3$Estimate>0, ' ', ''),
+   h3$table.coef <- paste0(ifelse(h3$Estimate>0, ' ', ''),
                          sprintf('%.3f',round(h3$Estimate,3)),
                          h3sig)
  
+ ## Convert to variable table   
+   
  hfull.table <- as.data.frame(cbind(rep('x', nrow(h1)), h1$table.coef,
                                     h2$table.coef, h3$table.coef))
  names(hfull.table) <- c('Variable', 'Profit-Seekers', "Multi-Platform", "Unknown")
@@ -1519,182 +1571,3 @@ Unfortunately both data sources for this work are proprietarily licenses and are
 \pagebreak
 
 ## References
-
-
-<!-- Heat map with other characteristics on axis
-
-<!-- ### Submarkets -->
-
-<!-- ### Flexible Geo Analysis -->
-
-<!-- ### Logit Models (maybe?) -->
-
-<!-- ### Reference to Shiny App -->
-
-<!-- ## Future Research -->
-
-<!-- - Does time of purchase (which month) matter? -->
-
-
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx'} -->
-
-<!--   host.data.ic <- str.data.ic -->
-
-<!--   ps <- which(str.data.ic$host.type == 'Profit Seeker') -->
-<!--   os <- which(str.data.ic$host.type == 'Opportunistic Sharer') -->
-<!--   mu <- which(str.data.ic$host.type == 'Multi-Platform User') -->
-<!--   un <- which(str.data.ic$host.type == 'Unknown') -->
-
-<!--   host.data.ic$occ.qtl[ps] <- makeWtdQtl( -->
-<!--       host.data.ic$occ.rate[ps], return.type='rank') -->
-<!--   host.data.ic$rate.qtl[ps] <- makeWtdQtl( -->
-<!--     host.data.ic$med.rate[ps], return.type='rank') -->
-
-<!--   host.data.ic$occ.qtl[os] <- makeWtdQtl( -->
-<!--       host.data.ic$occ.rate[os], return.type='rank') -->
-<!--   host.data.ic$rate.qtl[os] <- makeWtdQtl( -->
-<!--     host.data.ic$med.rate[os], return.type='rank') -->
-
-<!--   host.data.ic$occ.qtl[mu] <- makeWtdQtl( -->
-<!--       host.data.ic$occ.rate[mu], return.type='rank') -->
-<!--   host.data.ic$rate.qtl[mu] <- makeWtdQtl( -->
-<!--     host.data.ic$med.rate[mu], return.type='rank') -->
-
-<!--   host.data.ic$occ.qtl[un] <- makeWtdQtl( -->
-<!--       host.data.ic$occ.rate[un], return.type='rank') -->
-<!--   host.data.ic$rate.qtl[un] <- makeWtdQtl( -->
-<!--     host.data.ic$med.rate[un], return.type='rank') -->
-
-<!-- ```     -->
-
-<!-- For the profit-seekers,  -->
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx55'} -->
-
-<!--   ps.raw.hm.svm <- abbHeatMap(host.data.ic[ps, ], -->
-<!--                    x.field='occ.rate', -->
-<!--                    y.field='med.rate', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T, -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=F, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
-<!--   ps.raw.hm.svm <- ps.raw.hm.svm + ylab('Nightly Rate') -->
-
-<!--   ps.qtl.hm.svm <- abbHeatMap(host.data.ic[ps, ], -->
-<!--                    x.field='occ.qtl', -->
-<!--                    y.field='rate.qtl', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T, -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=T, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
-<!--   ps.qtl.hm.svm <- ps.qtl.hm.svm + ylab('Nightly Rate (Qtl)') -->
-
-<!-- ``` -->
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx44'} -->
-
-<!-- ggMultiPlots(ps.raw.hm.svm, ps.qtl.hm.svm, cols=2) -->
-
-<!-- ``` -->
-
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx33'} -->
-
-<!--   os.raw.hm.svm <- abbHeatMap(host.data.ic[os, ], -->
-<!--                    x.field='occ.rate', -->
-<!--                    y.field='med.rate', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T,  -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=F, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
-<!--   os.raw.hm.svm <- os.raw.hm.svm + ylab('Nightly Rate') -->
-
-<!--   os.qtl.hm.svm <- abbHeatMap(host.data.ic[os, ], -->
-<!--                    x.field='occ.qtl', -->
-<!--                    y.field='rate.qtl', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T,  -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=T, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
-<!--   os.qtl.hm.svm <- os.qtl.hm.svm + ylab('Nightly Rate (Qtl)') -->
-
-<!-- ``` -->
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx22'} -->
-
-<!-- ggMultiPlots(os.raw.hm.svm, os.qtl.hm.svm, cols=2) -->
-
-<!-- ``` -->
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx11'} -->
-
-<!--   mu.raw.hm.svm <- abbHeatMap(host.data.ic[mu, ], -->
-<!--                    x.field='occ.rate', -->
-<!--                    y.field='med.rate', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T, -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=F, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
-<!--   mu.raw.hm.svm <- mu.raw.hm.svm + ylab('Nightly Rate') -->
-
-<!--   mu.qtl.hm.svm <- abbHeatMap(host.data.ic[mu, ], -->
-<!--                    x.field='occ.qtl', -->
-<!--                    y.field='rate.qtl', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T, -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=T, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
-<!--   mu.qtl.hm.svm <- mu.qtl.hm.svm + ylab('Nightly Rate (Qtl)') -->
-
-<!-- ``` -->
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx1'} -->
-
-<!-- ggMultiPlots(mu.raw.hm.svm, mu.qtl.hm.svm, cols=2) -->
-
-<!-- ``` -->
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx2'} -->
-
-<!--   un.raw.hm.svm <- abbHeatMap(host.data.ic[un, ], -->
-<!--                    x.field='occ.rate', -->
-<!--                    y.field='med.rate', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T, -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=F, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
-<!--   un.raw.hm.svm <- un.raw.hm.svm + ylab('Nightly Rate') -->
-
-<!--   un.qtl.hm.svm <- abbHeatMap(host.data.ic[un, ], -->
-<!--                    x.field='occ.qtl', -->
-<!--                    y.field='rate.qtl', -->
-<!--                    pref.field='str.ext.pref', -->
-<!--                    svm=T, -->
-<!--                    alpha.count=F, -->
-<!--                    add.points=T, -->
-<!--                    quantile=T, -->
-<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
-<!--   un.qtl.hm.svm <- un.qtl.hm.svm + ylab('Nightly Rate (Qtl)') -->
-
-<!-- ``` -->
-
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx23'} -->
-
-<!-- ggMultiPlots(un.raw.hm.svm, un.qtl.hm.svm, cols=2) -->
-
-<!-- ``` -->
