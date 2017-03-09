@@ -5,7 +5,10 @@ date: "March 10, 2017"
 output:
   pdf_document: default
   html_document: default
-header-includes: \usepackage{setspace}\doublespacing
+header-includes: 
+   - \usepackage{setspace}\doublespacing
+   - \usepackage{caption}
+   - \captionsetup[table]{skip=10pt}
 geometry: margin=3.3cm
 bibliography: abb.bib
 ---
@@ -94,14 +97,11 @@ bibliography: abb.bib
 
 ```
 
-
-
-
 ## Introduction
 
 With the rise of Airbnb and other self-hosting accommodation platforms^[Flipkey.com, VRBO.com, Homeaway.com, Tripping.com, Stayz.com.au as examples.], it is easier than ever for property owners and investors to consider short-term rental (STR) as a potential leasing strategy for a revenue generating residential property. Should they though? Or rather, is it more profitable to do so when compared to a more traditional long-term rental (LTR)? And further, are certain types of properties in specific locations more likely to show a preference for a short-term leasing strategy over long-term one.
 
-To address these questions and to provide some guidance to potential and current investors and owners, we examine the short- and long-term residential rental market in Melbourne, Australia. Melbourne has a thriving short-term rental market with over 20,000 total properties listed on the Airbnb portal, the source of our short-term market data. We adopt a scenario-based approach that compares observed annual revenues for short-term rental (STR) properties with an estimate of their expected long-term rental revenues. Our results show that the feasibility of a greater return through a short term rental -- what we have termed ``Short Term Preference'' -- is dependent on property type, product, location and host policies.  In short, the answer to whether or not a owner or investor should opt for a short-term leasing strategy: it depends.  
+To address these questions and to provide some guidance to potential and current investors and owners, we examine the short- and long-term residential rental market in Melbourne, Australia. Melbourne has a thriving short-term rental market with over 20,000 total properties listed on the Airbnb portal, the source of our short-term market data. We adopt a scenario-based approach that compares observed annual revenues for short-term rental (STR) properties with an estimate of their expected long-term rental revenues. Our results show that the feasibility of a greater return through a short-term rental -- what we have termed ``Short-Term Preference'' -- is dependent on property type, product, location and host policies.  In short, the answer to whether or not a owner or investor should opt for a short-term leasing strategy: it depends.  
 
 ## Literature Review
 
@@ -239,7 +239,7 @@ Within the long-term rental data, property types fall into eight categories.  Li
 
 Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the short-term data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units or Studios, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure).^[Also note that 'Apartment-type' ownership is very rare in Australia.  Nearly every multi-family dwelling is owned as a condominium.  See @berry2000investment for more information on the overall structure of the Australian market] Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context.
 
-The Other category only makes up a very small percentage of the properties in both the short and long term market; especially so in the long-term market (\autoref{typecomp}) .  Additionally, a large proportion of the 'Others' in the short-term data are Bed & Breakfast units, a use which doesn't fit within our research question. As a result, we remove the 'Others' from both the short- and the long-term rental data.
+The Other category only makes up a very small percentage of the properties in both the short and long-term market; especially so in the long-term market (\autoref{typecomp}) .  Additionally, a large proportion of the 'Others' in the short-term data are Bed & Breakfast units, a use which doesn't fit within our research question. As a result, we remove the 'Others' from both the short- and the long-term rental data.
 
 
 
@@ -247,6 +247,10 @@ The Other category only makes up a very small percentage of the properties in bo
 
   load(paste0(fig.path, 'ltrtypes.RData'))
   load(paste0(fig.path, 'strtypes.RData'))
+  
+  str.types <- str.types + xlab('')
+  ltr.types <- ltr.types + xlab('')
+  
 
   ggMultiPlots(str.types, ltr.types, cols=2)
   
@@ -262,8 +266,6 @@ Next, the short-term rentals properties can be listed as one of three types rela
 
 As long-term rentals do not offer Private Room or Shared Room options^[Our long-term rental dataset does not include rooming houses, purpose built student accommodations and other types of rentals which may offer private or shared room options] and our purpose here is a comparison of long- and short-term returns, we remove all short-term properties that do not lease the entire home or apartment. Unfortunately, this filter does remove about 40% of the short-term data (\autoref{ltypecomp}), however, given the research question it is unavoidable.
 
-
-
 ```{r plot_ltype, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=2.5, fig.width=3.75, fig.cap='\\label{ltypecomp}Listing Type of Short-Term Rentals', fig.lp='ltcomp'}
 
  load(paste0(fig.path, 'listtypes.RData'))
@@ -272,19 +274,15 @@ As long-term rentals do not offer Private Room or Shared Room options^[Our long-
 
 ```
 
-
-
 #### Structural Characteristics 
 
 The Airbnb data provides limited information on the structural characteristics. The only overlapping fields that we have between the two datasets are bedrooms and bathrooms. Additionally, as the markets and structural components of houses and apartments differ, we bifurcate our analysis between the two property types from this point forward. 
 
-We begin by removing all properties that are missing bedroom or bathroom information or have a likely data error in these fields (more than 14 bedrooms or 10 bathrooms). For both short- and long-term rentals we find that most apartments have fewer than four bedrooms and houses fewer than five.  For both property types, the vast majority of properties have three or fewer bathrooms. We filter the data accordingly. Additionally, note that short term rentals consider studio apartments to be 0 bed units while the long term data considers these as 1 bedroom. We convert the 0 bed short term units to 1 bed units. A few short term properties indicate no baths, which is likely an error so we remove these observations from the data. Also, here we notice that the short-term data gives bathrooms in halves, while the long term data presents baths in whole numbers.  We round the baths in the short-term data up to whole integers.
+We begin by removing all properties that are missing bedroom or bathroom information or have a likely data error in these fields (more than 14 bedrooms or 10 bathrooms). For both short- and long-term rentals we find that most apartments have fewer than four bedrooms and houses fewer than five.  For both property types, the vast majority of properties have three or fewer bathrooms. We filter the data accordingly. Additionally, note that short-term rentals consider studio apartments to be 0 bed units while the long-term data considers these as 1 bedroom. We convert the 0 bed short-term units to 1 bed units. A few short-term properties indicate no baths, which is likely an error so we remove these observations from the data. Also, here we notice that the short-term data gives bathrooms in halves, while the long-term data presents baths in whole numbers.  We round the baths in the short-term data up to whole integers.
 
 In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short-term rental) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two (\autoref{bbtype}). From this analysis we see that there are 6 combinations that make up most all properties:  1bed/1bath, 2/1, 2/2, 3/1, 3/2 and 4/2. We filter the data to these combinations. 
 
-
-
-```{r plot_bb, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.width=5.75, fig.cap='\\label{bbtype}Bed and Baths by Tenure'}
+```{r plot_bb, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.width=5.75, fig.cap='\\label{bbtype}Bed and Baths by Tenure by Type'}
 
  load(paste0(fig.path, 'ltrbb.RData'))
  load(paste0(fig.path, 'strbb.RData'))
@@ -296,15 +294,11 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
   
 ```
 
-
-
 ### Rates and Rental Values
 
 Next we filter by the prices -- the nightly rates and weekly^[Rents are quoted in weekly values but paid in monthly installments in Melbourne] rental prices. The long-term rental data have a single price observation, the asking rent at closing.  For the short-term data, there are two indicators of nightly rate.  First, each property has a average nightly rate figure that takes the average of the rates for all booked nights over the October 2014 to August 2016 period. Second, there is a rate for each day in the daily observations. For the vast majority of properties, the daily rates change very little, but for a select few there is a wide variation in the daily rates, often somewhat randomly. In cases where a small number of reservations have been made, the average nightly rate can deviate widely from usual rate due to outliers on the high end. To remedy this, we create a new property-level variable that is the median nightly rate of successful bookings over the September 1, 2015 to August 31, 2016 period.
 
-After removing property level observations that are missing price data, we plot the distribution of the rates and rents.  In Figure 4 we see that most long term weekly rentals are greater than \$200 and less than \$1,000 per week while most median nightly rates are greater than \$50 and less than \$500 per night. We filter the property level data accordingly. We also filter the short term daily data to include only those observations with nightly rates between \$50 and \$500.
-
-
+After removing property level observations that are missing price data, we plot the distribution of the rates and rents.  In Figure 4 we see that most long-term weekly rentals are greater than \$200 and less than \$1,000 per week while most median nightly rates are greater than \$50 and less than \$500 per night. We filter the property level data accordingly. We also filter the short-term daily data to include only those observations with nightly rates between \$50 and \$500.
 
 ```{r plot_ratesrents, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3, fig.width=5.75, fig.cap='Distribution of Rates and Rents', fig.lp='rrcomp'}
 
@@ -315,15 +309,11 @@ After removing property level observations that are missing price data, we plot 
   
 ```
 
-
-
 ### Location and Submarkets
 
 Location is an important determinant in both the short- and long-term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high-end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts. The specific suburb of a property is the second, or finer scale, at which the market operates. \autoref{locmap} shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries.
 
-
-
-```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.width=4, fig.cap='\\label{locmap}Melbourne Submarkets', fig.lp='submap'}
+```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.width=3.5, fig.cap='\\label{locmap}Melbourne Submarkets', fig.lp='submap'}
 
  load(paste0(fig.path, 'suburbMap.RData'))
 
@@ -339,9 +329,7 @@ Location is an important determinant in both the short- and long-term rental mar
 
 ```
 
-
-
-It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beaches; and 2) Proximity to key tourist activities and events. Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analyzing short and long term rentals in Melbourne: 
+It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beaches; and 2) Proximity to key tourist activities and events. Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analyzing short and long-term rentals in Melbourne: 
 
 1. Rural (Outer suburbs, not Beach)
 2. Suburban (Middle suburbs, not Beach)
@@ -351,9 +339,7 @@ It is likely that the short-term rental market follows a similar market hierarch
 
 We select the 18 suburbs below to represent the 'core' of the city (Table 1).  The majority of tourist destinations and major events such as the Australian Open and the Grand Prix are located in these suburbs.  All are well served by public transportation and possess abundant amenities for tourists.
 
-
-
-```{r table_corelist, results="asis", comment=FALSE, message=FALSE, echo=FALSE, fig.cap='\\label{coretable}List of Core Suburbs', fig.lp='coresuburbs'}
+```{r table_corelist, results="asis", comment=FALSE, message=FALSE, echo=FALSE, fig.cap='\\label{coretable}List of Core Suburbs'}
 
  c.subs <- data.frame(A=core.suburbs[1:6],
                       B=core.suburbs[7:12],
@@ -369,19 +355,19 @@ We select the 18 suburbs below to represent the 'core' of the city (Table 1).  T
 
 ```
 
-
-
 We assign these designations by: 1) Adding suburb designations to the properties; 2) Assigning submarkets 1-4 based on suburb location; and 3) Indicating proximity to beach and labeling as 'Beach' submarket.  This process is repeated for both the short- and long-term data. Finally, we also remove any observations that fall outside of outer suburbs (the extent of the suburbs). The location of the short- and long-term rentals, colored by submarket, are shown in \autoref{pointmaps}.
 
-Before assigning submarkets to the long term property we must remedy the fact that about 5% of the long term rental observations have missing latitude and longitude values.  Half of these do, however, have a latitude and longitude values for the centroid of the street that the property faces.  To retain as many observations as possible in these intial steps we apply the street centroid value to the observations with missing lat/long values.  For those without either set of lat/longs we remove them from the dataset at this point. After making this correction we then assign one of the five submarket designations based on the process described above.
+Before assigning submarkets to the long-term property we must remedy the fact that about 5% of the long-term rental observations have missing latitude and longitude values.  Half of these do, however, have a latitude and longitude values for the centroid of the street that the property faces.  To retain as many observations as possible in these intial steps we apply the street centroid value to the observations with missing lat/long values.  For those without either set of lat/longs we remove them from the dataset at this point. After making this correction we then assign one of the five submarket designations based on the process described above.
 
-
-
-```{r plot_locations, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5.5, fig.height=9, fig.cap='\\label{pointmaps}Location Maps', fig.lp='locmaps'}
+```{r load_locations, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
 
   load(paste0(fig.path, 'ltrMap.RData'))
   load(paste0(fig.path, 'strMap.RData'))
 
+```
+  
+```{r plot_locations, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5, fig.height=10, fig.cap='\\label{pointmaps}Location Maps', fig.lp='locmaps', fig.ext='png'}
+  
   str.map <- str.map +
    theme(axis.title.y=element_blank(),
          axis.text.y=element_blank(),
@@ -402,11 +388,7 @@ Before assigning submarkets to the long term property we must remedy the fact th
 
 ```
 
-
-
-To better visualize the relative frequency of the submarkets in the two tenure types we have broken down the data by submarket by property type by tenure type. A number of interesting observations are illustrated here (\autoref{smcounts}). First, the vast majority of Airbnb units are apartments in city-core or city locations. As expected and as shown by the map, the long-term properties are more evenly spread across the metro region than the short-term properties.  Long-term houses are more peripheral than apartments, a result of urban development patterns and land economics. Beach properties are, relatively speaking, over-represented in the short term market, especially in apartments, while suburban and rural apartments, somewhat common in long-term markets, are nearly absent in the short-term market. Overall, the suburban and rural Airbnb markets are quite thin, later results focusing on these markets will need to be examined in light of this small sample size.
-
-
+ To better visualize the relative frequency of the submarkets in the two tenure types we have broken down the data by submarket by property type by tenure type. A number of interesting observations are illustrated here (\autoref{smcounts}). First, the vast majority of Airbnb units are apartments in city-core or city locations. As expected and as shown by the map, the long-term properties are more evenly spread across the metro region than the short-term properties.  Long-term houses are more peripheral than apartments, a result of urban development patterns and land economics. Beach properties are, relatively speaking, over-represented in the short-term market, especially in apartments, while suburban and rural apartments, somewhat common in long-term markets, are nearly absent in the short-term market. Overall, the suburban and rural Airbnb markets are quite thin, later results focusing on these markets will need to be examined in light of this small sample size.
 
 ```{r plot_locbars, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=8.5, fig.height=4, fig.cap='\\label{smcounts}Submarket Observation Counts', fig.lp='locbars'}
 
@@ -418,17 +400,13 @@ To better visualize the relative frequency of the submarkets in the two tenure t
 
 ```
 
-
-
 ### Summary of Data Cleaning
 
 We have applied ten separate filters to our two datasets. In the name of transparency and to highlight the bounds of our research question it is useful to review these filters (Table 2). There are more than 20,000 properties that are or have been listed on the Airbnb portal in Melbourne during the 2014 to 2016 period.  Filtering those not listed during the study period removes nearly 1/3 of all properties.  Further removing by property type and listing type (not entire home) elimates another 50% of the remaining properties.  From these 7,200 properties structural characteristics filters remove another 480 from consideration.  Over 1,000 of the remaining properties were never been booked and/or had outlying nightly rates and were removed.  Finally, 14 properties had either bad location data or missing information host policy. From over 20,000, we have 5,788 Airbnb properties meet the requirements of our research question.
 
-For the long term data, over half of the observations fall outside of our considered time frame, reducing the sample size down to around 130,000 from 290,000.  Further consideration regarding property types, structural characteristics, location, etc. remove another 12,000 observations, leaving 120,092 in the final dataset.
+For the long-term data, over half of the observations fall outside of our considered time frame, reducing the sample size down to around 130,000 from 290,000.  Further consideration regarding property types, structural characteristics, location, etc. remove another 12,000 observations, leaving 120,092 in the final dataset.
 
-
-
-```{r table_cleansummary, results="asis", comment=FALSE, message=FALSE, echo=FALSE, fig.cap='Data Cleaning Summary', fig.lp='cleansumm'}
+```{r table_cleansummary, results="asis", comment=FALSE, message=FALSE, echo=FALSE, fig.cap='Data Cleaning Summary'}
 
 cc <- clean.count[,c('operation', 'str', 'ltr')]
 str.count <- cumsum(c(cc$str[1], -cc$str[-1]))
@@ -451,17 +429,15 @@ clean.table$field <- c('Initial Count', 'Time', 'Property Type',
                        'Rates & Rents', 'Revenue', 'Location', 'Host Policy')
 clean.table$strper <- 100*round(clean.table$strper, 2)
 clean.table$ltrper <- 100*round(clean.table$ltrper, 2)
-names(clean.table) <- c('Filter', 'Short Term', 'Cut', '% Cut',
-                        'Long Term', 'Cut', '% Cut')
+names(clean.table) <- c('Filter', 'Short-term', 'Cut', '% Cut',
+                        'Long-term', 'Cut', '% Cut')
 options(xtable.comment = FALSE)
-print(xtable(clean.table, caption='Data Cleaning Summary\n',
+print(xtable(clean.table, caption='Data Cleaning Summary',
        digits=0),
        include.rownames=FALSE,
        caption.placement='top')
 
 ```
-
-
 
 ## Revenues 
 
@@ -469,7 +445,7 @@ print(xtable(clean.table, caption='Data Cleaning Summary\n',
 
 Within the remainder of this report when we refer to revenues we mean the net revenues from equations 1 and 3, respectively. Calculations of revenue for the observed and hypothetical long-term rentals are straightforward, weekly rent -- real or imputed -- times 52 minus search cost time and agency fees.  For the short-term rentals it is somewhat more complicated.  First, we must deal with those properties that were not listed for the entire 12-month period.  Our data cleaning eliminated all properties that were listed for less than six months, however, it would be incorrect to compare the revenue of a property listed on Airbnb for seven months with the hypothetical annual revenue from a long-term rental.  
 
-Second, many of the short term properties have a significant number of blocked days, days in which the property was not offered on Airbnb.  Here too, there is a problem with comparing observed revenues from a property with a 40\% block rate with a hypothetical year long revenue stream, especially if the property was leased out on other portal during those blocked days.  And, even if we knew that the blocked days were simply due to the host wanting to use the property themselves during that time, this deduction in revenue should not necessarily apply to the hypothetical investor in our examined scenario.  In short, in either case, the actual observed short-term revenue would be biased on the low end compared to what a revenue maximizing owner would be likely able to accomplish.  
+Second, many of the short-term properties have a significant number of blocked days, days in which the property was not offered on Airbnb.  Here too, there is a problem with comparing observed revenues from a property with a 40\% block rate with a hypothetical year long revenue stream, especially if the property was leased out on other portal during those blocked days.  And, even if we knew that the blocked days were simply due to the host wanting to use the property themselves during that time, this deduction in revenue should not necessarily apply to the hypothetical investor in our examined scenario.  In short, in either case, the actual observed short-term revenue would be biased on the low end compared to what a revenue maximizing owner would be likely able to accomplish.  
 
 As a result, we have calculated three separate revenues values for the short-term properties:
 
@@ -477,7 +453,7 @@ As a result, we have calculated three separate revenues values for the short-ter
 2. Actual ($REV_a$)}: Observed bookings extrapolated to a full year representing the likely actual revenue if the property had been listed all year long.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] based on observed occupancy rate multiplied by median nightly rate
 3. Potential ($REV_p$)}: Observed occupancy rate of non-blocked days multiplied by 366 multiplied by median nightly rate 
 
-As the observed calculation systematically under counts the revenue from properties that were not on the Airbnb portal for the entire year we disregard it going forward and consider the Actual revenue metric to be a better measure of actual market performance. We chart the distribution of the Actual ($REV_a$) and Potential ($REV_p$) short-term revenues against a distribution of the observed long term revenues for the long term properties. Revenues from the long-term rentals are far more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year (\autoref{revdens}).  Actual short-term revenues range from neglible to highs of greater than \$80,000, with many of the properties showing very limited (less than \$10,000) revenue. The range of the distribution for the Potential short-term revenue is similar, however, the distribution itself is much flatter, with many more properties showing potential incomes in the \$20,000 to \$40,000 range. 
+As the observed calculation systematically under counts the revenue from properties that were not on the Airbnb portal for the entire year we disregard it going forward and consider the Actual revenue metric to be a better measure of actual market performance. We chart the distribution of the Actual ($REV_a$) and Potential ($REV_p$) short-term revenues against a distribution of the observed long-term revenues for the long-term properties. Revenues from the long-term rentals are far more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year (\autoref{revdens}).  Actual short-term revenues range from neglible to highs of greater than \$80,000, with many of the properties showing very limited (less than \$10,000) revenue. The range of the distribution for the Potential short-term revenue is similar, however, the distribution itself is much flatter, with many more properties showing potential incomes in the \$20,000 to \$40,000 range. 
 
 While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not.  When looking at potential revenues, however, a great deal more may have the potential to produce more revenue.  The high number of very low yield Airbnb properties in the Actual condition suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing^[Do note that we have not considered any overall market demand issues when analyzing potential revenue.].
 
@@ -486,13 +462,13 @@ While this simple analysis does not control for location and product differences
 ```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='\\label{revdens}Comparison of Revenue Distributions', fig.lp='revdens'}
 
   stre <- str.data[,c('bedrooms', 'str.ext.revenue')]
-  stre$tenure <- 'short-term actual   '
+  stre$tenure <- 'Short-Term (Actual)   '
   names(stre)[2] <- 'revenue'
   strp <- str.data[,c('bedrooms', 'str.pot.revenue')]
-  strp$tenure <- 'short-term potential   '
+  strp$tenure <- 'Short-Term (potential)   '
   names(strp)[2] <- 'revenue'
   ltrr <- ltr.data[,c('bedrooms', 'ltr.revenue')]
-  ltrr$tenure <- 'long-term   '
+  ltrr$tenure <- 'Long-Term   '
   names(ltrr)[2] <- 'revenue'
   allr <- rbind(stre, strp, ltrr)
 
@@ -500,17 +476,18 @@ While this simple analysis does not control for location and product differences
     geom_density(alpha=.5) +
     scale_fill_manual(values=c(ltr.col, abb.col[2], str.col)) +
     scale_color_manual(values=c(ltr.col, abb.col[2], str.col)) +
-    ggtitle('Annual Revenues by Tenure Type') +
-    xlab('Annual Revenue') +
+    #ggtitle('Annual Revenues by Tenure Type') +
+    xlab('\nAnnual Revenue') +
     scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
-                       labels=c('$0', '$20,000', '$40,000', '$60,000'))+
-    theme(legend.position='bottom',
+                       labels=c('$0', '$20k', '$40k', '$60k'))+
+    theme(legend.position='none',
           legend.title = element_blank(),
           plot.title = element_text(hjust = 0.5),
           axis.text.y = element_blank(),
           axis.ticks.y = element_blank(),
           axis.title.y=element_blank()) +
-    coord_cartesian(xlim=c(0, 70000))
+    coord_cartesian(xlim=c(0, 70000)) +
+    facet_wrap(~tenure)
 
 ```
 
@@ -538,11 +515,11 @@ We will begin our analysis by making a comparison of the short and long-term mar
 
 Occupancy rates are one of the most important components in determining the profitability of short-term rentals. For reference, the mean occupancy rate in the sample is 27.6\%, with a median value of 19.4\%. In \autoref{occpref} (left panel) we show the percentage of properties for which short-term rental is more profitable versus the occupancy rate over the year analyzed. We see that likelihood of short-term rental being a better option increases sharply with occupancy rate up from about 25\% up to 75\% occupancy. For occupancy rates less than 40\%, long-term rental is more likely to be preferable. 
 
-As the distribution of occupancy rates is not uniform the initial plot may be misleading as to the frequency of short-term rentals being more profitable than long term. In the right hand panel of \autoref{occpref} (right panel) we transform the x-axis to represent the percentile of the full distribution of occupancy rates. By doing so, we see that, in general, properties need to be in the upper 25th percentile of occupancy rates across the entire market in order to have a equal likelihood of being more profitable as a short-term rental than as a more traditional long term one.  
+As the distribution of occupancy rates is not uniform the initial plot may be misleading as to the frequency of short-term rentals being more profitable than long-term. In the right hand panel of \autoref{occpref} (right panel) we transform the x-axis to represent the percentile of the full distribution of occupancy rates. By doing so, we see that, in general, properties need to be in the upper 25th percentile of occupancy rates across the entire market in order to have a equal likelihood of being more profitable as a short-term rental than as a more traditional long-term one.  
 
 
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{occpref}Probability of Short Term Pref. vs Occ. Rate'}
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{occpref}Probability of Short-Term Preference vs Occupancy Rate'}
 
   str.data.ic$pref <- str.data.ic$str.ext.pref
 
@@ -598,7 +575,7 @@ Along with occupancy rates, the other important consideration is the nightly rat
 
 The general trend is what is expected; that is that higher rates and occupancies, ceteris paribus, means greater profitability for short-term rentals.  This relationship is not a perfectly linear because the long-term rental revenue varies greatly based on the characteristics of the property.  While the left panel of \autoref{metrohm} helps show the general pattern it does leave many indeterminate areas.  In order to better delimit the situations where short-term rentals are more profitable we turn to a support vector machine (SVM) algorithm.
 
-An SVM can be used as a classifier to delineate the boundaries between two (or more) classes of observations.  In this case, we delineate the boundary, \autoref{metrohm} (right panel) between situations where long-term rentals are more profitable (red) and where short term are (green).  In order to avoid an overly broad straight line delineation we use a polynomial fitting technique. Overall, from the SVM model we see that the short-term preference begins at about 325% occupancy rate, regardless of nightly rate.  As the occupancy rate increases, the required nighly rate decreases, down to near $100 once occupancies hit 65\% or greater.
+An SVM can be used as a classifier to delineate the boundaries between two (or more) classes of observations.  In this case, we delineate the boundary, \autoref{metrohm} (right panel) between situations where long-term rentals are more profitable (red) and where short-term are (green).  In order to avoid an overly broad straight line delineation we use a polynomial fitting technique. Overall, from the SVM model we see that the short-term preference begins at about 325% occupancy rate, regardless of nightly rate.  As the occupancy rate increases, the required nighly rate decreases, down to near $100 once occupancies hit 65\% or greater.
 
 
 
@@ -667,7 +644,7 @@ Both the occupancy rates and the nightly rates are not uniformly distributed and
 
 ### Submarkets
 
-To gain a deeper understanding of the differences in short-term preference, we break the data down across a variety of characteristics and examine the preferability metrics in these submarkets. First, we bifurcate our data into houses and apartments.  Within the houses, 17.5\% of the properties are short-term preferable, while for the apartment that figure is nearly double at 30.5\%. Plotting the changes in short-term preferability against occupancy rates shows considerable similarity between houses and apartments (\autoref{smocc}).  The only measurable difference is in that for houses a property's occupancy rate needs to be 10 percentiles higher than apartments to show the same likelihood of short-term preference as an apartment. Or, in other words, a given house needs to outperform its peers by a greater extent than an apartment to achieve short term preference. 
+To gain a deeper understanding of the differences in short-term preference, we break the data down across a variety of characteristics and examine the preferability metrics in these submarkets. First, we bifurcate our data into houses and apartments.  Within the houses, 17.5\% of the properties are short-term preferable, while for the apartment that figure is nearly double at 30.5\%. Plotting the changes in short-term preferability against occupancy rates shows considerable similarity between houses and apartments (\autoref{smocc}).  The only measurable difference is in that for houses a property's occupancy rate needs to be 10 percentiles higher than apartments to show the same likelihood of short-term preference as an apartment. Or, in other words, a given house needs to outperform its peers by a greater extent than an apartment to achieve short-term preference. 
 
 
 
@@ -738,13 +715,9 @@ To gain a deeper understanding of the differences in short-term preference, we b
 
 ```
 
-
-
 Extending this analysis to include nightly rates shows a similar situation (\autoref{smhm}). For houses (left panel) there are very few combinations of occupancy rate and nightly rate that offer a greater than even likelihood of short-term preference.  As an example, a median nightly rate requires a 90th percentile occupancy rate. The market for apartment (right panel) is more forgiving and occupancy rates as low as the 60th percentile can equate to a greater than even chance of short-term prefence is coupled with nightly rates near the top of the market.  A median nightly rate requires a 70th percentile occupancy rate for short-term preference likelihood. 
 
-
-
-```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='\\label{smhm}Analysis of Percentile Rates: By Type'}
+```{r, fig.width=8, fig.height=3.5, echo=FALSE, fig.cap='\\label{smhm}Analysis of Percentile Rates: By Type'}
 
  
   house.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type ==
@@ -784,8 +757,6 @@ Extending this analysis to include nightly rates shows a similar situation (\aut
 
 ```
 
-
-
 #### By Geography
 
 Next, we divide the data into the five geographic sub-market shown in \autoref{pointmaps}. Within the City-Core, approximately one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to one in four for beach and rural properties, one in six for other city location and about one in nine for suburban locations. 
@@ -802,20 +773,19 @@ Next, we divide the data into the five geographic sub-market shown in \autoref{p
  # Limit to the extrapolated pref type
   pref.table <- pref.table[pref.table$rev.type == 'Extrapolated', ]
   pref.table[,1] <- c('City-Core', 'City', 'Suburban', 'Rural', 'Beach')
-  pref.table[,2] <- pref.table[,2]*100
+  pref.table[,2] <- paste0(sprintf('%.1f', pref.table[,2]*100), '%')
 
-  names(pref.table) <- c('Sub-Market', '% Short Term Preferable')
+  names(pref.table) <- c('Sub-Market', 'Short-Term Preferable')
   options(xtable.comment = FALSE)
   print(xtable(pref.table[,1:2], caption='Geographic Submarket Preferability\n',
-               digits=1),
+               digits=1,
+               align='llr'),
                include.rownames=FALSE,
                caption.placement='top')
 
 ```
 
 There is a noticable variability in the relationship between occupancy rates and short-term preference across the submarkets. For raw rates (\autoref{smocc}, left panel), rural properties can acheive short-term preference with lower occupancies than the other areas. This may be due to the relatively low long-term rental rates in the more rural areas coupled with high short-term rates for homes in wine country or near the mountainous terrain east of the city. Transforming to percentiles, we see that the city-core properties can reach short-term preference at a much lower occupancy rate than the others, with suburban and city as the most difficult markets.  
-
-
 
 ```{r, fig.width=8, fig.height=4, echo=FALSE} 
 
@@ -907,11 +877,7 @@ There is a noticable variability in the relationship between occupancy rates and
   ggMultiPlots(smr.occ, smq.occ, cols=2)
 ```
 
-
-
-Plotting out the nightly rate versus occupancy rate heat maps for all five geographic submarkets (\autoref{smhmps}) tells a similar story.  The 'City-Core' market offers the most potential for short term preference with suburban and city the least.  The rural market achieves very solid short-term preference for the most expensive homes, again likely those with special amenities or links to the wine region.  Beach properties do not perform as well as might be expected in the short term market, however, it should be kept in mind that the winter climate in Melbourne is not conducive to beach activity and therefore short-term beach properties may suffer during winter months. 
-
-
+Plotting out the nightly rate versus occupancy rate heat maps for all five geographic submarkets (\autoref{smhmps}) tells a similar story.  The 'City-Core' market offers the most potential for short-term preference with suburban and city the least.  The rural market achieves very solid short-term preference for the most expensive homes, again likely those with special amenities or links to the wine region.  Beach properties do not perform as well as might be expected in the short-term market, however, it should be kept in mind that the winter climate in Melbourne is not conducive to beach activity and therefore short-term beach properties may suffer during winter months. 
 
 ```{r, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Percentile Rates: Metro Level'}
 
@@ -1003,8 +969,6 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
 
 ```
 
-
-
 ## Explaining Preference
 
 The analyses above show that, overall, just less than one out of every four short-term rental properties was actually more profitable as a short-term rental than it would have been if rented long-term over the course of the year. This proportion, however, varied by location and property type, with apartments and city-core properties showing the highest likelihood of short-term preference. While illustrative, the above do not fully control for property characteristics or owner actions -- which are a key component of short-term rental success.  To better understand which factors are related to a higher likelihood of short-term preference, we develop a set of logistic regression models below. 
@@ -1041,9 +1005,7 @@ Adding the submarket variables (Model 2) shows that all areas have a much lower 
 
 Finally, in Model 3 we add in host behavior or policies. Allowing a greater number of guests per bedroom results in a higher probability of short-term preference.  This variable may be operating as proxy for additional sleeping spaces which allow for a higher nightly rate, ceteris paribus, to be charged.  The greater the minimum stay, the lower the probability of short-term preference.  Longer minimum stays may equate to lower occupancy rates as one or two night travelers are exempted from the property.  Owners with longer minimum stays may be looking to minimize costs such as cleaning and administration.  Flexible cancellation policies result in a lower probability of short-term preference, while a Strict policy has a weak, but positive relationship with short-term preference.  Strict policies do help maintain revenues, but may also scare off some potential guests.  Strict cancellation may be a luxury for the best and highly desired properties on the market and, within our model, may be acting as a proxy for some unobserved measure of quality or demand while a flexible cancellation may be signalling the opposite.
 
-
-
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference'}
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short-Term Preference'}
 
  m1 <- as.data.frame(summary(pref.models[[1]])$coefficients)
  m2 <- as.data.frame(summary(pref.models[[2]])$coefficients)
@@ -1136,8 +1098,6 @@ Finally, in Model 3 we add in host behavior or policies. Allowing a greater numb
 
 ```
 
-
-
 ### Sensitivity Tests
 
 To test if the above results are influence by the assumptions we have made throughout this analysis, we perform two sets of sensitivity tests.  First, we examine how the results change if Potential revenue, not Actual revenue, of the short-term properties is used in the comparisons.  Second, we categorize the hosts, split the data and re-analyze the performance of properties based on hypothetical motivations and actions of the hosts. 
@@ -1148,7 +1108,7 @@ The above uses the Actual^[Extrapolated out in cases of Airbnb properties on the
 
 Using the potential revenue, 53.3% of all properties are short-term preferable.  Breaking that down by type and by geographic submarket (Table 5) shows similar findings, in terms of relative comparativeness, to the actual revenue analysis above.  Apartments have a higher short-term preference than do Houses and City-Core properties dominate the other geographic regions.  One notable difference here is that the Rural properties perform rather poorly under a potential revenue scenario, relatively speaking, suggesting that they may be operating near their peak in the current condition. 
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Potential Short Term Preference'}
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Potential Short-Term Preference'}
 
  # Make Basic comparison table
   tpref.table <- abbCreateCompTable(ic.df=str.data.ic,
@@ -1160,12 +1120,12 @@ Using the potential revenue, 53.3% of all properties are short-term preferable. 
 
   spref.table <- spref.table[spref.table$rev.type == 'Potential', ]
   st.table <- rbind(tpref.table, spref.table)
-  st.table[,2] <- st.table[,2]*100
-  names(st.table) <- c('Sub-Market', '% Short Term Preferable')
+  st.table[,2] <- paste0(sprintf('%.1f', st.table[,2]*100), '%') 
+  names(st.table) <- c('Sub-Market', 'Short-Term Preferable')
   options(xtable.comment = FALSE)
   print(xtable(st.table[,1:2], 
                caption='Potential Revenue Preferability\n',
-               digits=1),
+               digits=1, align='llr'),
                include.rownames=FALSE,
                caption.placement='top',
                hline.after=c(-1, 0, 2, 7, 7))
@@ -1200,7 +1160,8 @@ Examining the SVM heat maps for the entire metro region under the Actual revenue
                    add.points=T,
                    quantile=T,
                    fill.colors=c(abb.col[1], abb.col[5]))
-  pqtl.hm.svm <- pqtl.hm.svm + ylab('Nightly Rate (Qtl)')+
+  pqtl.hm.svm <- pqtl.hm.svm + ylab('Nightly Rate (Pcntl)')+
+    xlab('Occupancy Rate (Pcntl)') +
   annotate("text", x = 50, y = 50, label = "Potential", size=9)
   
   qtl.hm.svm.p <- qtl.hm.svm +
@@ -1208,7 +1169,7 @@ Examining the SVM heat maps for the entire metro region under the Actual revenue
   
 ```
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.height=3.5, fig.cap='\\label{pothm}Heatmaps of Potential Short Term Preference'}
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.height=3.5, fig.cap='\\label{pothm}Heatmaps of Short-Term Preference'}
 
   ggMultiPlots(qtl.hm.svm.p, pqtl.hm.svm, cols=2)
 
@@ -1216,7 +1177,7 @@ Examining the SVM heat maps for the entire metro region under the Actual revenue
  
 Our final test of the potential revenue case is to re-run the logistic regression models using short-term preference in the potential case as the dependent variable. Generally speaking, the results from the new series of models (Table 6) are qualitatively similar to those derived in the Actual revenue case (Table 4).  The overall magnitude of the coefficient for House (vs Apartments) is lowered in the Potential case, suggesting that houses may be blocked off more that Apartments.  The product types (bed/bath) show similar trends, though with larger discounts for the 2 Bed / 1 Bath and 2 Bed/2 Bath units.  Likewise the geographic submarkets and host policies show similar effects in terms of direction of impact with some slight deviations in magnitude. 
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Potential Short Term Preference'}
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Potential Short-Term Preference'}
 
  pm1 <- as.data.frame(summary(pref.models[[4]])$coefficients)
  pm2 <- as.data.frame(summary(pref.models[[5]])$coefficients)
@@ -1289,7 +1250,7 @@ Our final test of the potential revenue case is to re-run the logistic regressio
 
 ```
 
-Overall, the choice of revenue type, Actual or Potential, does affect some of the conclusions to be derived from the results above.  As expected, under the Potential case there are more properties (50\% vs 27\%) that exhibit short-term preference.  Under the scenario, the possibilities of increasing revenue by moving from long to short term leasing appear much better.  Again, however, we have not attempted to measure or estimate how this hypothetical flood of properties onto the market (due to the elimation of blocked days) would impact overall market dynamics.  Suffice it to say that it would like drive down occupancies and maybe price, therefore leading to a decrease in short-term preference likelihood.
+Overall, the choice of revenue type, Actual or Potential, does affect some of the conclusions to be derived from the results above.  As expected, under the Potential case there are more properties (50\% vs 27\%) that exhibit short-term preference.  Under the scenario, the possibilities of increasing revenue by moving from long- to short-term leasing appear much better.  Again, however, we have not attempted to measure or estimate how this hypothetical flood of properties onto the market (due to the elimation of blocked days) would impact overall market dynamics.  Suffice it to say that it would like drive down occupancies and maybe price, therefore leading to a decrease in short-term preference likelihood.
 
 In explaining the drivers of short-term preference, the logistic regression models do not change materially with the switch in dependent variable.  This suggests that the underlying drivers of short-term preference remain relatively constant regardless of the choice of revenue estimate. Only the base probability of short-term preference increases in the the potential revenue case  
 
@@ -1302,8 +1263,6 @@ As hinted at above in the Actual versus Potential comparison and as indicated in
 If these are the dominant two forms of hosts in the market, then a distribution of properties by the percent of time which they are blocked should be highly bi-modal with profit seekers on the left and opportunistic sharers on the right. The left hand panel of \autoref{hostblock} shows that this breakdown holds somewhat, with peaks of hosts at each end, but that there are also a considerable number of hosts who block their properties some (25\% to 75\%) of the time.  
 
 There is also a third potential host type, that of the host who utilizies multiple platforms to list their short-term property, of which Airbnb may just be one. A potential method to identify these hosts is to look at the number of individual periods of blocked days.  A host using multiple platforms will likely have many small periods of blocked days on Airbnb as they will block out those days in which reservations are made on other platforms. We test to see if this is a meaningful metric by plotting the total count of blocked periods versus the percentage of blocked days in the right panel of \autoref{hostblock}. We do find many hosts with a large number of blocked periods, but, unfortunately, no true pattern emerges.  
-
-
 
 ```{r build_blockfreq, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
 
@@ -1338,11 +1297,7 @@ ggMultiPlots(host.block.freq, block.rate.period, cols=2)
 
 ```
 
-
-
 Attempts to divide the hosts up with unsupervised^[As there are no official host types we could not run more reliable supervised models.] clustering algorithms -- including the use of more variables -- failed to produce robust categories of hosts. As a more subjective, but implementable, approach we have divided the hosts up into four categories based on the original two variables considered: block percentage and number of blocked periods. Profit seekers are those host who have blocked percentages less than 25\% of the time.  Opportunistic Sharers have blocked their properties at least 75\% of the time.  Within those two extremes, we consider users who have at least 12 blocked periods during a year to be 'Multi-Platform Users' and the remaining set to be 'Unknown'. Profit Seekers make up 43\% of the hosts, with Opportunistic Sharers capturing 18\% and Multi-Platform Users 10\%.  The remainder 'Unknown' category contains just over 28\% of all properties. See \autoref{hostcat} and \autoref{htc} for a breakdown of these group by the two variables. 
-
-
 
 ```{r calc_hosttypes, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE}
 
@@ -1411,14 +1366,12 @@ host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
   ylab('Frequency\n') + 
   xlab('\nHost Type') +
   scale_x_discrete(labels=c('Profit','Sharer','Multi','Unk'))+
-  #ggtitle('Short Term Host Types') + 
+  #ggtitle('short-term Host Types') + 
   theme(plot.title = element_text(hjust = 0.5))
 
 host.type.bar
 
 ```
-
-
 
 Looking at the differences in short-term preference under both revenue cases, we see large variation in short-term preference between host types in the Actual case and a much smaller variation in the Potential case, as expected. There is little change for the 'Profit Seekers' as most of these hosts are already operating with few blocked days.  For the other three sets, considerable gains could be had with a more aggresive leasing approach. As the potential figures are somewhat similar here, we will only examine the differences for host types in the Actual number going forward. 
 
@@ -1433,14 +1386,15 @@ Looking at the differences in short-term preference under both revenue cases, we
   phpref.table <- apref.table[apref.table$rev.type == 'Potential', ]
   hpref.table <- hpref.table[,1:2]
   hpref.table[,3] <- phpref.table[,2]
-  hpref.table[,2] <- hpref.table[,2]*100
-  hpref.table[,3] <- hpref.table[,3]*100
+  hpref.table[,2] <- paste0(sprintf('%.1f', hpref.table[,2]*100), '%')
+  hpref.table[,3] <- paste0(sprintf('%.1f', hpref.table[,3]*100), '%')
   
-  names(hpref.table) <- c('Host Type', '% STP - Actual', '% STP - Potential')
+  names(hpref.table) <- c('Host Type', 'STP (Actual)', 'STP (Potential)')
   options(xtable.comment = FALSE)
   print(xtable(hpref.table, 
                caption='Host Type Preferability\n',
-               digits=1),
+               digits=1,
+               align='llrr'),
                include.rownames=FALSE,
                caption.placement='top')
     
@@ -1448,7 +1402,7 @@ Looking at the differences in short-term preference under both revenue cases, we
 
 Table 8 compares logistic models results from three of the host types.  The Opportunistic Sharers show no instances of short-term preference and therefore could not be estimated.  The left hand column, that of the Profit-Seekers, is the most representative of a sample of property owners that are seeking to maximize revenue.  Overall, the coefficients from this sub-sample match up well to the results from the entire sample shown in Table 5.  In short, the conclusions are the same: small apartments in the central city with short minimal stays, inflexible cancelation policies and a high guest limit offer the highest probability of short-term preference.  The models for the multi-platform users (middle panel) and the Unknowns (right) are not as clear as the Profit-Seekers but do suggest overall similar dynamics.  
 
-```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='\\label{logpot}Logistic Model Results of Potential Short Term Preference'}
+```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='\\label{logpot}Logistic Model Results of Potential Short-Term Preference'}
 
  h1 <- as.data.frame(summary(host.models[[1]])$coefficients)
  h2 <- as.data.frame(summary(host.models[[3]])$coefficients)
@@ -1525,11 +1479,11 @@ Although it gathers considerable interest in both economic and public policy cir
 
 Comparing annual revenues from the two leasing strategies shows that revenues from more traditional long-term rentals are, on average, higher and much less variable than those from the Airbnb market (\autoref{revdens}).  However, there is a long right tail to the distibution of short-term revenues suggesting that some owners are doing better, and occasionally much better, in the short-term market than they would on the long-term market. This univariate comparison of revenues does not tell the entire story, as the Airbnb market does not have the same spatial distribution as the long-term market (Figure 8).  Short-term leasing is much more common in the central areas of the city, with small clusters showing up in suburban beach locations and rural tourist destinations like the Yarra Valley wine district.
 
-In analyzing the short-term observations with estimated long-term rents we found that approximately one in four Airbnb properties brought in more revenue with its short-term leasing strategy than it would have with a long-term approach. As expected, this probability is not equal across space, property type or property size (bed and bath count).  Apartments are much more likely than houses to be more profitable as a short-term rental.  Core city properties are more likely than other properties to prefer a short-term strategy, as are smaller properties versus larger ones. For instance, 36\% of apartments in the city core generated more revenue on Airbnb than they likely would have on the long term market while only 8\% of suburban houses did. Looking at potential revenues -- through eliminating the impact of blocked days -- increases the overall likelihood of short-term preference considerably. 
+In analyzing the short-term observations with estimated long-term rents we found that approximately one in four Airbnb properties brought in more revenue with its short-term leasing strategy than it would have with a long-term approach. As expected, this probability is not equal across space, property type or property size (bed and bath count).  Apartments are much more likely than houses to be more profitable as a short-term rental.  Core city properties are more likely than other properties to prefer a short-term strategy, as are smaller properties versus larger ones. For instance, 36\% of apartments in the city core generated more revenue on Airbnb than they likely would have on the long-term market while only 8\% of suburban houses did. Looking at potential revenues -- through eliminating the impact of blocked days -- increases the overall likelihood of short-term preference considerably. 
 
-The nightly rates and total occupancies drive the profitability of short-term leasing.  As the nightly rate vs. occupancy rate heat maps and SVM plots (\autoref{metrohmp}, \ref{smhm}, \ref{smhmps}, \ref{pothm}) show, even with very high nightly rates, owners would need to achieve an occupancy rate of at least the 75th percentile in market (around 40\%) in order to achieve a better than 50\% probability of being more profitable in a short-term strategy than a long term one. A 40\% occupancy rate means bookings at least three days out of every week all year long. In Melbourne summers this may be an easy feat as tourist numbers swell, but doing so on a cold week in July likely proves more difficult. The vertical-ness of the divide between short- and long-term preference in the SVM plots suggests that occupancy rate is the most critical factor in reaching short-term preference in most markets. 
+The nightly rates and total occupancies drive the profitability of short-term leasing.  As the nightly rate vs. occupancy rate heat maps and SVM plots (\autoref{metrohmp}, \ref{smhm}, \ref{smhmps}, \ref{pothm}) show, even with very high nightly rates, owners would need to achieve an occupancy rate of at least the 75th percentile in market (around 40\%) in order to achieve a better than 50\% probability of being more profitable in a short-term strategy than a long-term one. A 40\% occupancy rate means bookings at least three days out of every week all year long. In Melbourne summers this may be an easy feat as tourist numbers swell, but doing so on a cold week in July likely proves more difficult. The vertical-ness of the divide between short- and long-term preference in the SVM plots suggests that occupancy rate is the most critical factor in reaching short-term preference in most markets. 
 
-The logistic regression models (Table 4, 6 and 8) than we estimate show that most of the finding from the univariate and bivariate analyses done earlier are validated .  Small apartments in the central city are the best bet for generating greater revenues through short term leasing.  We also test for the impact of host behavior on the probability of short term preference.  We find that more flexibility around the number of guests and the minimum stay increase the probability of short-term preference, while the reverse is true of cancellation policies (more strict equals higher short term preference probability).  As a host, it appears to be best to do what you can to attract bookings and then make it difficult for those bookings to be cancelled.
+The logistic regression models (Table 4, 6 and 8) than we estimate show that most of the finding from the univariate and bivariate analyses done earlier are validated .  Small apartments in the central city are the best bet for generating greater revenues through short-term leasing.  We also test for the impact of host behavior on the probability of short-term preference.  We find that more flexibility around the number of guests and the minimum stay increase the probability of short-term preference, while the reverse is true of cancellation policies (more strict equals higher short-term preference probability).  As a host, it appears to be best to do what you can to attract bookings and then make it difficult for those bookings to be cancelled.
 
 Testing for the sensitivity of the initial results through consideration of potential revenue figures and by dividing the sample up by likely host motivation, we find the qualitative finding to be generally robust.  While the use of potential revenue does increase the base probability of short-term preference, the same factors -- small inner city apartments with low minimum stays, strict cancellation and liberal guest capacity -- explain a higher likelihood of short-term preference.  
 
@@ -1537,7 +1491,7 @@ In short, about 1/4 of current Airbnb properties are outperforming their potenti
 
 ### Limitations and Future Research
 
-There are a number of limitations to this research.  There are few shared property characterstics between the two datasets, which make cross-estimating rents and rates difficult, especially from the short-term market.  Part of the difficulty in estimating potential short-term rates for long-term properties is that the short term market appears to be heavily influenced by non-property specific factors such as the leasing policies (minimum stay, number of guests, etc.) themselves.  Future research should focus both on building better models to explain (and ultimately predict) short-term rates and occupancies as well as to understand the impact of policies such as strict cancellation or no pets on the short term market.  It is likely that this work is being done proprietarily by Airbnb.com itself and other complementary firms such as AirDNA.com, our data provider.
+There are a number of limitations to this research.  There are few shared property characterstics between the two datasets, which make cross-estimating rents and rates difficult, especially from the short-term market.  Part of the difficulty in estimating potential short-term rates for long-term properties is that the short-term market appears to be heavily influenced by non-property specific factors such as the leasing policies (minimum stay, number of guests, etc.) themselves.  Future research should focus both on building better models to explain (and ultimately predict) short-term rates and occupancies as well as to understand the impact of policies such as strict cancellation or no pets on the short-term market.  It is likely that this work is being done proprietarily by Airbnb.com itself and other complementary firms such as AirDNA.com, our data provider.
 
 Additionally, we have opted to make comparisons between short- and long-term strategies by imputing long-term rents for short-term properties with a hedonic price model. Alternatively, a matching procedure could be employed that would match like properties between the two markets and use comparisons between the two as evidence of potential short and long-term revenues.
 
@@ -1545,7 +1499,7 @@ In this work, we have made the assumption that, over the course of a year, the g
 
 Beyond airBNB.com other short-term platforms exist (e.g. www.homeaway.com). This project doesn't take into account that individual properties may be advertised and rented out through different platforms. These are additional revenue streams that are not take into account and might increase the occupancy and revenue for short-term rentals. We do suggest that, due to block patterns, a number of host do appear to be employing this approach but cannot confirm the extend to which this is actually happening. 
 
-Finally, our analysis looks at a single year, beginning in September (spring) and ending in August in which the property owner is given a binary option of either short or long term leasing strategy.  In reality, the possibilities may not be so rigid.  For example,given the fact that Melbourne's large university student population (many of whom are international) require housing during Autumn, Winter and Spring, while tourist swell in the summer months, an enterprising owner maybe able to pair long term leasing during the off-season with short-term leasing during peak times to maximize revenues.  In general, the rise of Airbnb and related portals give properties owners more options, and therefore more opportunities, to maximize returns on their property.  Future research should expand our scenario to look at more than just a single binary option over a fixed period.  We feel there may be significant opportunities for new ventures in industry to exploit the changing market for housing.
+Finally, our analysis looks at a single year, beginning in September (spring) and ending in August in which the property owner is given a binary option of either short- or long-term leasing strategy.  In reality, the possibilities may not be so rigid.  For example,given the fact that Melbourne's large university student population (many of whom are international) require housing during Autumn, Winter and Spring, while tourist swell in the summer months, an enterprising owner maybe able to pair long-term leasing during the off-season with short-term leasing during peak times to maximize revenues.  In general, the rise of Airbnb and related portals give properties owners more options, and therefore more opportunities, to maximize returns on their property.  Future research should expand our scenario to look at more than just a single binary option over a fixed period.  We feel there may be significant opportunities for new ventures in industry to exploit the changing market for housing.
 
 #### Data, Code and Interactivity
 
@@ -1572,7 +1526,7 @@ Unfortunately both data sources for this work are proprietarily licenses and are
 
 
 
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx'} -->
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx'} -->
 
 <!--   host.data.ic <- str.data.ic -->
 
@@ -1605,7 +1559,7 @@ Unfortunately both data sources for this work are proprietarily licenses and are
 
 <!-- For the profit-seekers,  -->
 
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx55'} -->
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx55'} -->
 
 <!--   ps.raw.hm.svm <- abbHeatMap(host.data.ic[ps, ], -->
 <!--                    x.field='occ.rate', -->
@@ -1631,14 +1585,14 @@ Unfortunately both data sources for this work are proprietarily licenses and are
 
 <!-- ``` -->
 
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx44'} -->
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx44'} -->
 
 <!-- ggMultiPlots(ps.raw.hm.svm, ps.qtl.hm.svm, cols=2) -->
 
 <!-- ``` -->
 
 
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx33'} -->
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx33'} -->
 
 <!--   os.raw.hm.svm <- abbHeatMap(host.data.ic[os, ], -->
 <!--                    x.field='occ.rate', -->
@@ -1664,13 +1618,13 @@ Unfortunately both data sources for this work are proprietarily licenses and are
 
 <!-- ``` -->
 
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx22'} -->
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx22'} -->
 
 <!-- ggMultiPlots(os.raw.hm.svm, os.qtl.hm.svm, cols=2) -->
 
 <!-- ``` -->
 
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx11'} -->
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx11'} -->
 
 <!--   mu.raw.hm.svm <- abbHeatMap(host.data.ic[mu, ], -->
 <!--                    x.field='occ.rate', -->
@@ -1696,13 +1650,13 @@ Unfortunately both data sources for this work are proprietarily licenses and are
 
 <!-- ``` -->
 
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx1'} -->
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx1'} -->
 
 <!-- ggMultiPlots(mu.raw.hm.svm, mu.qtl.hm.svm, cols=2) -->
 
 <!-- ``` -->
 
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx2'} -->
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx2'} -->
 
 <!--   un.raw.hm.svm <- abbHeatMap(host.data.ic[un, ], -->
 <!--                    x.field='occ.rate', -->
@@ -1728,7 +1682,7 @@ Unfortunately both data sources for this work are proprietarily licenses and are
 
 <!-- ``` -->
 
-<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of Short Term Preference', fig.lp='xxx23'} -->
+<!-- ```{r, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Logistic Model Results of short-term Preference', fig.lp='xxx23'} -->
 
 <!-- ggMultiPlots(un.raw.hm.svm, un.qtl.hm.svm, cols=2) -->
 
