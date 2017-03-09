@@ -165,11 +165,9 @@ Before we start, we estimate two figures necessary to determine utility costs: 1
 
 #### Compare Revenue Distributions
 
-## Global Market Analysis
+Before we examine the distributions of the observed short-term revenues and the estimated long-term revenues, we must produce the estimates of long-term revenue for the short-term properties. 
 
-We now analyze the full metro market to test which properties are more profitable as short-term rentals.  
-
-We start by specifying the imputation models for the LTR and the Airbnb datasets
+We start by specifying the imputation model specification we will use to estimated likely long-term (weekly) rental prices for each short-term property. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
@@ -179,64 +177,62 @@ We start by specifying the imputation models for the LTR and the Airbnb datasets
 
 ```
 
+We then employ a custom function to impute the long term rents for the short-term properties.  The 'clip.field' is a spatial fixed effects that add spatial recognition to the models.  
 
-<!-- We then employ a custom function to cross impute rates and rents for the two datasets.  The 'clip.field' is a spatial fixed effects that add spatial recognition to the models.  -->
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+  imp.data <- imputeLtrRents(ltr.df=ltr.data,
+                               str.df=str.data,
+                               mod.spec=ltr.mod.spec,
+                               match.factor='suburb')
 
-<!--   imp.data <- imputeLtrRents(ltr.df=ltr.data,  -->
-<!--                                str.df=str.data,  -->
-<!--                                mod.spec=ltr.mod.spec, -->
-<!--                                match.factor='suburb') -->
+```
 
-<!-- ``` -->
+From the imputed results, we extract the imputed rental values and merge to the original short-term data. 
 
-<!-- From the imputed results, we extract the base data (with imputed values) as well as the model summaries.  -->
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+  # Extract out DFs (only those that imputed)
+  str.metro <- merge(str.data, imp.data$imp.rent, by='property.id')
 
-<!--   # Extract out DFs (only those that imputed) -->
-<!--   str.glob <- merge(str.data, imp.data$imp.rent, by='property.id') -->
+```
 
-<!-- ``` -->
+Next we impute the likely long-term search cost (days on market) for the short-term properties.
 
-<!-- Next we cross impute days on market and occupancy rates. -->
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
-
-<!--   # Apply dom to abb -->
-<!--   str.glob$imp.dom <- imputeDOM(str.glob, ltr.data, calc.type='median') -->
+  # Apply dom to abb
+  str.metro$imp.dom <- imputeDOM(str.metro, ltr.data, calc.type='median')
 
 
-<!-- ``` -->
+```
 
-<!-- With the cross-imputed DOMs and occupancy rates we now make the cross-tenure imputations of revenues and add them back to the original datasets.  -->
+With the imputed DOMs and weekly rental rates we now make the an estimate of likely annual revenue if leased on the long term market. We append this to the original dataset.
 
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-<!--   str.glob$ltr.imp.revenue <- str.glob$imp.rent * (52 - str.glob$imp.dom / 7) -->
+  str.metro$ltr.imp.revenue <- str.metro$imp.rent * (52 - str.metro$imp.dom / 7)
 
-<!-- ``` -->
+```
 
-<!-- Next, we compare the revenues from the two and extract the new datasets. -->
+Finally we make a comparison of the observed short term revenues and the imputed long term revenue and add these field back onto the original data. 
 
-<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-<!--   comp.revs <- compareRevenues(str.glob) -->
+  comp.revs <- compareRevenues(str.metro)
 
-<!--   str.glob <- merge(str.glob, comp.revs, by='property.id') -->
+  str.metro <- merge(str.metro, comp.revs, by='property.id')
 
-<!-- ``` -->
+```
 
-Realizing that the imputed long term rental values may be more accurate when estimated at smaller scales, we functionalize the above processes and then apply it to short term rentals, broken into submarkets by type, bed/bath and geographic area.  In other words, we separately estimate LTR rents for Apartments with 1bed/1bath in the city core, Apartments with 1bed/1bath in the beach submarket, etc. for all compbinations of type, bed/bath and geographic area. We then combine the results form all estimates back into a single data.frame that contains all of the short-term rentals. 
-
+The above process of long-term revenue estimation treated the entire market as operating similarly. Realizing that the imputed long term rental values and search times may be more accurate when estimated at smaller scales, we functionalize the above processes and then apply it to short-term rentals, broken into submarkets by type, bed/bath and geographic area.  In other words, we separately estimate LTR rents for Apartments with 1bed/1bath in the city core, Apartments with 1bed/1bath in the beach submarket, etc. for all compbinations of type, bed/bath and geographic area. We then combine the results form all estimates back into a single data.frame that contains all of the short-term rentals. We use these finer scale estimates going forward (the data in the **str.data.ic** object).
 
 ```{r build.tbg.data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
  # Create the type, bed/bath and geo sub market variable
 
- str.data$tbg <- paste0(str.data$product,'.', str.data$sub.mrkt)
- ltr.data$tbg <- paste0(ltr.data$product,'.', ltr.data$sub.mrkt)
+ str.data$tbg <- paste0(str.data$product,'.', str.data$geo.mrkt)
+ ltr.data$tbg <- paste0(ltr.data$product,'.', ltr.data$geo.mrkt)
 
  # Make IC estimates at TBG level
 
@@ -254,65 +250,66 @@ Having calculated the revenues, both short-term and long-term imputed, we now co
 
 ```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
 
-  buildRevDensPlot(str.data.ic,
-                   rev.cols=c(ltr.col, abb.col[2], str.col))
+  # Actual
+   stra.rev <- str.data.ic[,c('property.id', 'str.act.revenue')]
+   stra.rev$tenure <- 'Short-Term (Actual)   '
+   names(stra.rev)[2] <- 'revenue'
   
+  # Potential
+   strp.rev <- str.data.ic[,c('property.id', 'str.pot.revenue')]
+   strp.rev$tenure <- 'Short-Term (Potential)   '
+   names(strp.rev)[2] <- 'revenue'
+  
+  # Long-Term
+   ltr.rev <- str.data.ic[,c('property.id', 'ltr.imp.revenue')]
+   ltr.rev$tenure <- 'Long-Term   '
+   names(ltr.rev)[2] <- 'revenue'
+  
+  # Combine
+   revdens.data <- rbind(stra.rev, strp.rev, ltr.rev)
+  
+  ## Build a plot
+  
+   rd.plot <- ggplot(revdens.data, 
+                     aes(x=revenue, fill=tenure, color=tenure)) +
+     geom_density(alpha=.5) +
+     scale_fill_manual(values=c(ltr.col, abb.col[2], str.col)) +
+     scale_color_manual(values=c(ltr.col, abb.col[2], str.col)) +
+     xlab('\nAnnual Revenue') +
+     scale_x_continuous(breaks=c(seq(0, 75000, by=25000)),
+                        labels=c('$0', '$25k', '$50k', '$75k'))+
+     theme(legend.position='none',
+           legend.title = element_blank(),
+           plot.title = element_text(hjust = 0.5),
+           axis.text.y = element_blank(),
+           axis.ticks.y = element_blank(),
+           axis.title.y=element_blank()) +
+     coord_cartesian(xlim=c(0, 85000))
+     rd.plot <- rd.plot + facet_wrap(~tenure)
+  
+  ## Plot
+    
+     rd.plot
   
 ```
 
+## Results
 
+We will begin by analyzing the above estimates at the entire metro scale. Analyses of various submarkets will follow. Overall, we see that 31.1\% of properties raised more revenue via short term rental than expected in the long term market.  
 
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
-
-
-
-
-
-
-
-## Analyze Results
-
-First we make a comparison table of the results, broken down by submarket.  
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- # Make Basic comparison table
-  pref.table <- abbCreateCompTable(ic.df=str.data.ic,
-                                   split.field='sub.mrkt')
-
- # Convert to wide format for output
-  pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var')
-
- # Limit to the extrapolated pref type
-  pref.table <- pref.table[pref.table$rev.type == 'Extrapolated', ]
-    
-```
-
-We then turn this into a simple chart to see the differences
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-    
-  sm.col <- abb.col[c(1, 3, 6, 5, 2)]
-
-  ggplot(pref.table, aes(x=ID, weights=Var, fill=ID)) + 
-    geom_bar() +
-    facet_grid(~rev.type) +
-    scale_fill_manual(values=sm.col) +
-    xlab('') +
-    ylab('% of properties where Airbnb is more profitable') +
-    scale_y_continuous(breaks=c(0,.25,.5,.75,1),
-                       labels=c('0%', '25%', '50%', '75%', '100%')) +
-    theme(legend.position='none')
+  table(str.data.ic$str.act.pref) / nrow(str.data.ic)
 
 ```
 
-Next, we plot the \% of properties that have short-term preference versus the occupancy rate
+Next, we plot the \% of properties that have short-term preference versus the occupancy rate as occupancy rate is an important determinant of short-term preference. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
 
  ## Set Preference data field
 
-  str.data.ic$pref <- str.data.ic$str.ext.pref
+  str.data.ic$pref <- str.data.ic$str.act.pref
 
  ## Calculate the percentile fields
 
@@ -332,22 +329,58 @@ Next, we plot the \% of properties that have short-term preference versus the oc
                         x.field='occ.qtl',
                         smooth=TRUE,
                         smooth.span=.5)
+  
+   ## Make plots  
+  
+  # Raw
+  raw.occ.metro <- ggplot(rawocc.metro$data,
+                   aes(x=x.var, y=Var))+
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='none') + 
+    ggtitle('Raw Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  # Quantile
+  qtl.occ.metro <- ggplot(qtlocc.metro$data,
+                   aes(x=x.var, y=Var))+
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate (Pcntl)') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25th', '50th', '75th', '100th')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='none') + 
+    ggtitle('Percentile Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  # Make Plot
+  ggMultiPlots(raw.occ.metro, qtl.occ.metro, cols=2)
+
 
 ```
 
-Next we build a heat map that shows which combinations of occ rate and nightly rate are most likely to result in short-term preference.
+Next we build a heat map that shows which combinations of occupancy rate and nightly rate are most likely to result in short-term preference.
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
   rate.hm <- abbHeatMap(str.data.ic,
                 x.field='occ.rate',
                 y.field='med.rate',
-                pref.field='str.ext.pref',
+                pref.field='str.act.pref',
                 svm=F, 
                 alpha.count=T,
                 add.points=T,
                 fill.colors=c(abb.col[1], abb.col[5]))
-  rate.hm
+  rate.hm + ylab('Nightly Rate')
   
 ```
 
@@ -358,27 +391,29 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
   rate.hm.svm <- abbHeatMap(str.data.ic,
                             x.field='occ.rate',
                             y.field='med.rate',
-                            pref.field='str.ext.pref',
+                            pref.field='str.act.pref',
                             svm=T, 
                             alpha.count=F,
                             add.points=T,
                             fill.colors=c(abb.col[1], abb.col[5]))
-  rate.hm.svm
+  rate.hm.svm+ ylab('Nightly Rate')
 
   
 ```
+
+As the distributions of occupancy rate and nightly rate are not uniform, we standardize these values to a percentile and then replot to give a better sense of the relative level of occupancy rate and nightly rate required for short-term preference.
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
   qtl.hm <- abbHeatMap(str.data.ic,
                 x.field='occ.qtl',
                 y.field='rate.qtl',
-                pref.field='str.ext.pref',
+                pref.field='str.act.pref',
                 svm=F, 
                 alpha.count=T,
                 add.points=T,
                 fill.colors=c(abb.col[1], abb.col[5]))
-  qtl.hm
+  qtl.hm+ ylab('Nightly  (Pcntl)')
 
 ```
 
@@ -387,44 +422,420 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
   qtl.hm.svm <- abbHeatMap(str.data.ic,
                    x.field='occ.qtl',
                    y.field='rate.qtl',
-                   pref.field='str.ext.pref',
+                   pref.field='str.act.pref',
                    svm=T, 
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
                    fill.colors=c(abb.col[1], abb.col[5]))
-  qtl.hm.svm
+  qtl.hm.svm+ ylab('Nightly  (Pcntl)')
 
 ```
 
+### Submarkets
+
+Now we move on to looking more deeply at various submarkets.  We start by analyzing the differences between houses and apartments. 
+
+First we make a comparison table of the results.  
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  svm.rate <- makeSVM(str.data.ic,
-                     x.field='occ.rate',
-                     y.field='nightly.rate',
-                     z.field='str.act.pref',
-                     svm.type='C-svc',
-                     svm.kernel='polydot',
-                     poly.degree=4,
-                     expand.factor=100)
-  
-  svm.qtl <- makeSVM(str.data.ic,
-                      x.field='occ.qtl',
-                      y.field='rate.qtl',
-                      z.field='str.act.pref',
-                      svm.type='C-svc',
-                      svm.kernel='polydot',
-                      poly.degree=4,
-                      expand.factor=100)
-  
-  market.ratio <- data.frame(type=c('rate', 'qtl'),
-                             actual=rep(mean(str.data.ic$str.act.pref), 2),
-                             fitted=c(mean(svm.rate$orig$fitted),
-                                      mean(svm.qtl$orig$fitted)),
-                             svm=c(mean(svm.rate$pred$pred),
-                                   mean(svm.qtl$pred$pred)))
+ # Make Basic comparison table
+  pref.table.type <- abbCreateCompTable(ic.df=str.data.ic,
+                                   split.field='type')
+
+ # Limit to the extrapolated pref type
+  pref.table.type <- pref.table.type[pref.table.type$rev.type == 'Actual', ]
+    
 ```
+
+We then turn this into a simple chart to see the differences.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ggplot(pref.table.type, aes(x=ID, weights=Var, fill=ID)) + 
+    geom_bar() +
+    scale_fill_manual(values=c('red', 'blue')) +
+    xlab('') +
+    ylab('% of properties where Airbnb is more profitable') +
+    scale_y_continuous(breaks=c(0,.25,.5,.75,1),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='none')
+
+```
+
+We then look at the relationship between occ rate and preference.  Before we start though we recalculate the percentiles within each submarket. 
+
+```{r build_occ_type1, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+
+ ## Create dataset
+
+  type.data.ic <- str.data.ic
+
+  # Id the types
+  apt.id <- which(str.data.ic$type == 'Apartment')
+  house.id <- which(str.data.ic$type == 'House')
+
+  # Recalculate the percentiles
+  type.data.ic$occ.qtl[apt.id] <- makeWtdQtl(type.data.ic$occ.rate[apt.id],
+                                      return.type='rank')
+  type.data.ic$occ.qtl[house.id] <- makeWtdQtl(
+    type.data.ic$occ.rate[house.id], return.type='rank')
+  
+  type.data.ic$rate.qtl[apt.id] <- makeWtdQtl(type.data.ic$med.rate[apt.id],
+                                  return.type='rank')
+  type.data.ic$rate.qtl[house.id] <- makeWtdQtl(
+    type.data.ic$med.rate[house.id], return.type='rank')
+
+``` 
+
+Then we calculate the preference figures
+
+```{r build_occ_type, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+
+ ## Calc the occ rate numbers
+  
+  rawocc.type <- abbPrefPlot(type.data.ic,
+                         x.field='occ.rate',
+                         split.field='type',
+                         smooth=TRUE,
+                         smooth.span=.5 ,
+                         spl.col=c('black', 'grey40'))
+  
+  pctocc.type <- abbPrefPlot(type.data.ic,
+                         x.field='occ.qtl',
+                         split.field='type',
+                         smooth=TRUE,
+                         smooth.span=.5 ,
+                         spl.col=c('black', 'grey40'))
+  
+```
+
+And then plot. 
+
+```{r plot_occ_type, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{smocc}Preference vs Occ. Rates: By Type'}
+  
+ ## Build raw plot
+  
+  ptr.occ <- ggplot(rawocc.type$data,
+                    aes(x=x.var, y=Var, group=ID, color=ID)) +  
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate') +
+    scale_color_manual(values=c('black', 'grey60'),
+                       name='') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom') + 
+    ggtitle('Raw Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+  
+ ## Build Percentile Plots
+
+  ptq.occ <- ggplot(pctocc.type$data,
+                    aes(x=x.var, y=Var, group=ID, color=ID)) +  
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate (Pcntl)') +
+    scale_color_manual(values=c('black', 'grey60'),
+                       name='') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25th', '50th', '75th', '100th')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom') + 
+    ggtitle('Percentile Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+
+ ## Plot  
+     
+  ggMultiPlots(ptr.occ, ptq.occ, cols=2)
+
+```
+
+Finally, we make percentile SVM heatmaps for both apartments and houses. 
+
+```{r plot_svm_type, fig.width=8, fig.height=3.5, echo=FALSE, fig.cap='\\label{smhm}Analysis of Percentile Rates: By Type'}
+
+ ## Make House SVM Heatmap
+ 
+  house.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type ==
+                                          'House', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.act.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5])) +
+  theme(legend.position='none') +
+  annotate("text", x = 50, y = 50, label = "Houses", size=9) +
+  ylab('Nightly Rate (Pcntl)') +
+  xlab('Occupancy Rate (Pcntl)')
+
+ ## Make Apartment SVM Heat Map
+
+  apt.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type ==
+                                          'Apartment', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.act.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+  annotate("text", x = 50, y = 50, label = "Apartments", size=9)+
+  ylab('Nightly Rate (Pcntl)') +
+  xlab('Occupancy Rate (Pcntl)')
+
+ ## Plot
+  
+  ggMultiPlots(house.hm.svm, apt.hm.svm, cols=2)
+
+```
+
+#### Geographic Submarkets
+
+We now repeat the three analyses -- table, occupancy plot, heat map -- for the five geographic submarkets.
+
+```{r table_geo, message=FALSE, warning=FALSE, results='asis', comment=FALSE, cache=TRUE, echo=FALSE, fig.cap='Geographic Submarket Preferability'}
+
+ # Make Basic comparison table
+  pref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                   split.field='geo.mrkt')
+
+ # Convert to wide format for output
+  pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var')
+
+ # Limit to the extrapolated pref type
+  pref.table <- pref.table[pref.table$rev.type == 'Actual', ]
+  pref.table[ ,1] <- c('City-Core', 'City', 'Suburban', 'Rural', 'Beach')
+  pref.table[ ,2] <- paste0(sprintf('%.1f', pref.table[ ,2] * 100), '%')
+
+ # Fix names  
+  names(pref.table) <- c('Sub-Market', 'Short-Term Preferable')
+  options(xtable.comment = FALSE)
+  
+ ## Make printable table
+  
+  print(xtable(pref.table[,1:2], 
+               caption='Geographic Submarket Preferability\n',
+               digits=1,
+               align='llr'),
+        include.rownames=FALSE,
+        caption.placement='top')
+
+```
+
+ 
+```{r build_occ_geo, fig.width=8, fig.height=4, echo=FALSE} 
+
+ ## Build data
+
+  subm.data.ic <- str.data.ic
+
+  # Get IDs
+  cc.id <- which(str.data.ic$geo.mrkt == 'city-core')
+  city.id <- which(str.data.ic$geo.mrkt == 'city')
+  sub.id <- which(str.data.ic$geo.mrkt == 'suburban')
+  rural.id <- which(str.data.ic$geo.mrkt == 'rural')
+  beach.id <- which(str.data.ic$geo.mrkt == 'beach')
+  
+  # Recalc the percentiles
+  subm.data.ic$occ.qtl[cc.id] <- makeWtdQtl(subm.data.ic$occ.rate[cc.id],
+                                      return.type='rank')
+  subm.data.ic$rate.qtl[cc.id] <- makeWtdQtl(subm.data.ic$med.rate[cc.id],
+                                  return.type='rank')
+  
+  subm.data.ic$occ.qtl[city.id] <- makeWtdQtl(
+      subm.data.ic$occ.rate[city.id], return.type='rank')
+  subm.data.ic$rate.qtl[city.id] <- makeWtdQtl(
+    subm.data.ic$med.rate[city.id], return.type='rank')
+  
+  subm.data.ic$occ.qtl[sub.id] <- makeWtdQtl(subm.data.ic$occ.rate[sub.id],
+                                      return.type='rank')
+  subm.data.ic$rate.qtl[sub.id] <- makeWtdQtl(subm.data.ic$med.rate[sub.id],
+                                  return.type='rank')
+  
+  subm.data.ic$occ.qtl[rural.id] <- makeWtdQtl(subm.data.ic$occ.rate[rural.id],
+                                      return.type='rank')
+  subm.data.ic$rate.qtl[rural.id] <- makeWtdQtl(subm.data.ic$med.rate[rural.id],
+                                  return.type='rank')
+  
+  subm.data.ic$occ.qtl[beach.id] <- makeWtdQtl(subm.data.ic$occ.rate[beach.id],
+                                      return.type='rank')
+  subm.data.ic$rate.qtl[beach.id] <- makeWtdQtl(subm.data.ic$med.rate[beach.id],
+                                  return.type='rank')
+  
+```
+
+```{r plot_occ_geo, fig.width=9, fig.height=4, message=FALSE, warning=FALSE, echo=FALSE, fig.cap='\\label{smocc}Analysis of Percentile Rates: Geographic Submarkets'} 
+
+ ## Set colors
+
+  sm.col <- abb.col[c(1, 3, 6, 5, 2)] 
+  
+ ## Create plot data
+  
+  rawocc.geo <- abbPrefPlot(subm.data.ic,
+                        x.field='occ.rate',
+                        split.field='geo.mrkt',
+                        smooth=TRUE,
+                        smooth.span=.5 ,
+                        spl.col=sm.col)
+  
+  pctocc.geo <- abbPrefPlot(subm.data.ic,
+                         x.field='occ.qtl',
+                         split.field='geo.mrkt',
+                         smooth=TRUE,
+                         smooth.span=.5 ,
+                         spl.col=sm.col)
+  
+ ## Make plot objects  
+  
+  smr.occ <- ggplot(rawocc.geo$data,
+                    aes(x=x.var, y=Var, group=ID, color=ID)) +  
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate') +
+    scale_color_manual(values=sm.col,
+                       name='') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom') + 
+    ggtitle('Raw Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+
+  smq.occ <- ggplot(pctocc.geo$data,
+                    aes(x=x.var, y=Var, group=ID, color=ID)) +  
+    geom_point(alpha=.5, size=.4) +
+    stat_smooth(se=FALSE, size=2, span=.5) +
+    xlab('\nOccupancy Rate (Pcntl)') +
+    scale_color_manual(values=sm.col,
+                       name='') +
+    scale_x_continuous(breaks=seq(0, 100, by=25),
+                       labels=c('0%', '25th', '50th', '75th', '100th')) +
+    ylab('\nSTR Preferability %') +
+    scale_y_continuous(breaks=seq(0, 1, by=.25),
+                       labels=c('0%', '25%', '50%', '75%', '100%')) +
+    theme(legend.position='bottom') + 
+    ggtitle('Percentile Rates') + 
+    theme(plot.title = element_text(hjust = 0.5))
+   
+ ## Plot  
+  
+  ggMultiPlots(smr.occ, smq.occ, cols=2)
+
+```
+
+
+```{r build_svm_geo, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Percentile Rates: Metro Level'}
+
+  # Build the SVM Heatmaps
+
+  core.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt ==
+                                          'city-core', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.act.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5])) +
+  theme(legend.position='none') +
+    ylab('') +
+    xlab('') +
+  annotate("text", x = 50, y = 50, label = "City-Core", size=9)
+
+
+  city.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt ==
+                                          'city', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.act.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+    ylab('') +
+    xlab('')+
+  annotate("text", x = 50, y = 50, label = "City", size=9)
+
+
+  sub.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt ==
+                                          'suburban', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.act.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+    ylab('') +
+    xlab('')+
+  annotate("text", x = 50, y = 50, label = "Suburban", size=9)
+
+
+  rural.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt ==
+                                          'rural', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.act.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+    ylab('') +
+    xlab('')+
+  annotate("text", x = 50, y = 50, label = "Rural", size=9)
+
+
+  beach.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt ==
+                                          'beach', ],
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.act.pref',
+                   svm=T,
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))+
+  theme(legend.position='none')+
+    ylab('') +
+    xlab('')+
+  annotate("text", x = 50, y = 50, label = "Beach", size=9)
+
+```
+
+```{r plot_svm_geo, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='\\label{smhmps}Geographic Submarket Heatmaps'}
+
+  ggMultiPlots(core.hm.svm, city.hm.svm, sub.hm.svm,
+               rural.hm.svm, beach.hm.svm, cols=2)
+
+```
+
+## Logit models
+
+Now we attempt to explain the drivers of preference with a set of logistic regression models.  
+
+First, a basic model with just structural characteristics.
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
@@ -432,7 +843,7 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
                                 levels=c('1..1', '2..1', '2..2',
                                          '3..1', '3..2', '4..2'))
 
-  mod.ext.str <- glm(str.ext.pref~type+as.factor(bedbath),
+  mod.act.str <- glm(str.act.pref~type+as.factor(bedbath),
                      family=binomial(link='logit'),
                      data=str.data.ic)
   mod.pot.str <- glm(str.pot.pref~type+as.factor(bedbath),
@@ -440,87 +851,184 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
                      data=str.data.ic)
 ```
 
+Then a model that adds in the geographic submarkets
+
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  mod.ext.loc <- glm(str.ext.pref~type+as.factor(bedbath)+
-                                  sub.mrkt,
+  mod.act.loc <- glm(str.act.pref~type+as.factor(bedbath)+
+                                  geo.mrkt,
                      family=binomial(link='logit'),
                      data=str.data.ic)
   mod.pot.loc <- glm(str.pot.pref~type+as.factor(bedbath)+
-                                  sub.mrkt,
+                                  geo.mrkt,
                      family=binomial(link='logit'),
                      data=str.data.ic)
 ```
 
+Finally a model that adds in host policies. 
+
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  mod.ext.host <- glm(str.ext.pref~type+as.factor(bedbath)+
-                        sub.mrkt+
+  mod.act.host <- glm(str.act.pref~type+as.factor(bedbath)+
+                        geo.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       family=binomial(link='logit'),
                       data=str.data.ic)
   mod.pot.host <- glm(str.pot.pref~type+as.factor(bedbath)+
-                        sub.mrkt+
+                        geo.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       family=binomial(link='logit'),
                       data=str.data.ic)
-  
-  pref.models <- list(mod.ext.str, mod.ext.loc, mod.ext.host, 
+```
+
+We combine all model results in to a list for easy export. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  pref.models <- list(mod.act.str, mod.act.loc, mod.act.host, 
                       mod.pot.str, mod.pot.loc, mod.pot.host)
-  names(pref.models) <- c('ext.str', 'ext.loc', 'ext.host',
+  names(pref.models) <- c('act.str', 'act.loc', 'act.host',
                           'pot.str', 'pot.loc', 'pot.host')
 
 ```
 
+We then also run a set of regression models where the premium (or discount) for short-term leasing is the dependent variable.  We use the same three model specifications as above. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  mod.ext.str.prem <- lm(str.ext.prem~type+as.factor(bedbath),
+  mod.act.str.prem <- lm(str.act.prem~type+as.factor(bedbath),
                     data=str.data.ic)
   mod.pot.str.prem <- lm(str.pot.prem~type+as.factor(bedbath),
                     data=str.data.ic)
   
-  mod.ext.loc.prem <- glm(str.ext.pref~type+as.factor(bedbath)+
-                                  sub.mrkt,
+  mod.act.loc.prem <- glm(str.act.pref~type+as.factor(bedbath)+
+                                  geo.mrkt,
                      family=binomial(link='logit'),
                      data=str.data.ic)
   mod.pot.loc.prem <- glm(str.pot.pref~type+as.factor(bedbath)+
-                                  sub.mrkt,
+                                  geo.mrkt,
                      family=binomial(link='logit'),
                      data=str.data.ic)
-  
-```
 
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  mod.ext.host.prem <- lm(str.ext.prem~type+as.factor(bedbath)+
-                        sub.mrkt+
+  mod.act.host.prem <- lm(str.act.prem~type+as.factor(bedbath)+
+                        geo.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       data=str.data.ic)
   mod.pot.host.prem <- lm(str.pot.prem~type+as.factor(bedbath)+
-                        sub.mrkt+
+                        geo.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       data=str.data.ic)
+```
   
-    prem.models <- list(mod.ext.str.prem, mod.ext.loc.prem, mod.ext.host.prem, 
+We then package these into a list for easy export  
+  
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+    
+    prem.models <- list(mod.act.str.prem, mod.act.loc.prem, mod.act.host.prem, 
                       mod.pot.str.prem, mod.pot.loc.prem, mod.pot.host.prem)
-    names(prem.models) <- c('ext.str', 'ext.loc', 'ext.host',
+    names(prem.models) <- c('act.str', 'act.loc', 'act.host',
                           'pot.str', 'pot.loc', 'pot.host')
 
 ```
 
-### Sensitivity
+## Sensitivity
 
+### Potential Revenue
 
+To test for the sensitivity of the result to the revenue type, we re-do some of the intial data vizs.  First we build a new preference table looking at the submarkets of type and geography. 
 
+```{r pot_table, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Potential Short-Term Preference'}
+
+ # Make Basic comparison table of type
+  tpref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                    split.field='type')
+ # Extract Potential Results
+  tpref.table <- tpref.table[tpref.table$rev.type == 'Potential', ]
+  
+ # Make baseic comparison table of submarkets  
+  spref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                    split.field='geo.mrkt')
+
+ # Extract potential results  
+  spref.table <- spref.table[spref.table$rev.type == 'Potential', ]
+  
+ # Combine and round  
+  st.table <- rbind(tpref.table, spref.table)
+  st.table[,2] <- paste0(sprintf('%.1f', st.table[,2]*100), '%') 
+  
+ ## Fix names and print  
+  
+  names(st.table) <- c('Sub-Market', 'Short-Term Preferable')
+  options(xtable.comment = FALSE)
+  print(xtable(st.table[,1:2], 
+               caption='Potential Revenue Preferability\n',
+               digits=1, align='llr'),
+               include.rownames=FALSE,
+               caption.placement='top',
+               hline.after=c(-1, 0, 2, 7, 7))
+
+```
+
+Next we recrate the SVM percentile heat maps. 
+  
+```{r pot_svm, results='asis', echo=FALSE, message=FALSE, comment=FALSE}
+
+ ## create data and re-estimate the percentiles
+
+  pot.data.ic <- str.data.ic
+
+  pot.data.ic$occ.qtl <- makeWtdQtl(pot.data.ic$pot.occ.rate, return.type='rank')
+  
+ ## Make the pecentile heatmap  
+  
+  pqtl.hm <- abbHeatMap(pot.data.ic,
+                x.field='occ.qtl',
+                y.field='rate.qtl',
+                pref.field='str.pot.pref',
+                svm=F, 
+                alpha.count=T,
+                add.points=T,
+                fill.colors=c(abb.col[1], abb.col[5]))
+  pqtl.hm <- pqtl.hm + ylab('Nightly Rate (Qtl)')
+  
+ ## Make percentile SVM heatmap  
+  
+  pqtl.hm.svm <- abbHeatMap(pot.data.ic,
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.pot.pref',
+                   svm=T, 
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  pqtl.hm.svm <- pqtl.hm.svm + ylab('Nightly Rate (Pcntl)')+
+    xlab('Occupancy Rate (Pcntl)') +
+  annotate("text", x = 50, y = 50, label = "Potential", size=9)
+  
+ ## Add annotations to previous SVM  
+  
+  qtl.hm.svm.p <- qtl.hm.svm +
+  annotate("text", x = 50, y = 50, label = "Actual", size=9)
+  
+```
+
+```{r plot_pot_svm, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.height=3.5, fig.cap='\\label{pothm}Heatmaps of Short-Term Preference'}
+
+  ggMultiPlots(qtl.hm.svm.p, pqtl.hm.svm, cols=2)
+
+``` 
+ 
 ### Host types
 
+Finally, we test to see if grouping by hosts types has any impact.  
 
+First we must divide hosts up.  We start by looking at block rate.  
+    
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   host.block.freq <- ggplot(str.data, aes(x=block.rate)) + 
@@ -547,6 +1055,7 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 
 ```
 
+We then add the number of blocked periods
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
@@ -574,21 +1083,21 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 
 ```
 
-
+No real pattern emerges, so we divide manually. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-str.data$blockpertime <- round(str.data$nbr.block * str.data$extr.par, 1)
+str.data.ic$blockpertime <- round(str.data.ic$nbr.block * str.data.ic$extr.par, 1)
 
-str.data$host.type <- 'Unknown'
-str.data$host.type[str.data$blockpertime > 12] <- 'Multi-Platform User'
-str.data$host.type[str.data$block.rate <= .25] <- 'Profit Seeker'
-str.data$host.type[str.data$block.rate >= .75] <- 'Opportunistic Sharer'
-str.data$host.type <- factor(str.data$host.type,
+str.data.ic$host.type <- 'Unknown'
+str.data.ic$host.type[str.data.ic$blockpertime > 12] <- 'Multi-Platform User'
+str.data.ic$host.type[str.data.ic$block.rate <= .25] <- 'Profit Seeker'
+str.data.ic$host.type[str.data.ic$block.rate >= .75] <- 'Opportunistic Sharer'
+str.data.ic$host.type <- factor(str.data.ic$host.type,
                              levels=c('Profit Seeker', 'Opportunistic Sharer', 
                                       'Multi-Platform User', 'Unknown'))
 
-host.type <- ggplot(str.data, 
+host.type <- ggplot(str.data.ic, 
        aes(x=block.rate, y=blockpertime, color=host.type)) + 
   geom_point(alpha=.5, size=.8, shape=16) +
   ylab('Number of Blocked Periods\n') + 
@@ -619,9 +1128,11 @@ host.type <- ggplot(str.data,
   
 ```
 
+See the counts of each group
+
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
+host.type.bar <- ggplot(str.data.ic, aes(host.type, fill=host.type)) +
   geom_bar() +
   scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
   theme(legend.position='none') +
@@ -646,8 +1157,34 @@ host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
 
 ```
 
+We then re-estimate the preference table. 
 
+```{r host_table, results='asis', message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
 
+ # Make Basic comparison table
+  apref.table <- abbCreateCompTable(ic.df=str.data.ic,
+                                    split.field='host.type')
+
+ # Limit to the extrapolated pref type
+  hpref.table <- apref.table[apref.table$rev.type == 'Actual', ]
+  phpref.table <- apref.table[apref.table$rev.type == 'Potential', ]
+  hpref.table <- hpref.table[,1:2]
+  hpref.table[,3] <- phpref.table[,2]
+  hpref.table[,2] <- paste0(sprintf('%.1f', hpref.table[,2]*100), '%')
+  hpref.table[,3] <- paste0(sprintf('%.1f', hpref.table[,3]*100), '%')
+  
+  names(hpref.table) <- c('Host Type', 'STP (Actual)', 'STP (Potential)')
+  options(xtable.comment = FALSE)
+  print(xtable(hpref.table, 
+               caption='Host Type Preferability\n',
+               digits=1,
+               align='llrr'),
+               include.rownames=FALSE,
+               caption.placement='top')
+    
+```
+
+And re-run the logistic regression models. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
@@ -658,7 +1195,7 @@ host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
   
   
   mod.pot.ps <- glm(str.pot.pref~type+as.factor(bedbath)+
-                    sub.mrkt+
+                    geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
@@ -666,333 +1203,68 @@ host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
   
   
   mod.pot.os <- glm(str.pot.pref~type+as.factor(bedbath)+
-                    sub.mrkt+
+                    geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[os,])
   
   mod.pot.mu <- glm(str.pot.pref~type+as.factor(bedbath)+
-                    sub.mrkt+
+                    geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[mu,])
   
   mod.pot.un <- glm(str.pot.pref~type+as.factor(bedbath)+
-                    sub.mrkt+
+                    geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[un,])
   
-  mod.ext.ps <- glm(str.ext.pref~type+as.factor(bedbath)+
-                    sub.mrkt+
+  mod.act.ps <- glm(str.act.pref~type+as.factor(bedbath)+
+                    geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[ps,])
   
   
-  mod.ext.os <- glm(str.ext.pref~type+as.factor(bedbath)+
-                    sub.mrkt+
+  mod.act.os <- glm(str.act.pref~type+as.factor(bedbath)+
+                    geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[os,])
   
-  mod.ext.mu <- glm(str.ext.pref~type+as.factor(bedbath)+
-                    sub.mrkt+
+  mod.act.mu <- glm(str.act.pref~type+as.factor(bedbath)+
+                    geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[mu,])
   
-  mod.ext.un <- glm(str.ext.pref~type+as.factor(bedbath)+
-                    sub.mrkt+
+  mod.act.un <- glm(str.act.pref~type+as.factor(bedbath)+
+                    geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
                  data=str.data.ic[un,])
 
-host.models <- list(mod.ext.ps, mod.ext.os, mod.ext.mu, mod.ext.un,
+host.models <- list(mod.act.ps, mod.act.os, mod.act.mu, mod.act.un,
                     mod.pot.ps, mod.pot.os, mod.pot.mu, mod.pot.un)
-names(host.models) <- c('ext.ps', 'ext.os', 'ext.mu', 'ext.un',
+names(host.models) <- c('act.ps', 'act.os', 'act.mu', 'act.un',
                         'pot.ps', 'pot.os', 'pot.mu', 'pot.un')
     
-```
-
-
-### Moving Window Logit
-
-To better capture the spatial variation in the logit model results, we set up a moving window logit model that estimates a different model at each estimation point on the map.  Before beginning, we import a new suburbs shapefile and trim it to those suburbs with Airbnb properties. 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- suburbs.shp <- readShapePoly(paste0(data.path, 'geographic/melbSuburbs.shp'),
-                              proj4string=CRS("+init=epsg:4283"),
-                              delete_null_obj=TRUE)
-
- ssubs <- table(str.data.ic$suburb)
- s.subs <- subs[subs$id %in% names(ssubs),]
- s.suburbs <- suburbs.shp[suburbs.shp@data$NAME_2006 %in% names(ssubs),]
- sssubs <- fortify(s.suburbs)
- 
-```
-
-Next we set up the prediction points.  We drap a grid over the entire area and use those points for prediction points. 
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- # Min, Max and Range
- xmin <- min(s.subs$long)
- xmax <- max(s.subs$long)
- ymin <- min(s.subs$lat)
- ymax <- max(s.subs$lat)
- xrange <- xmax-xmin
- yrange <- ymax-ymin
- 
- # Set Scale
- scale <- mean(xrange, yrange)/100
- 
- # Create estimation points
- est.data <- str.data.ic
- est.points <- createGridPoints(s.suburbs, scale, T)
-
-```
-
-We then specify the logistic regression model and set the moving window bandwidth. 
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- ## Set model specification  
- 
- pot.mod.spec <- str.pot.pref ~ type + as.factor(bedbath) + 
-   I(max.guests / bedrooms) + min.stay + 
-   I(cancel.policy == 'Flexible') + 
-   I(cancel.policy == 'Strict')
- 
- ext.mod.spec <- str.ext.pref ~ type + as.factor(bedbath) + 
-   I(max.guests / bedrooms) + min.stay + 
-   I(cancel.policy == 'Flexible') + 
-   I(cancel.policy == 'Strict')
-
-
- ## Set bandwidth
- 
- k <- 400
-
-```
-
-The results are estimated with the custom MWL function
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- pot.results.all <- mwl(est.data, 
-                        est.points, 
-                        pot.mod.spec, 
-                        k)
-
- ext.results.all <- mwl(est.data, 
-                        est.points, 
-                        ext.mod.spec, 
-                        k)
- 
- 
-  pot.results.ps <- mwl(est.data[ps, ], 
-                        est.points, 
-                        pot.mod.spec, 
-                        k)
-   pot.results.os <- mwl(est.data[os, ], 
-                        est.points, 
-                        pot.mod.spec, 
-                        k)
- 
-   pot.results.mu <- mwl(est.data[mu, ], 
-                        est.points, 
-                        pot.mod.spec, 
-                        k)
- 
-   pot.results.un <- mwl(est.data[un, ], 
-                        est.points, 
-                        pot.mod.spec, 
-                        k)
- 
-   ext.results.ps <- mwl(est.data[ps, ], 
-                        est.points, 
-                        ext.mod.spec, 
-                        k)
-   ext.results.os <- mwl(est.data[os, ], 
-                        est.points, 
-                        ext.mod.spec, 
-                        k)
- 
-   ext.results.mu <- mwl(est.data[mu, ], 
-                        est.points, 
-                        ext.mod.spec, 
-                        k)
- 
-   ext.results.un <- mwl(est.data[un, ], 
-                        est.points, 
-                        ext.mod.spec, 
-                        k)
- 
-
-```
-
-Coefficents are extracted and put into a data.frame
-
-
-MAKE A FUNCTION BELOW HERE
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-extrMWLCoef <- function(mwl.results,
-                        est.points,
-                        names.coef){
- 
- coef.names <- rownames(mwl.results[[1]])
- 
- # Create a list to capture
- coef.list <- list()
- 
- # Create a data.frame to capture
- coef.df <- data.frame(lat=est.points@coords[,2],
-                       long=est.points@coords[,1])
- 
- # Loop through and extract coefficients
- for(cn in 1:length(coef.names)){
-   coef.list[[cn]] <- lapply(mwl.results, getMWLCoef, coef=coef.names[cn])
-   coef.df[ ,ncol(coef.df) + 1] <- unlist(coef.list[[cn]])
- }
- 
- # Add plottable names
- colnames(coef.df)[3:13] <- names.coef
- 
- return(coef.df)
-
-}
-```
-
-
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-x.names <- c('intercept', 'house', 'bb11', 'bb21', 'bb31',
-                              'bb32', 'bb42', 'guest', 'minstay', 'flex', 'strict')
-
-pra.coef <- extrMWLCoef(pot.results.all,
-                        est.points,
-                        x.names)
-era.coef <- extrMWLCoef(ext.results.all,
-                        est.points,
-                        x.names)
-prp.coef <- extrMWLCoef(pot.results.ps,
-                        est.points,
-                        x.names)
-pro.coef <- extrMWLCoef(pot.results.os,
-                        est.points,
-                        x.names)
-prm.coef <- extrMWLCoef(pot.results.mu,
-                        est.points,
-                        x.names)
-pru.coef <- extrMWLCoef(pot.results.un,
-                        est.points,
-                        x.names)
-erp.coef <- extrMWLCoef(ext.results.ps,
-                        est.points,
-                        x.names)
-ero.coef <- extrMWLCoef(ext.results.os,
-                        est.points,
-                        x.names)
-erm.coef <- extrMWLCoef(ext.results.mu,
-                        est.points,
-                        x.names)
-eru.coef <- extrMWLCoef(ext.results.un,
-                        est.points,
-                        x.names)
-all.mwl.coefs <- list(pra.coef, era.coef, prp.coef, pro.coef, prm.coef, pru.coef,
-                  erp.coef, ero.coef, erm.coef, eru.coef)
-names(all.mwl.coefs) <- c('pra', 'era', 'prp', 'pro', 'prm', 'pru', 
-                          'erp', 'ero', 'erm', 'eru')
-
-```
-
-Finally, these coefficients are converted to a surface. 
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-makeMWLSurfs <- function(mwl.coefs,
-                         est.points){
-
-  # Make capture list
-  surf.list <- list()
-  
-  mwl.coefs <- mwl.coefs[ ,!names(mwl.coefs) %in% c('lat', 'long')]
- 
- # Create surfaces
-  for(sl in 1:ncol(mwl.coefs)){
-   
-   # If NAs
-   to.cut <- which(is.na(mwl.coefs[,sl]))
-   if(length(to.cut) > 0){
-     surf.points <- est.points[-to.cut,]
-     surf.value <- mwl.coefs[-to.cut, sl]
-   } else {
-     surf.points <- est.points
-     surf.value <- mwl.coefs[ , sl]
-   }
-   
-   # Surface estimation
-   surf.list[[sl]] <- point2Surface(surf.points, 
-                                    surf.value,
-                                    .01, 
-                                    1.5)
-  }
-  
-  names(surf.list) <- names(mwl.coefs)
-
-return(surf.list)    
-}
-
-```
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-pra.surfs <- makeMWLSurfs(pra.coef,
-                          est.points)
-era.surfs <- makeMWLSurfs(era.coef,
-                          est.points)
-
-
-prp.surfs <- makeMWLSurfs(prp.coef,
-                          est.points)
-pro.surfs <- makeMWLSurfs(pro.coef,
-                          est.points)
-prm.surfs <- makeMWLSurfs(prm.coef,
-                          est.points)
-pru.surfs <- makeMWLSurfs(pru.coef,
-                          est.points)
-
-
-erp.surfs <- makeMWLSurfs(erp.coef,
-                          est.points)
-ero.surfs <- makeMWLSurfs(ero.coef,
-                          est.points)
-erm.surfs <- makeMWLSurfs(erm.coef,
-                          est.points)
-eru.surfs <- makeMWLSurfs(eru.coef,
-                          est.points)
-all.mwl.surfs <- list(pra.surfs, era.surfs, prp.surfs, pro.surfs, prm.surfs, pru.surfs,
-                      erp.surfs, ero.surfs, erm.surfs, eru.surfs)
-names(all.mwl.surfs) <- c('pra', 'era', 'prp', 'pro', 'prm', 'pru',
-                          'erp', 'ero', 'erm', 'eru')
 ```
 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
 save(clean.count, daily.data, listing.data, ltr.data, pref.table,
-     pref.table.wide, revdens.data, rawocc.metro, qtlocc.metro,
+     pref.table.wide, revdens.data, rawocc.metro, qtlocc.metro, rawocc.type,
+     pctocc.type, subm.data.ic, rawocc.geo, pctocc.geo, type.data.ic, pot.data.ic,
      s.subs, sssubs, str.data, str.data.ic, subs, all.mwl.coefs, all.mwl.surfs,
      core.suburbs, est.points, exch.rate, host.models, pref.models, prem.models,
      file=paste0(data.path, 'analyzed/analyzed_workspace.RData'))
@@ -1000,5 +1272,270 @@ save(clean.count, daily.data, listing.data, ltr.data, pref.table,
 
 
 ```
+
+<!-- ### Moving Window Logit -->
+
+<!-- To better capture the spatial variation in the logit model results, we set up a moving window logit model that estimates a different model at each estimation point on the map.  Before beginning, we import a new suburbs shapefile and trim it to those suburbs with Airbnb properties.  -->
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--  suburbs.shp <- readShapePoly(paste0(data.path, 'geographic/melbSuburbs.shp'), -->
+<!--                               proj4string=CRS("+init=epsg:4283"), -->
+<!--                               delete_null_obj=TRUE) -->
+
+<!--  ssubs <- table(str.data.ic$suburb) -->
+<!--  s.subs <- subs[subs$id %in% names(ssubs),] -->
+<!--  s.suburbs <- suburbs.shp[suburbs.shp@data$NAME_2006 %in% names(ssubs),] -->
+<!--  sssubs <- fortify(s.suburbs) -->
+
+<!-- ``` -->
+
+<!-- Next we set up the prediction points.  We drap a grid over the entire area and use those points for prediction points.  -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--  # Min, Max and Range -->
+<!--  xmin <- min(s.subs$long) -->
+<!--  xmax <- max(s.subs$long) -->
+<!--  ymin <- min(s.subs$lat) -->
+<!--  ymax <- max(s.subs$lat) -->
+<!--  xrange <- xmax-xmin -->
+<!--  yrange <- ymax-ymin -->
+
+<!--  # Set Scale -->
+<!--  scale <- mean(xrange, yrange)/100 -->
+
+<!--  # Create estimation points -->
+<!--  est.data <- str.data.ic -->
+<!--  est.points <- createGridPoints(s.suburbs, scale, T) -->
+
+<!-- ``` -->
+
+<!-- We then specify the logistic regression model and set the moving window bandwidth.  -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--  ## Set model specification   -->
+
+<!--  pot.mod.spec <- str.pot.pref ~ type + as.factor(bedbath) +  -->
+<!--    I(max.guests / bedrooms) + min.stay +  -->
+<!--    I(cancel.policy == 'Flexible') +  -->
+<!--    I(cancel.policy == 'Strict') -->
+
+<!--  act.mod.spec <- str.act.pref ~ type + as.factor(bedbath) +  -->
+<!--    I(max.guests / bedrooms) + min.stay +  -->
+<!--    I(cancel.policy == 'Flexible') +  -->
+<!--    I(cancel.policy == 'Strict') -->
+
+
+<!--  ## Set bandwidth -->
+
+<!--  k <- 400 -->
+
+<!-- ``` -->
+
+<!-- The results are estimated with the custom MWL function -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--  pot.results.all <- mwl(est.data,  -->
+<!--                         est.points,  -->
+<!--                         pot.mod.spec,  -->
+<!--                         k) -->
+
+<!--  act.results.all <- mwl(est.data,  -->
+<!--                         est.points,  -->
+<!--                         act.mod.spec,  -->
+<!--                         k) -->
+
+
+<!--   pot.results.ps <- mwl(est.data[ps, ],  -->
+<!--                         est.points,  -->
+<!--                         pot.mod.spec,  -->
+<!--                         k) -->
+<!--    pot.results.os <- mwl(est.data[os, ],  -->
+<!--                         est.points,  -->
+<!--                         pot.mod.spec,  -->
+<!--                         k) -->
+
+<!--    pot.results.mu <- mwl(est.data[mu, ],  -->
+<!--                         est.points,  -->
+<!--                         pot.mod.spec,  -->
+<!--                         k) -->
+
+<!--    pot.results.un <- mwl(est.data[un, ],  -->
+<!--                         est.points,  -->
+<!--                         pot.mod.spec,  -->
+<!--                         k) -->
+
+<!--    act.results.ps <- mwl(est.data[ps, ],  -->
+<!--                         est.points,  -->
+<!--                         act.mod.spec,  -->
+<!--                         k) -->
+<!--    act.results.os <- mwl(est.data[os, ],  -->
+<!--                         est.points,  -->
+<!--                         act.mod.spec,  -->
+<!--                         k) -->
+
+<!--    act.results.mu <- mwl(est.data[mu, ],  -->
+<!--                         est.points,  -->
+<!--                         act.mod.spec,  -->
+<!--                         k) -->
+
+<!--    act.results.un <- mwl(est.data[un, ],  -->
+<!--                         est.points,  -->
+<!--                         act.mod.spec,  -->
+<!--                         k) -->
+
+
+<!-- ``` -->
+
+<!-- Coefficents are extracted and put into a data.frame -->
+
+
+<!-- MAKE A FUNCTION BELOW HERE -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!-- extrMWLCoef <- function(mwl.results, -->
+<!--                         est.points, -->
+<!--                         names.coef){ -->
+
+<!--  coef.names <- rownames(mwl.results[[1]]) -->
+
+<!--  # Create a list to capture -->
+<!--  coef.list <- list() -->
+
+<!--  # Create a data.frame to capture -->
+<!--  coef.df <- data.frame(lat=est.points@coords[,2], -->
+<!--                        long=est.points@coords[,1]) -->
+
+<!--  # Loop through and extract coefficients -->
+<!--  for(cn in 1:length(coef.names)){ -->
+<!--    coef.list[[cn]] <- lapply(mwl.results, getMWLCoef, coef=coef.names[cn]) -->
+<!--    coef.df[ ,ncol(coef.df) + 1] <- unlist(coef.list[[cn]]) -->
+<!--  } -->
+
+<!--  # Add plottable names -->
+<!--  colnames(coef.df)[3:13] <- names.coef -->
+
+<!--  return(coef.df) -->
+
+<!-- } -->
+<!-- ``` -->
+
+
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!-- x.names <- c('intercept', 'house', 'bb11', 'bb21', 'bb31', -->
+<!--                               'bb32', 'bb42', 'guest', 'minstay', 'flex', 'strict') -->
+
+<!-- pra.coef <- extrMWLCoef(pot.results.all, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- era.coef <- extrMWLCoef(act.results.all, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- prp.coef <- extrMWLCoef(pot.results.ps, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- pro.coef <- extrMWLCoef(pot.results.os, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- prm.coef <- extrMWLCoef(pot.results.mu, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- pru.coef <- extrMWLCoef(pot.results.un, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- erp.coef <- extrMWLCoef(act.results.ps, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- ero.coef <- extrMWLCoef(act.results.os, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- erm.coef <- extrMWLCoef(act.results.mu, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- eru.coef <- extrMWLCoef(act.results.un, -->
+<!--                         est.points, -->
+<!--                         x.names) -->
+<!-- all.mwl.coefs <- list(pra.coef, era.coef, prp.coef, pro.coef, prm.coef, pru.coef, -->
+<!--                   erp.coef, ero.coef, erm.coef, eru.coef) -->
+<!-- names(all.mwl.coefs) <- c('pra', 'era', 'prp', 'pro', 'prm', 'pru',  -->
+<!--                           'erp', 'ero', 'erm', 'eru') -->
+
+<!-- ``` -->
+
+<!-- Finally, these coefficients are converted to a surface.  -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!-- makeMWLSurfs <- function(mwl.coefs, -->
+<!--                          est.points){ -->
+
+<!--   # Make capture list -->
+<!--   surf.list <- list() -->
+
+<!--   mwl.coefs <- mwl.coefs[ ,!names(mwl.coefs) %in% c('lat', 'long')] -->
+
+<!--  # Create surfaces -->
+<!--   for(sl in 1:ncol(mwl.coefs)){ -->
+
+<!--    # If NAs -->
+<!--    to.cut <- which(is.na(mwl.coefs[,sl])) -->
+<!--    if(length(to.cut) > 0){ -->
+<!--      surf.points <- est.points[-to.cut,] -->
+<!--      surf.value <- mwl.coefs[-to.cut, sl] -->
+<!--    } else { -->
+<!--      surf.points <- est.points -->
+<!--      surf.value <- mwl.coefs[ , sl] -->
+<!--    } -->
+
+<!--    # Surface estimation -->
+<!--    surf.list[[sl]] <- point2Surface(surf.points,  -->
+<!--                                     surf.value, -->
+<!--                                     .01,  -->
+<!--                                     1.5) -->
+<!--   } -->
+
+<!--   names(surf.list) <- names(mwl.coefs) -->
+
+<!-- return(surf.list)     -->
+<!-- } -->
+
+<!-- ``` -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!-- pra.surfs <- makeMWLSurfs(pra.coef, -->
+<!--                           est.points) -->
+<!-- era.surfs <- makeMWLSurfs(era.coef, -->
+<!--                           est.points) -->
+
+
+<!-- prp.surfs <- makeMWLSurfs(prp.coef, -->
+<!--                           est.points) -->
+<!-- pro.surfs <- makeMWLSurfs(pro.coef, -->
+<!--                           est.points) -->
+<!-- prm.surfs <- makeMWLSurfs(prm.coef, -->
+<!--                           est.points) -->
+<!-- pru.surfs <- makeMWLSurfs(pru.coef, -->
+<!--                           est.points) -->
+
+
+<!-- erp.surfs <- makeMWLSurfs(erp.coef, -->
+<!--                           est.points) -->
+<!-- ero.surfs <- makeMWLSurfs(ero.coef, -->
+<!--                           est.points) -->
+<!-- erm.surfs <- makeMWLSurfs(erm.coef, -->
+<!--                           est.points) -->
+<!-- eru.surfs <- makeMWLSurfs(eru.coef, -->
+<!--                           est.points) -->
+<!-- all.mwl.surfs <- list(pra.surfs, era.surfs, prp.surfs, pro.surfs, prm.surfs, pru.surfs, -->
+<!--                       erp.surfs, ero.surfs, erm.surfs, eru.surfs) -->
+<!-- names(all.mwl.surfs) <- c('pra', 'era', 'prp', 'pro', 'prm', 'pru', -->
+<!--                           'erp', 'ero', 'erm', 'eru') -->
+<!-- ``` -->
 
 
