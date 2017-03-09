@@ -4,6 +4,7 @@
 #                                                                                        #
 ##########################################################################################
 
+
 ### Calculate the occupancy rates for each date in a range -------------------------------
 
 abbCalcDateRates <- function(daily.df){

@@ -1265,11 +1265,11 @@ names(host.models) <- c('act.ps', 'act.os', 'act.mu', 'act.un',
 save(clean.count, daily.data, listing.data, ltr.data, pref.table,
      pref.table.wide, revdens.data, rawocc.metro, qtlocc.metro, rawocc.type,
      pctocc.type, subm.data.ic, rawocc.geo, pctocc.geo, type.data.ic, pot.data.ic,
-     s.subs, sssubs, str.data, str.data.ic, subs, all.mwl.coefs, all.mwl.surfs,
-     core.suburbs, est.points, exch.rate, host.models, pref.models, prem.models,
+     str.data, str.data.ic, subs,
+     core.suburbs,  exch.rate, host.models, pref.models, prem.models,
      file=paste0(data.path, 'analyzed/analyzed_workspace.RData'))
 
-
+ #all.mwl.coefs, all.mwl.surfs,est.points,  s.subs, sssubs,
 
 ```
 

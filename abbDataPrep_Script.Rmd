@@ -1284,7 +1284,7 @@ The chart below break down the relative frequency of short and long term rental 
     scale_fill_manual(values=sm.col) +
     facet_wrap(~type) +
     ylab('# of Properties\n') + xlab('')+
-    theme(legend.position = 'bottom',gc()
+    theme(legend.position = 'bottom',
           legend.title = element_blank(),
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank()) +
