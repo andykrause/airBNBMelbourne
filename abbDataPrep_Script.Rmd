@@ -949,7 +949,7 @@ Location is clearly an important determinant in both the short and long term ren
  ## Build the map object
 
   # Set colors
-  g.cols <- abb.col[c(2, 10, 9)]
+  g.cols <- c('grey10', 'grey40', 'grey70')
 
   # Make map
   loc.map <- ggplot() +
@@ -957,13 +957,34 @@ Location is clearly an important determinant in both the short and long term ren
     scale_fill_manual(values=g.cols, labels=c('Inner      ',
                                               'Middle      ',
                                               'Outer')) +
-    geom_path(data=subs, aes(x=long, y=lat, group=group), col='gray40') +
+    geom_path(data=subs[subs$des=='Outer', ], 
+              aes(x=long, y=lat, group=group), col='white', size=.1,
+              linetype=1) +
+  
+    geom_path(data=subs[subs$des=='Middle', ], 
+              aes(x=long, y=lat, group=group), col='grey70', size=.1,
+              linetype=1) +
+    
+    geom_path(data=subs[subs$des=='Inner', ], 
+              aes(x=long, y=lat, group=group), col='grey40', size=.1,
+              linetype=1) +
+    
     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
     xlab('') + ylab('')+
     theme(legend.position = 'bottom',
-          legend.title = element_blank()) +
-    ggtitle("Melbourne Suburb Classifications")+
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(fill = "white"),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+    #ggtitle("Melbourne Suburb Classifications")+
     theme(plot.title = element_text(hjust = 0.5))
 
 ```
@@ -1175,7 +1196,7 @@ The location of the short and long term rentals, colored by submarket, are shown
   # Make map
 
   str.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
     geom_point(data=str.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.2,
                alpha=.2) +
     scale_color_manual(values=sm.col) +
@@ -1183,10 +1204,20 @@ The location of the short and long term rentals, colored by submarket, are shown
     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
     xlab('') + ylab('')+
     theme(legend.position = 'bottom',
-          legend.title = element_blank()) +
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(fill = "white"),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
     guides(colour = guide_legend(override.aes = list(size=3,
                                                      alpha=1))) + 
-    ggtitle('AirBNB Location\nBy Submarket')+
+    ggtitle('Short-Term Rental Locations')+
     theme(plot.title = element_text(hjust = 0.5))
   
 ```
@@ -1196,7 +1227,7 @@ The location of the short and long term rentals, colored by submarket, are shown
   # Make map
 
   ltr.map <- ggplot() +
-    geom_polygon(data=subs, aes(x=long, y=lat, group=group), color='gray50') +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
     geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=sub.mrkt), size=.1,
                alpha=.1) +
     scale_color_manual(values=sm.col) +
@@ -1204,10 +1235,20 @@ The location of the short and long term rentals, colored by submarket, are shown
     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
     xlab('') + ylab('')+
     theme(legend.position = 'bottom',
-          legend.title = element_blank()) +
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(fill = "white"),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
     guides(colour = guide_legend(override.aes = list(size=3,
                                                      alpha=1))) + 
-    ggtitle('Long Term Rental Location\nBy Submarket')+
+    ggtitle('Long-Term Rental Locations')+
     theme(plot.title = element_text(hjust = 0.5))
   
 ```
@@ -1247,7 +1288,7 @@ The chart below break down the relative frequency of short and long term rental 
           legend.title = element_blank(),
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank()) +
-    ggtitle('Short Term Property Type\nBy Submarket')+
+    #ggtitle('Short Term Property Type\nBy Submarket')+
     theme(plot.title = element_text(hjust = 0.5))
   
   # Make Long term rental map
@@ -1261,7 +1302,7 @@ The chart below break down the relative frequency of short and long term rental 
           legend.title = element_blank(),
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank()) +
-    ggtitle('Long Term Property Type\nBy Submarket')+
+    #ggtitle('Long Term Property Type\nBy Submarket')+
     theme(plot.title = element_text(hjust = 0.5))
   
 ```
