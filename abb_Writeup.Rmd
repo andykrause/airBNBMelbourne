@@ -351,7 +351,6 @@ We select the 18 suburbs below to represent the 'core' of the city (Table 1).  T
        caption.placement="top",
        hline.after=c(0,6))
 
-
 ```
 
 We assign these designations by: 1) Adding suburb designations to the properties; 2) Assigning submarkets 1-4 based on suburb location; and 3) Indicating proximity to beach and labeling as 'Beach' submarket.  This process is repeated for both the short- and long-term data. Finally, we also remove any observations that fall outside of outer suburbs (the extent of the suburbs). The location of the short- and long-term rentals, colored by submarket, are shown in \autoref{pointmaps}.
