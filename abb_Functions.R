@@ -471,13 +471,13 @@ compareRevenues <- function(str.df){
   
   ## Actual Revenue
   
-  str.df$str.act.prem <- str.df$str.act.revenue - str.df$ltr.imp.revenue
-  str.df$str.act.pref <- ifelse(str.df$str.act.prem > 0, 1, 0)
+  str.df$str.obs.prem <- str.df$str.obs.revenue - str.df$ltr.imp.revenue
+  str.df$str.obs.pref <- ifelse(str.df$str.obs.prem > 0, 1, 0)
   
   ## Extrapolated Revenue
   
-  str.df$str.ext.prem <- str.df$str.ext.revenue - str.df$ltr.imp.revenue
-  str.df$str.ext.pref <- ifelse(str.df$str.ext.prem > 0, 1, 0)
+  str.df$str.act.prem <- str.df$str.act.revenue - str.df$ltr.imp.revenue
+  str.df$str.act.pref <- ifelse(str.df$str.act.prem > 0, 1, 0)
   
   ## Potential Revenue
   
@@ -486,8 +486,8 @@ compareRevenues <- function(str.df){
   
   ## Return Values 
   
-  return(str.df[,c('property.id', 'str.act.prem', 'str.act.pref',
-                   'str.ext.prem', 'str.ext.pref', 
+  return(str.df[,c('property.id', 'str.obs.prem', 'str.obs.pref',
+                   'str.act.prem', 'str.act.pref', 
                    'str.pot.prem', 'str.pot.pref')])  
   
 }
@@ -1236,3 +1236,67 @@ logDx <- function(log.model, data, resp.var){
               logLik=ll,
               auc=auc))
 }
+
+### Custom function for building revenue density plots -----------------------------------
+
+
+buildRevDensPlot <- function(str.data,
+                             rev.types=c('act', 'pot'),
+                             rev.cols=1:(length(rev.types) + 1),
+                             facet=TRUE){
+  
+  ## Build the dataset  
+  
+  # Actual
+  if('act' %in% rev.types){
+    stra.rev <- str.data[,c('property.id', 'str.act.revenue')]
+    stra.rev$tenure <- 'Short-Term (Actual)   '
+    names(stra.rev)[2] <- 'revenue'
+  } else {
+    stra.rev <- NULL
+  }
+  
+  # Potential
+  if('pot' %in% rev.types){
+    strp.rev <- str.data[,c('property.id', 'str.pot.revenue')]
+    strp.rev$tenure <- 'Short-Term (Potential)   '
+    names(strp.rev)[2] <- 'revenue'
+  } else {
+    strp.rev <- NULL
+  }
+  
+  # Long-Term
+  ltr.rev <- str.data[,c('property.id', 'ltr.imp.revenue')]
+  ltr.rev$tenure <- 'Long-Term   '
+  names(ltr.rev)[2] <- 'revenue'
+  
+  # Combine
+  revdens.data <- rbind(stra.rev, strp.rev, ltr.rev)
+  
+  ## Build a plot
+  
+  rd.plot <- ggplot(revdens.data, 
+                    aes(x=revenue, fill=tenure, color=tenure)) +
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=rev.cols) +
+    scale_color_manual(values=rev.cols) +
+    xlab('\nAnnual Revenue') +
+    scale_x_continuous(breaks=c(seq(0, 75000, by=25000)),
+                       labels=c('$0', '$25k', '$50k', '$75k'))+
+    theme(legend.position='none',
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y=element_blank()) +
+    coord_cartesian(xlim=c(0, 85000))
+  
+  if(facet){
+    rd.plot <- rd.plot + facet_wrap(~tenure)
+  }
+  
+  ## Return 
+  
+  return(rd.plot)
+  
+}  
