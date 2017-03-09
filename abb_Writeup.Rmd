@@ -94,6 +94,7 @@ bibliography: abb.bib
 ```{r load_workspace, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, cache=TRUE}
 
    load(paste0(data.path, '/analyzed/analyzed_workspace.RData'))
+   a<-1
 
 ```
 
@@ -183,7 +184,7 @@ Leasing costs $L$ are the fees paid to the rental agency to find and manage tena
 
 Janitorial costs, $J$, cover the costs to 'turn-over' the property between occupants.  For a short-term leasing strategy, these costs can be experienced every day or two, depending on the minimum length of stay and the total number of occupancies over the course of the year. Our data for short-term rentals comes from the Airbnb platform.  In addition to the nightly rate that an occupant pays to the owner there is also a separate 'cleaning fee' that is attached, as is a booking fee to Airbnb^[This fee could be considered analogous to the leasing fees $L$ that long-term rentals pay]. Some hosts add additional 'linen' fees to cover costs of laundering.  While it may be advantageous for hosts in competitive markets to underquote their cleaning fees to keep occupancies up, we have no evidence to suggest that owners are exhibiting such behavior. As a result of janitorial fees being a separate line item and directly paid by the occupants they can also be ignored in the comparative analysis below as they are direct.
 
-Finally, there are utility costs, $U$, that are borne by the property owner in a short-term leasing strategy but by the tenant in a long-term option.  The State of Victoria estimates energy costs for an apartment at A\$330 per month and for a larger house at A\$520 per month.  For two people in an apartment the cost is approximately A\$5 per person per day and for a four person household in a detached house the cost is around A\$4 per person per day person. For the purposes of estimating utility costs for the short-term rentals we use a mid-point value of A\$4.50 per person per day.  As we don't know total number of guests in each reservation we use a figure of 1.7 guests per bedroom and sum up the total costs for all bookings over the year.   
+Finally, there are utility costs, $U$, that are borne by the property owner in a short-term leasing strategy but by the tenant in a long-term option.  The State of Victoria estimates energy costs for an apartment at A\$330 per month and for a larger house at A\$520 per month.  For two people in an apartment the cost is approximately A\$5 per person per day and for a four person household in a detached house the cost is around A\$4 per person per day person. For the purposes of estimating utility costs for the short-term rentals we use a mid-point value of A\$4.50 per person per day.  As we don't know total number of guests in each reservation we use a figure of 1.5 guests per bedroom and sum up the total costs for all bookings over the year.   
 
 \begin{equation}
 U = (4.5 * B * 1.7) * O
@@ -261,7 +262,7 @@ Next, the short-term rentals properties can be listed as one of three types rela
 
 As long-term rentals do not offer Private Room or Shared Room options^[Our long-term rental dataset does not include rooming houses, purpose built student accommodations and other types of rentals which may offer private or shared room options] and our purpose here is a comparison of long- and short-term returns, we remove all short-term properties that do not lease the entire home or apartment. Unfortunately, this filter does remove about 40% of the short-term data (\autoref{ltypecomp}), however, given the research question it is unavoidable.
 
-```{r plot_ltype, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=2.5, fig.width=3.75, fig.cap='\\label{ltypecomp}Listing Type of Short-Term Rentals', fig.lp='ltcomp'}
+```{r plot_ltype, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=2.5, fig.width=3.75, fig.cap='\\label{ltypecomp}Listing Type of Short-Term Rentals'}
 
  load(paste0(fig.path, 'listtypes.RData'))
 
@@ -295,7 +296,7 @@ Next we filter by the prices -- the nightly rates and weekly^[Rents are quoted i
 
 After removing property level observations that are missing price data, we plot the distribution of the rates and rents.  In Figure 4 we see that most long-term weekly rentals are greater than \$200 and less than \$1,000 per week while most median nightly rates are greater than \$50 and less than \$500 per night. We filter the property level data accordingly. We also filter the short-term daily data to include only those observations with nightly rates between \$50 and \$500.
 
-```{r plot_ratesrents, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3, fig.width=5.75, fig.cap='Distribution of Rates and Rents', fig.lp='rrcomp'}
+```{r plot_ratesrents, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3, fig.width=5.75, fig.cap='Distribution of Rates and Rents'}
 
  load(paste0(fig.path, 'rateplot.RData'))
  load(paste0(fig.path, 'rentplot.RData'))
@@ -361,7 +362,7 @@ Before assigning submarkets to the long-term property we must remedy the fact th
 
 ```
   
-```{r plot_locations, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5, fig.height=10, fig.cap='\\label{pointmaps}Location Maps', fig.lp='locmaps', fig.ext='png'}
+```{r plot_locations, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=5, fig.height=10, fig.cap='\\label{pointmaps}Location Maps', fig.ext='png'}
   
   str.map <- str.map +
    theme(axis.title.y=element_blank(),
@@ -385,7 +386,7 @@ Before assigning submarkets to the long-term property we must remedy the fact th
 
  To better visualize the relative frequency of the submarkets in the two tenure types we have broken down the data by submarket by property type by tenure type. A number of interesting observations are illustrated here (\autoref{smcounts}). First, the vast majority of Airbnb units are apartments in city-core or city locations. As expected and as shown by the map, the long-term properties are more evenly spread across the metro region than the short-term properties.  Long-term houses are more peripheral than apartments, a result of urban development patterns and land economics. Beach properties are, relatively speaking, over-represented in the short-term market, especially in apartments, while suburban and rural apartments, somewhat common in long-term markets, are nearly absent in the short-term market. Overall, the suburban and rural Airbnb markets are quite thin, later results focusing on these markets will need to be examined in light of this small sample size.
 
-```{r plot_locbars, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=8.5, fig.height=4, fig.cap='\\label{smcounts}Submarket Observation Counts', fig.lp='locbars'}
+```{r plot_locbars, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=8.5, fig.height=4, fig.cap='\\label{smcounts}Submarket Observation Counts'}
 
   load(paste0(fig.path, 'ltrsubplot.RData'))
   load(paste0(fig.path, 'strsubplot.RData'))
@@ -549,7 +550,7 @@ As the distribution of occupancy rates is not uniform the initial plot may be mi
     theme(plot.title = element_text(hjust = 0.5))
   
   # Make Plot
-  ggMultiPlots(rawocc, qtlocc, cols=2)
+  ggMultiPlots(raw.occ.metro, qtl.occ.metro, cols=2)
 
 ```
 
