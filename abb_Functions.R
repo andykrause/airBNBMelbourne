@@ -1213,3 +1213,26 @@ abbPrefAnalysisViz <- function(ic.df,
   
 }
 
+### Create a vector of significance stars for regression results -------------------------
+
+makeStatSig <- function(x){
+  x <- as.numeric(x)
+  y <- rep('***', length(x))
+  y[x > .01] <- '** '
+  y[x > .05] <- '*  '
+  y[x > .1] <- '   '
+  y
+}
+
+### Diagnostics for logistic regression models -------------------------------------------
+logDx <- function(log.model, data, resp.var){
+  
+  pred <- prediction(predict(log.model, data, type='response'), resp.var)
+  auc <- performance(pred, measure='auc')
+  ll <- logLik(log.model)
+  AIC <- AIC(log.model)
+  
+  return(list(AIC=AIC,
+              logLik=ll,
+              auc=auc))
+}
