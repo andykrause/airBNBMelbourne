@@ -598,33 +598,33 @@ abbCreateCompTable <- function(ic.df,
   
   if(split.field == 'none'){
     
+    str.obs <- mean(ic.df$str.obs.pref)
     str.act <- mean(ic.df$str.act.pref)
-    str.ext <- mean(ic.df$str.ext.pref)
     str.pot <- mean(ltr.df$str.pot.pref)
     
     rate.table <- data.frame(ID='all',
-                             var=c(str.act, str.ext, str.pot),
-                             rev.type=c('Actual', 
-                                        'Extrapolated', 
+                             var=c(str.obs, str.act, str.pot),
+                             rev.type=c('Observed', 
+                                        'Actual', 
                                         'Potential'))
     
   } else {
     
     # Calculate cross-tab values
+    str.obs <- tapply2DF(ic.df$str.obs.pref, ic.df[ ,split.field], mean)
     str.act <- tapply2DF(ic.df$str.act.pref, ic.df[ ,split.field], mean)
-    str.ext <- tapply2DF(ic.df$str.ext.pref, ic.df[ ,split.field], mean)
     str.pot <- tapply2DF(ic.df$str.pot.pref, ic.df[, split.field], mean)
     
     # Add names
+    str.obs$rev.type <- 'Observed'
     str.act$rev.type <- 'Actual'
-    str.ext$rev.type <- 'Extrapolated'
     str.pot$rev.type <- 'Potential'
     
     # Combine into table
-    rate.table <- rbind(str.act, str.ext, str.pot)
+    rate.table <- rbind(str.obs, str.act, str.pot)
     
     # Reorder factors for common split fields
-    if(split.field == 'sub.mrkt'){
+    if(split.field == 'geo.mrkt'){
       
       rate.table$ID <- factor(rate.table$ID, 
                               levels=c('city-core', 'city', 'beach',
@@ -718,7 +718,7 @@ abbPrefPlot <- function(pref.data,
   
  ## Fix Factor Levels
   
-  if(split.field == 'sub.mrkt'){
+  if(split.field == 'geo.mrkt'){
     pref.full$ID <- factor(pref.full$ID, 
                            levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
   }
@@ -1088,7 +1088,7 @@ abbPrefAnalysisViz <- function(ic.df,
   
   spl.col <- 1:nrow(pref.table)
   
-  if(split.field == 'sub.mrkt'){
+  if(split.field == 'geo.mrkt'){
     spl.col <- c("#FA5863", "#00758C", "#FCB30E", "#4DE26E", "#8B0E52")
   }
   
