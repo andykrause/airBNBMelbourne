@@ -241,9 +241,7 @@ Part of the difficulty in perfectly mapping property types from these two datase
 
 The Other category only makes up a very small percentage of the properties in both the short and long-term market; especially so in the long-term market (\autoref{typecomp}) .  Additionally, a large proportion of the 'Others' in the short-term data are Bed & Breakfast units, a use which doesn't fit within our research question. As a result, we remove the 'Others' from both the short- and the long-term rental data.
 
-
-
-```{r plot_pt, message=FALSE, warning=FALSE, cache=TRUE, comment=FALSE, echo=FALSE, results='hide', fig.height=3, fig.cap='\\label{typecomp}Property Type by Tenure'}
+```{r plot_pt, message=FALSE, warning=FALSE, cache=FALSE, comment=FALSE, echo=FALSE, results='hide', fig.height=3, fig.cap='\\label{typecomp}Property Type by Tenure'}
 
   load(paste0(fig.path, 'ltrtypes.RData'))
   load(paste0(fig.path, 'strtypes.RData'))
@@ -251,12 +249,9 @@ The Other category only makes up a very small percentage of the properties in bo
   str.types <- str.types + xlab('')
   ltr.types <- ltr.types + xlab('')
   
-
   ggMultiPlots(str.types, ltr.types, cols=2)
   
 ```
-
-
 
 Next, the short-term rentals properties can be listed as one of three types relating to the extent of the property which is able to be booked:
 
@@ -266,7 +261,7 @@ Next, the short-term rentals properties can be listed as one of three types rela
 
 As long-term rentals do not offer Private Room or Shared Room options^[Our long-term rental dataset does not include rooming houses, purpose built student accommodations and other types of rentals which may offer private or shared room options] and our purpose here is a comparison of long- and short-term returns, we remove all short-term properties that do not lease the entire home or apartment. Unfortunately, this filter does remove about 40% of the short-term data (\autoref{ltypecomp}), however, given the research question it is unavoidable.
 
-```{r plot_ltype, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=2.5, fig.width=3.75, fig.cap='\\label{ltypecomp}Listing Type of Short-Term Rentals', fig.lp='ltcomp'}
+```{r plot_ltype, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=2.5, fig.width=3.75, fig.cap='\\label{ltypecomp}Listing Type of Short-Term Rentals', fig.lp='ltcomp'}
 
  load(paste0(fig.path, 'listtypes.RData'))
 
@@ -282,7 +277,7 @@ We begin by removing all properties that are missing bedroom or bathroom informa
 
 In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short-term rental) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two (\autoref{bbtype}). From this analysis we see that there are 6 combinations that make up most all properties:  1bed/1bath, 2/1, 2/2, 3/1, 3/2 and 4/2. We filter the data to these combinations. 
 
-```{r plot_bb, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=4, fig.width=5.75, fig.cap='\\label{bbtype}Bed and Baths by Tenure by Type'}
+```{r plot_bb, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=4, fig.width=5.75, fig.cap='\\label{bbtype}Bed and Baths by Tenure by Type'}
 
  load(paste0(fig.path, 'ltrbb.RData'))
  load(paste0(fig.path, 'strbb.RData'))
@@ -300,7 +295,7 @@ Next we filter by the prices -- the nightly rates and weekly^[Rents are quoted i
 
 After removing property level observations that are missing price data, we plot the distribution of the rates and rents.  In Figure 4 we see that most long-term weekly rentals are greater than \$200 and less than \$1,000 per week while most median nightly rates are greater than \$50 and less than \$500 per night. We filter the property level data accordingly. We also filter the short-term daily data to include only those observations with nightly rates between \$50 and \$500.
 
-```{r plot_ratesrents, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3, fig.width=5.75, fig.cap='Distribution of Rates and Rents', fig.lp='rrcomp'}
+```{r plot_ratesrents, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.height=3, fig.width=5.75, fig.cap='Distribution of Rates and Rents', fig.lp='rrcomp'}
 
  load(paste0(fig.path, 'rateplot.RData'))
  load(paste0(fig.path, 'rentplot.RData'))
@@ -313,7 +308,7 @@ After removing property level observations that are missing price data, we plot 
 
 Location is an important determinant in both the short- and long-term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high-end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts. The specific suburb of a property is the second, or finer scale, at which the market operates. \autoref{locmap} shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries.
 
-```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.width=3.5, fig.cap='\\label{locmap}Melbourne Submarkets', fig.lp='submap'}
+```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, fig.height=3.5, fig.width=3.5, fig.cap='\\label{locmap}Melbourne Submarkets'}
 
  load(paste0(fig.path, 'suburbMap.RData'))
 
@@ -394,7 +389,9 @@ Before assigning submarkets to the long-term property we must remedy the fact th
 
   load(paste0(fig.path, 'ltrsubplot.RData'))
   load(paste0(fig.path, 'strsubplot.RData'))
-  ltrtype.map <- ltrtype.map + ylab("")
+  
+  ltrtype.map <- ltrtype.map + ylab("") + ggtitle('Long-Term Properties')
+  strtype.map <- strtype.map + ggtitle('Short-Term Properties')
 
   ggMultiPlots(strtype.map, ltrtype.map, cols=2)
 
@@ -406,16 +403,24 @@ We have applied ten separate filters to our two datasets. In the name of transpa
 
 For the long-term data, over half of the observations fall outside of our considered time frame, reducing the sample size down to around 130,000 from 290,000.  Further consideration regarding property types, structural characteristics, location, etc. remove another 12,000 observations, leaving 120,092 in the final dataset.
 
-```{r table_cleansummary, results="asis", comment=FALSE, message=FALSE, echo=FALSE, fig.cap='Data Cleaning Summary'}
+```{r table_cleansummary, results="asis", comment=FALSE, message=FALSE, echo=FALSE}
 
-cc <- clean.count[,c('operation', 'str', 'ltr')]
-str.count <- cumsum(c(cc$str[1], -cc$str[-1]))
-ltr.count <- cumsum(c(cc$ltr[1], -cc$ltr[-1]))
-str.cut <- c(0, str.count[-length(str.count)] - str.count[-1])
-str.per <- c(0, str.cut[-1] / str.count[-length(str.count)])
-ltr.cut <- c(0, ltr.count[-length(ltr.count)] - ltr.count[-1])
-ltr.per <- c(0, ltr.cut[-1] / ltr.count[-length(ltr.count)])
-clean.table <- data.frame(field=cc$operation,
+ ## Extract data
+  
+  cc <- clean.count[,c('operation', 'str', 'ltr')]
+
+ ## Sum counts and create percentages
+
+  str.count <- cumsum(c(cc$str[1], -cc$str[-1]))
+  ltr.count <- cumsum(c(cc$ltr[1], -cc$ltr[-1]))
+  str.cut <- c(0, str.count[-length(str.count)] - str.count[-1])
+  str.per <- c(0, str.cut[-1] / str.count[-length(str.count)])
+  ltr.cut <- c(0, ltr.count[-length(ltr.count)] - ltr.count[-1])
+  ltr.per <- c(0, ltr.cut[-1] / ltr.count[-length(ltr.count)])
+
+ ## Compile into data.frame  
+  
+  clean.table <- data.frame(field=cc$operation,
                           strcount=str.count,
                           strcut=str.cut,
                           strper=str.per,
@@ -423,17 +428,23 @@ clean.table <- data.frame(field=cc$operation,
                           ltrcut=ltr.cut,
                           ltrper=ltr.per)
 
-rownames(clean.table) <- NULL
-clean.table$field <- c('Initial Count', 'Time', 'Property Type',
-                       'Listing Type', 'Bedrooms', 'Baths', 'Bed/Bath Combo',
-                       'Rates & Rents', 'Revenue', 'Location', 'Host Policy')
-clean.table$strper <- 100*round(clean.table$strper, 2)
-clean.table$ltrper <- 100*round(clean.table$ltrper, 2)
-names(clean.table) <- c('Filter', 'Short-term', 'Cut', '% Cut',
-                        'Long-term', 'Cut', '% Cut')
-options(xtable.comment = FALSE)
-print(xtable(clean.table, caption='Data Cleaning Summary',
-       digits=0),
+  ## Fix fields and names
+
+  rownames(clean.table) <- NULL
+  clean.table$field <- c('Initial Count', 'Time', 'Property Type',
+                         'Listing Type', 'Bedrooms', 'Baths', 'Bed & Bath Combo',
+                         'Rates & Rents', 'Revenue', 'Location', 'Host Policy')
+  clean.table$strper <- 100*round(clean.table$strper, 2)
+  clean.table$ltrper <- 100*round(clean.table$ltrper, 2)
+  names(clean.table) <- c('Filter', 'Short-term', 'Cut', '% Cut',
+                          'Long-term', 'Cut', '% Cut')
+
+ ## Conver to xtable and print
+  
+  options(xtable.comment = FALSE)
+  print(xtable(clean.table, 
+               digits=0,
+               caption='Data Cleaning Summary'),
        include.rownames=FALSE,
        caption.placement='top')
 
@@ -461,16 +472,16 @@ While this simple analysis does not control for location and product differences
 
 ```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='\\label{revdens}Comparison of Revenue Distributions', fig.lp='revdens'}
 
-  stre <- str.data[,c('bedrooms', 'str.ext.revenue')]
-  stre$tenure <- 'Short-Term (Actual)   '
-  names(stre)[2] <- 'revenue'
-  strp <- str.data[,c('bedrooms', 'str.pot.revenue')]
-  strp$tenure <- 'Short-Term (potential)   '
-  names(strp)[2] <- 'revenue'
-  ltrr <- ltr.data[,c('bedrooms', 'ltr.revenue')]
-  ltrr$tenure <- 'Long-Term   '
-  names(ltrr)[2] <- 'revenue'
-  allr <- rbind(stre, strp, ltrr)
+  stra.rev <- str.data[,c('bedrooms', 'str.ext.revenue')]
+  stra.rev$tenure <- 'Short-Term (Actual)   '
+  names(stra.rev)[2] <- 'revenue'
+  strp.rev <- str.data[,c('bedrooms', 'str.pot.revenue')]
+  strp.rev$tenure <- 'Short-Term (potential)   '
+  names(strp.rev)[2] <- 'revenue'
+  ltr.rev <- ltr.data[,c('bedrooms', 'ltr.revenue')]
+  ltr.rev$tenure <- 'Long-Term   '
+  names(ltr.rev)[2] <- 'revenue'
+  revdens.data <- rbind(stra.rev, strp.rev, ltrrev)
 
   ggplot(allr, aes(x=revenue, fill=tenure, color=tenure)) +
     geom_density(alpha=.5) +
