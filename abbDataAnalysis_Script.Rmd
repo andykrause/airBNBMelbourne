@@ -31,6 +31,8 @@ output: html_document
   library(RColorBrewer)
   library(Hmisc)
   library(kernlab)
+  library(lmtest)
+  library(ROCR)
 
 ```
 
@@ -91,6 +93,10 @@ Next, we source the necessary custom code files for the analysis.
 
   }
   
+ ## Set options
+
+  options(xtable.comment = FALSE)
+  options(xtable.caption.placement='top')
 
 ```
 
