@@ -1,15 +1,16 @@
 ---
-title: "Abb Analysis"
+title: "Should I Airbnb My Property: Analytic Code Explanation"
 author: "Andy Krause and Gideon Aschwanden"
-date: "February 5, 2017"
+date: "March 10, 2017"
 output: html_document
 ---
 
 ### Introduction
 
-&nbsp;
-
+This document describes all of the code used to the generate the output included in the 'Should I Airbnb my Property' study.  Additional analysis that were not included in the final report are also found within this document.  This analysis uses the output from the **abbDataClean_Script.rmd** file found in the same online repository. 
 ### Preliminary Commands
+
+We begin by loading the libraries necessary to do this analysis. 
 
 &nbsp;
 
@@ -35,6 +36,8 @@ output: html_document
   library(ROCR)
 
 ```
+
+We then set the paths to the data, code and figures, based on the user of the document.  We also set a variable indicating whether or not we are working offline. 
 
 ```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
@@ -62,7 +65,7 @@ output: html_document
 
 ```
 
-Next, we source the necessary custom code files for the analysis.  
+Next, we source the necessary custom code files for the analysis.  We also set a few options here. 
   
 ```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
@@ -99,6 +102,8 @@ Next, we source the necessary custom code files for the analysis.
 
 ```
 
+We load the workspace from the data clean script that includes the prepared data objects. 
+
 ```{r load_str_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   # Property Information
@@ -107,24 +112,39 @@ Next, we source the necessary custom code files for the analysis.
 
 ```
 
-State gives energy costs at 330 (apt) to 520 (house).  For 2 person in apt that works out to 5 per person per day.  For house of 4 that works out to about 4 per person per day.  
+### Calculating Net Revenues
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+We begin the analysis by calculating the net revenues for the short term data.  We calculate three types of net revenues, Observed, Extrapolated (Actual) and Potential. The difference are described more fully in the writeup. 
+
+Before we start, we estimate two figures necessary to determine utility costs: 1) Costs per person per day (cpppd) and the average number of guests per bedroom.The State of Victoria gives energy costs at \$330 (apartment) to \$520 (house).  For 2 persons in an apartment that works out to \$5 per person per day.  For a house of 4 persons that works out to about \$4 per person per day. We use a mid point value of \$4.50 per person per day.  We use an estimate of 1.5 persons per bedroom in each unit.   
+
+```{r utility_estimates, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   str.data$cpppd <- 4.5
   str.data$avg.guests <- str.data$bedrooms * 1.5
 
-  str.data$str.act.revenue <- ((str.data$bookings * str.data$med.rate) - 
+```
+
+```{r obs_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str.data$str.obs.revenue <- ((str.data$bookings * str.data$med.rate) - 
                                  (str.data$bookings * str.data$avg.guests *
                                     str.data$cpppd))
 
+```
+
+```{r act_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
   str.data$extr.par <- 366 / str.data$total.days
 
-  str.data$str.ext.revenue <- ((str.data$bookings * str.data$extr.par *
+  str.data$str.act.revenue <- ((str.data$bookings * str.data$extr.par *
                                   str.data$med.rate) - 
                                  (str.data$bookings * str.data$avg.guests * 
                                     str.data$cpppd * str.data$extr.par))
-  # 
+```
+
+```{r pot_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
   str.data$occ.rate <- 1 - (str.data$block.rate + str.data$avail.rate)
 
   str.data$pot.occ.rate <- ((str.data$bookings * str.data$extr.par) / 
@@ -143,169 +163,7 @@ State gives energy costs at 330 (apt) to 520 (house).  For 2 person in apt that 
 
 ```
 
-#### Compute revenue densities
-
-```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
-
-  stra.rev <- str.data[,c('bedrooms', 'str.ext.revenue')]
-  stra.rev$tenure <- 'Short-Term (Actual)   '
-  names(stra.rev)[2] <- 'revenue'
-  strp.rev <- str.data[,c('bedrooms', 'str.pot.revenue')]
-  strp.rev$tenure <- 'Short-Term (potential)   '
-  names(strp.rev)[2] <- 'revenue'
-  ltr.rev <- ltr.data[,c('bedrooms', 'ltr.revenue')]
-  ltr.rev$tenure <- 'Long-Term   '
-  names(ltr.rev)[2] <- 'revenue'
-  revdens.data <- rbind(stra.rev, strp.rev, ltr.rev)
-
-  ggplot(revdens.data, aes(x=revenue, fill=tenure, color=tenure)) +
-    geom_density(alpha=.5) +
-    scale_fill_manual(values=c(ltr.col, abb.col[2], str.col)) +
-    scale_color_manual(values=c(ltr.col, abb.col[2], str.col)) +
-    #ggtitle('Annual Revenues by Tenure Type') +
-    xlab('\nAnnual Revenue') +
-    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
-                       labels=c('$0', '$20k', '$40k', '$60k'))+
-    theme(legend.position='none',
-          legend.title = element_blank(),
-          plot.title = element_text(hjust = 0.5),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.title.y=element_blank()) +
-    coord_cartesian(xlim=c(0, 70000)) +
-    facet_wrap(~tenure)
-
-```
-
-
-
-### Host types
-
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  host.block.freq <- ggplot(str.data, aes(x=block.rate)) + 
-  geom_density(fill=str.col, color=str.col) +
-  ylab('Frequency\n') + 
-  xlab('\n% of Time Property is Blocked') +
-  scale_x_continuous(breaks=seq(0,1,.2),
-                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
-    ggtitle('Host Block Rate Frequency\n') +
-    theme(plot.title = element_text(hjust = 0.5)) +
-    theme(axis.text.y=element_blank(),
-          axis.ticks.y=element_blank())
-
-  # Make Plot
-  png(file=paste0(fig.path, 'dataanys_hostblock.png'), width = 480, height = 280, 
-      bg='transparent')
-
-    host.block.freq
-  
-  dev.off()
-  
-  save(host.block.freq, file=paste0(fig.path, 'hostblockfreq.RData'))
-  
-
-```
-
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  block.rate.period <- ggplot(str.data, aes(x=block.rate, y=nbr.block*extr.par)) + 
-  geom_point(fill=str.col, color=str.col, size=.2) +
-  ylab('Nbr of Blocked Periods\n') + 
-  xlab('\n% of Time Property is Blocked') +
-  scale_x_continuous(breaks=seq(0, 1, .2),
-                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
-    ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
-    theme(plot.title = element_text(hjust = 0.5)) 
-
-  # Make Plot
-  png(file=paste0(fig.path, 'dataanys_blockrateperiod.png'), width = 480, height = 280, 
-      bg='transparent')
-
-    block.rate.period
-  
-  dev.off()
-  
-  block.rate.period
-  
-  save(block.rate.period, file=paste0(fig.path, 'blockrateperiod.RData'))
-  
-
-```
-
-
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-str.data$blockpertime <- round(str.data$nbr.block * str.data$extr.par, 1)
-
-str.data$host.type <- 'Unknown'
-str.data$host.type[str.data$blockpertime > 12] <- 'Multi-Platform User'
-str.data$host.type[str.data$block.rate <= .25] <- 'Profit Seeker'
-str.data$host.type[str.data$block.rate >= .75] <- 'Opportunistic Sharer'
-str.data$host.type <- factor(str.data$host.type,
-                             levels=c('Profit Seeker', 'Opportunistic Sharer', 
-                                      'Multi-Platform User', 'Unknown'))
-
-host.type <- ggplot(str.data, 
-       aes(x=block.rate, y=blockpertime, color=host.type)) + 
-  geom_point(alpha=.5, size=.8, shape=16) +
-  ylab('Number of Blocked Periods\n') + 
-  xlab('\n% of Time Property is Blocked') +
-      ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
- 
-    scale_x_continuous(breaks=seq(0, 1, .2),
-                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
-
-  scale_color_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9])) + 
-  theme(legend.position='bottom',
-          legend.title = element_blank(),
-        plot.title = element_text(hjust = 0.5))+
-    guides(colour = guide_legend(override.aes = list(size=3,
-                                                     alpha=1)))
-  # Make Plot
-  png(file=paste0(fig.path, 'dataanys_hosttype.png'), width = 480, height = 280, 
-      bg='transparent')
-
-    host.type
-  
-  dev.off()
-  
-  host.type
-  
-  save(host.type, file=paste0(fig.path, 'hosttype.RData'))
-  
-  
-```
-
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
-  geom_bar() +
-  scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
-  theme(legend.position='none') +
-  ylab('Frequency\n') + 
-  xlab('\nHost Type') +
-  ggtitle('Short Term Host Types') + 
-  theme(plot.title = element_text(hjust = 0.5))
-
-
-  # Make Plot
-  png(file=paste0(fig.path, 'dataanys_hosttypebar.png'), width = 480, height = 280, 
-      bg='transparent')
-
-    host.type.bar
-  
-  dev.off()
-  
-  host.type.bar
-  
-  save(host.type.bar, file=paste0(fig.path, 'hosttypebar.RData'))
-  
-
-```
+#### Compare Revenue Distributions
 
 ## Global Market Analysis
 
@@ -322,55 +180,56 @@ We start by specifying the imputation models for the LTR and the Airbnb datasets
 ```
 
 
-We then employ a custom function to cross impute rates and rents for the two datasets.  The 'clip.field' is a spatial fixed effects that add spatial recognition to the models. 
+<!-- We then employ a custom function to cross impute rates and rents for the two datasets.  The 'clip.field' is a spatial fixed effects that add spatial recognition to the models.  -->
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-  
-  imp.data <- imputeLtrRents(ltr.df=ltr.data, 
-                               str.df=str.data, 
-                               mod.spec=ltr.mod.spec,
-                               match.factor='suburb')
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
 
-```
+<!--   imp.data <- imputeLtrRents(ltr.df=ltr.data,  -->
+<!--                                str.df=str.data,  -->
+<!--                                mod.spec=ltr.mod.spec, -->
+<!--                                match.factor='suburb') -->
 
-From the imputed results, we extract the base data (with imputed values) as well as the model summaries. 
+<!-- ``` -->
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+<!-- From the imputed results, we extract the base data (with imputed values) as well as the model summaries.  -->
 
-  # Extract out DFs (only those that imputed)
-  str.glob <- merge(str.data, imp.data$imp.rent, by='property.id')
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
 
-```
+<!--   # Extract out DFs (only those that imputed) -->
+<!--   str.glob <- merge(str.data, imp.data$imp.rent, by='property.id') -->
 
-Next we cross impute days on market and occupancy rates.
+<!-- ``` -->
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+<!-- Next we cross impute days on market and occupancy rates. -->
 
-  # Apply dom to abb
-  str.glob$imp.dom <- imputeDOM(str.glob, ltr.data, calc.type='median')
-  
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
 
-```
+<!--   # Apply dom to abb -->
+<!--   str.glob$imp.dom <- imputeDOM(str.glob, ltr.data, calc.type='median') -->
 
-With the cross-imputed DOMs and occupancy rates we now make the cross-tenure imputations of revenues and add them back to the original datasets. 
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+<!-- ``` -->
 
-  str.glob$ltr.imp.revenue <- str.glob$imp.rent * (52 - str.glob$imp.dom / 7)
+<!-- With the cross-imputed DOMs and occupancy rates we now make the cross-tenure imputations of revenues and add them back to the original datasets.  -->
 
-```
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
 
-Next, we compare the revenues from the two and extract the new datasets.
+<!--   str.glob$ltr.imp.revenue <- str.glob$imp.rent * (52 - str.glob$imp.dom / 7) -->
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+<!-- ``` -->
 
-  comp.revs <- compareRevenues(str.glob)
+<!-- Next, we compare the revenues from the two and extract the new datasets. -->
 
-  str.glob <- merge(str.glob, comp.revs, by='property.id')
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
 
-```
+<!--   comp.revs <- compareRevenues(str.glob) -->
+
+<!--   str.glob <- merge(str.glob, comp.revs, by='property.id') -->
+
+<!-- ``` -->
 
 Realizing that the imputed long term rental values may be more accurate when estimated at smaller scales, we functionalize the above processes and then apply it to short term rentals, broken into submarkets by type, bed/bath and geographic area.  In other words, we separately estimate LTR rents for Apartments with 1bed/1bath in the city core, Apartments with 1bed/1bath in the beach submarket, etc. for all compbinations of type, bed/bath and geographic area. We then combine the results form all estimates back into a single data.frame that contains all of the short-term rentals. 
+
 
 ```{r build.tbg.data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
@@ -386,10 +245,29 @@ Realizing that the imputed long term rental values may be more accurate when est
                                  mod.spec=ltr.mod.spec,
                                  match.factor='suburb',
                                  split.field='tbg',
-                                 verbose=TRUE)
+                                 verbose=FALSE)
 
 
 ```
+
+Having calculated the revenues, both short-term and long-term imputed, we now compare the actual (extr), potential and imputed long-term revenue distributions for the short term properties 
+
+```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
+
+  buildRevDensPlot(str.data.ic,
+                   rev.cols=c(ltr.col, abb.col[2], str.col))
+  
+  
+```
+
+
+
+
+
+
+
+
+
 
 
 ## Analyze Results
@@ -635,6 +513,140 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
                           'pot.str', 'pot.loc', 'pot.host')
 
 ```
+
+### Sensitivity
+
+
+
+### Host types
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  host.block.freq <- ggplot(str.data, aes(x=block.rate)) + 
+  geom_density(fill=str.col, color=str.col) +
+  ylab('Frequency\n') + 
+  xlab('\n% of Time Property is Blocked') +
+  scale_x_continuous(breaks=seq(0,1,.2),
+                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    ggtitle('Host Block Rate Frequency\n') +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(axis.text.y=element_blank(),
+          axis.ticks.y=element_blank())
+
+  # Make Plot
+  png(file=paste0(fig.path, 'dataanys_hostblock.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    host.block.freq
+  
+  dev.off()
+  
+  save(host.block.freq, file=paste0(fig.path, 'hostblockfreq.RData'))
+  
+
+```
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  block.rate.period <- ggplot(str.data, aes(x=block.rate, y=nbr.block*extr.par)) + 
+  geom_point(fill=str.col, color=str.col, size=.2) +
+  ylab('Nbr of Blocked Periods\n') + 
+  xlab('\n% of Time Property is Blocked') +
+  scale_x_continuous(breaks=seq(0, 1, .2),
+                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+
+  # Make Plot
+  png(file=paste0(fig.path, 'dataanys_blockrateperiod.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    block.rate.period
+  
+  dev.off()
+  
+  block.rate.period
+  
+  save(block.rate.period, file=paste0(fig.path, 'blockrateperiod.RData'))
+  
+
+```
+
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+str.data$blockpertime <- round(str.data$nbr.block * str.data$extr.par, 1)
+
+str.data$host.type <- 'Unknown'
+str.data$host.type[str.data$blockpertime > 12] <- 'Multi-Platform User'
+str.data$host.type[str.data$block.rate <= .25] <- 'Profit Seeker'
+str.data$host.type[str.data$block.rate >= .75] <- 'Opportunistic Sharer'
+str.data$host.type <- factor(str.data$host.type,
+                             levels=c('Profit Seeker', 'Opportunistic Sharer', 
+                                      'Multi-Platform User', 'Unknown'))
+
+host.type <- ggplot(str.data, 
+       aes(x=block.rate, y=blockpertime, color=host.type)) + 
+  geom_point(alpha=.5, size=.8, shape=16) +
+  ylab('Number of Blocked Periods\n') + 
+  xlab('\n% of Time Property is Blocked') +
+      ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+ 
+    scale_x_continuous(breaks=seq(0, 1, .2),
+                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+
+  scale_color_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9])) + 
+  theme(legend.position='bottom',
+          legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5))+
+    guides(colour = guide_legend(override.aes = list(size=3,
+                                                     alpha=1)))
+  # Make Plot
+  png(file=paste0(fig.path, 'dataanys_hosttype.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    host.type
+  
+  dev.off()
+  
+  host.type
+  
+  save(host.type, file=paste0(fig.path, 'hosttype.RData'))
+  
+  
+```
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
+  geom_bar() +
+  scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
+  theme(legend.position='none') +
+  ylab('Frequency\n') + 
+  xlab('\nHost Type') +
+  ggtitle('Short Term Host Types') + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+  # Make Plot
+  png(file=paste0(fig.path, 'dataanys_hosttypebar.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    host.type.bar
+  
+  dev.off()
+  
+  host.type.bar
+  
+  save(host.type.bar, file=paste0(fig.path, 'hosttypebar.RData'))
+  
+
+```
+
+
 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
