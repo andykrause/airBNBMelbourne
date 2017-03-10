@@ -1269,7 +1269,7 @@ save(clean.count, daily.data, listing.data, ltr.data, pref.table,
      core.suburbs,  exch.rate, host.models, pref.models, prem.models,
      file=paste0(data.path, 'analyzed/analyzed_workspace.RData'))
 
-save(str.data.ic, subs, file=paste0(data.path,'analyzed/shinyinput.RData'))
+save(str.data.ic, subs, abb.col, file=paste0(data.path,'analyzed/shinyinput.RData'))
 
  #all.mwl.coefs, all.mwl.surfs,est.points,  s.subs, sssubs,
 
