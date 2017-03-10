@@ -219,7 +219,11 @@ abbCalcBookStr <- function(id,
     # Extract
     if(length(id.R) > 0){
       r.list <- ss.list[id.R]
+      bookings <- sum(nchar(unlist(r.list)))
+    } else {
+      bookings <- 0
     }
+    
     if(length(id.A) > 0){
       a.list <- ss.list[id.A]
       avails <- unlist(lapply(a.list, nchar))
@@ -263,6 +267,7 @@ abbCalcBookStr <- function(id,
     id.min <- NA
     id.max <- NA
     avail.rate <- NA
+    bookings <- NA
 
   }  
   
@@ -276,7 +281,8 @@ abbCalcBookStr <- function(id,
                     avail.rate=avail.rate,
                     longest.block=longest.block,
                     nbr.block=nbr.block,
-                    med.block=med.block))
+                    med.block=med.block,
+                    bookings=bookings))
 }
 
 ### Set the cleaning counter -------------------------------------------------------------

@@ -1365,7 +1365,7 @@ As we have limited the time period of analysis from the expanse of the raw data,
 
  # Remove existing 
  cut.fields <- which(names(str.data) %in% c('total.days', 'block.rate', 'avail.rate',
-                                     'longest.block', 'nbr.block', 'med.block'))
+                                     'longest.block', 'nbr.block', 'med.block', 'bookings'))
  str.data <- str.data[ ,-cut.fields]
 
  # Add summary data to property data
