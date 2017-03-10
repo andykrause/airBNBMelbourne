@@ -23,109 +23,53 @@
         actionButton('plot', "Plot/Re-Plot Data", icon("paper-plane"), 
                      style="color: #fff; background-color: #FF5A5F; border-color: #FF5A5F"),
         hr(),
-        
-    ## Select county to view --------------------------------------------------
-        
-        selectInput('county', 'Select a Market to Analyze',
-          c('Choose a market' = 'none', 
-            'All properites' = 'all',
-            'Houses only' = 'houses',
-            'Apartments only' = 'apts',
-            'City-core' = 'city-core',
-            'City' = 'city',
-            'Suburban' = 'suburban',
-            'Rural' = 'rural',
-            'Beach' = 'beach')
-        ),
-        hr(),
-        hr()#,
-    #     
-    # ## Select which options to alter ------------------------------------------
-    #     
-    #     selectInput(
-    #       'opt', 'Select Options to Update',
-    #       c('Choose a option' = 'none',
-    #         'Graphical Aesthetics' = 'aeth',
-    #         'Data Specifics' = 'spec')
-    #     ),
-    #     hr(),
-    #     hr(),
-    #     
-    #  ## If 'aeth' option chosen ----------------------------------------------
-    # 
-    #     conditionalPanel(
-    #      condition = "input.opt == 'aeth'",
-    #   
-    #    ## Select Y value
-    #      
-    #       selectInput('yVar', "Select Y Variable",
-    #         c('Prediction Error' = "raw.error")
-    #       ), # Ends Select Y Value
-    #      
-    #    ## Select X variable
-    #       
-    #      selectInput("xVar", "Select X Variable",
-    #         c('Data/Model/Estimator' = 'dme',
-    #           'Prediction Month' = 'pred.time',
-    #           'Forecast Distance' = 'time.diff')
-    #         ), # Ends Select X Variable
-    #    
-    #    ## Select Color variable
-    #     selectInput('col', "Select Color Variable",
-    #                  c('None' = 'none',
-    #                    'Data/Model/Estimator' = 'dme',
-    #                    'Hierarchical Blend' = 'hrb')
-    #    ), # Ends Color colour
-    #    
-    #    # Select Facet Variable
-    #    selectInput("f1Var", "Select Facet Variable",
-    #                c('none' = 'none',
-    #                  'Market Level' = 'market',
-    #                  'Model' = 'model',
-    #                  'Estimator' = 'est')
-    #    ) # Ends Select Facet Variable
-    #    
-    #   ), # Ends conditionPanel('aeth'
-    #   
-    # ## if 'spec' option chosen ---------------------------------------------
-    # 
-    #   conditionalPanel(condition = "input.opt == 'spec'",
-    #   
-    #     sliderInput("timeRange", "Time Range in Months (Jan 06 = 1)",
-    #                  min = 1, max = 121, 
-    #                  value = c(1, 121), step=1),    
-    #     
-    #     # Select Prediction Types to consider
-    #     selectInput("predType", "Select Prediction Type",
-    #                 c('Forecast' = 'forecast',
-    #                   'Holdout (80/20)' = 'holdout',
-    #                   'Both' = 'both')
-    #     ),
-    #                    
-    #     # Use Absolute Value of error or not
-    #     checkboxInput('abserr', "Use Absolute Value of Errors", TRUE),
-    #     
-    #     # Consider Hierarchical Blended Models
-    #     checkboxInput('hrb', "Include Hierarchical Blend", TRUE),
-    #     
-    #     # Consider Specific Model Types
-    #     checkboxInput('useMTB', "Include Model Blending", TRUE),
-    #     checkboxInput('useAVR', "Include Assessed Value Models", TRUE),
-    #     checkboxInput('useRME', "Include Relative Match Models", TRUE),
-    #     checkboxInput('useSRS', "Include Repeat Sale Models", TRUE),
-    #     checkboxInput('useHED', "Include Hedonic Models", TRUE),
-    #     checkboxInput('useBAS', "Include Base Estimators", TRUE),
-    #     checkboxInput('useROB', "Include Robust Estimators", TRUE),
-    #     checkboxInput('useWGT', "Include Weighted Estimators", TRUE)
-    #     
-    #   ) # Ends conditional panel
-    ), # Ends sidebarPanel(
+     
+    ## Select Input Types  
+           
+    selectInput(
+      'opt', 'Select Options to Update',
+      c('Choose a option' = 'none',
+        'Data Parameters' = 'data',
+        'Analysis Parameters' = 'anys')
+    ),
+
+    # Data Panel
+    conditionalPanel(
+      condition = "input.opt == 'data'",
+      
+      ## Select Data to Include
+      h3("Select those to Include in Analysis:"),
+      hr(),
+      h4("Property Type"),
+      checkboxInput('apt', "Apartments", TRUE),
+      checkboxInput('house', "House", TRUE),
+      h4("Geographic Submarket"),
+      checkboxInput('core', "City Core", TRUE),
+      checkboxInput('city', "City", TRUE),
+      checkboxInput('suburban', "Suburban", TRUE),
+      checkboxInput('rural', "Rural", TRUE),
+      checkboxInput('beach', "Beach", TRUE),
+      h4("Product Type"),
+      checkboxInput('bb11', "1 Bed / 1 Bath", TRUE),
+      checkboxInput('bb21', "2 Bed / 1 Bath", TRUE),
+      checkboxInput('bb22', "2 Bed / 2 Bath", TRUE),
+      checkboxInput('bb31', "3 Bed / 1 Bath", TRUE),
+      checkboxInput('bb32', "3 Bed / 2 Bath", TRUE),
+      checkboxInput('bb42', "4 Bed / 2 Bath", TRUE),
+      h4("Host Category"),
+      checkboxInput('hostps', "Hosts - Profit Seekers", TRUE),
+      checkboxInput('hostos', "Hosts - Opportunistic Sharers", TRUE),
+      checkboxInput('hostmu', "Hosts - Multiplatform Users", TRUE),
+      checkboxInput('hostun', "Host - Unknowns", TRUE)
+      
+    ) # Ends Conditional Panel
+   ), # Ends sidebarPanel(
     
 ## Show main panel -----------------------------------------------------  
     
     # Show the caption and plot of the requested variable against mpg
     mainPanel(
-      tabPanel("Plot", plotOutput("compPlot"))
+      tabPanel("Plot", plotOutput("occplot"))
     ) # Ends MainPanel(
    ) # Ends sidebarLayout(
   ) # Ends FluidPage(
