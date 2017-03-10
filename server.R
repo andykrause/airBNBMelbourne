@@ -122,13 +122,14 @@ shinyServer(function(input, output) {
     
     ## If doing comparison, calc percentiles separately
     
-    if(input$facet.var != 'none'){
+    if(input$facet.var != 'none' & input$transform == 'Pcntl'){
       
       x.list <- split(x.data, x.data[,input$facet.var])
       for(ix in 1:length(x.list)){
-        x.list[[ix]] <- makeWtdQtl(x.list[[ix]]$occ, return.type='rank')
+        x.list[[ix]]$occ <- makeWtdQtl(x.list[[ix]]$occ, return.type='rank')
+        x.list[[ix]]$occ <- makeWtdQtl(x.list[[ix]]$occ, return.type='rank')
       }
-      x.data <- rbind.fill(x.data)
+      x.data <- rbind.fill(x.list)
     }
     
     
@@ -401,7 +402,20 @@ shinyServer(function(input, output) {
        
   })
  
-### Make the Revenue Density Plot  
+### Make a wrapper for heatmaps ----------------------------------------------------------
+  
+  heatMapWrapper <- eventReactive(input$plot, {
+    
+    hm.data <- filterData()
+   
+    hm.list <- split(hm.data, hm.data[, input$facet.var])
+    hm.plots <- lapply(hm.list, makeOneHeatMap, transform=input$transform,
+                       svm=input$svm, name.field=input$facet.var)
+    return(hm.plots)
+  
+  })
+  
+### Make the Revenue Density Plot -------------------------------------------------------- 
   
   buildRevDensPlot <- eventReactive(input$plot, {
     
@@ -664,7 +678,12 @@ shinyServer(function(input, output) {
   
   output$hmplot <- renderPlot({
     
-    buildHeatMap()
+    if(input$facet.var == 'none'){
+      buildHeatMap()
+    } else {
+      ggMultiPlots(plotlist=heatMapWrapper(), cols=2)
+    }  
+    
     
   }, height = 500, width = 500 )
   
@@ -689,6 +708,8 @@ shinyServer(function(input, output) {
   })  
 
 }) # Close Shiny Server
+
+### Additional Functions -----------------------------------------------------------------
 
 makeSVM <- function(svm.data,
                     x.field,
@@ -803,8 +824,6 @@ makeWtdQtl <- function(data.vec,
   
 }
 
-
-
 tapply2DF <- function(xData,          # Vector being tapply'd 
                       byField,        # Field to split vector by
                       xFunc,          # Function to apply
@@ -835,4 +854,165 @@ tapply2DF <- function(xData,          # Vector being tapply'd
   ## Return values
   
   return(xTable)
+}
+
+makeOneHeatMap <- function(hm.data,
+                           transform,
+                           svm,
+                           name.field){
+  
+  ## Obtain data
+
+  hm.name <- names(table(as.character(hm.data[,name.field])))
+  
+  ## If no data is returned
+  if(nrow(hm.data) == 0){
+    xx <- data.frame(x=c(0, 1),
+                     y=c(0, 1))
+    null.plot <- list(plot=ggplot(xx, aes(x=x, y=y)) + 
+                        annotate("text", x = .5, y = .5, 
+                                 label = "You have selected\n no properties",
+                                 size=9))
+    return(null.plot)
+  } 
+  
+  ## Set bins
+  
+  if(transform == 'Pcntl'){
+    
+    bins <- c(5, 5)
+    quantile=TRUE
+    
+  } else {
+    
+    bins <- c(5, 25)
+    quantile <- FALSE
+    
+  }
+  
+  ## Build SVM data
+  
+  if(svm){
+    svm.obj <- makeSVM(hm.data,
+                       x.field='occ',
+                       y.field='rate',
+                       z.field='pref',
+                       svm.type='C-svc',
+                       svm.kernel='polydot',
+                       poly.degree=2,
+                       expand.factor=100,
+                       quantile=quantile,
+                       bins=bins)
+    
+    point.data <- hm.data
+    point.data$x <- point.data$occ
+    point.data$y <- point.data$rate
+    
+    hm.data <- svm.obj$pred
+    names(hm.data) <- c('x.var', 'y.var', 'fill.var')
+    
+  } else {
+    
+    # Set up X, Y and fill variables
+    hm.data$x.var <- hm.data$occ
+    hm.data$y.var <- hm.data$rate
+    hm.data$fill.var <- hm.data$pref 
+    
+    point.data <- hm.data
+    point.data$x <- point.data$occ
+    point.data$y <- point.data$rate
+    
+  }
+  
+  ## Make Plot  
+  # Set up the basics
+  
+  hm.plot <- ggplot(data=hm.data,
+                    aes(x=x.var, y=y.var))
+  
+  
+  # Add the colors/counts
+  hm.plot <- hm.plot +
+    stat_bin2d(data=hm.data,
+               aes(alpha=..count.., fill=as.factor(fill.var)),
+               binwidth=bins) +
+    guides(alpha=FALSE)
+  
+  # Add points
+  hm.plot <- hm.plot + geom_point(data=point.data,
+                                  aes(x=x, y=y),
+                                  size=.1, color='gray50', alpha=.35,
+                                  show.legend=FALSE)
+  ## Tidy up plot
+  
+  if(transform == 'Raw'){
+    hm.plot <- hm.plot +
+      xlab('\n Occupancy Rate') +
+      ylab('\n Nightly Rate') + 
+      scale_x_continuous(breaks=seq(0, 100, by=25),
+                         labels=c('0%', '25%', '50%', '75%', '100%'))
+  } else {
+    hm.plot <- hm.plot +
+      xlab('\n Occupancy Rate (Pcntl)') +
+      scale_x_continuous(breaks=seq(0, 100, by=25),
+                         labels=c('0th', '25th', '50th', '75th', '100th')) +
+      ylab('\n Nightly Rate (Pcntl)') +
+      scale_y_continuous(breaks=seq(0, 100, by=25),
+                         labels=c('0th', '25th', '50th', '75th', '100th'))
+    
+  }
+  
+  ## Add legend   
+  
+  hm.plot <- hm.plot +
+    scale_fill_manual(values=c('red', 'forestgreen'),
+                      name='',
+                      labels=c('Long Term Preferred     ',
+                               'Short Term Preferred     ')) +
+    theme(legend.position='bottom')
+  
+  hm.plot <- hm.plot +
+    annotate("text", x = mean(hm.data$x), y = mean(hm.data$y), 
+             label = hm.name, size=6) 
+  
+  return(hm.plot)  
+  
+}
+
+
+ggMultiPlots <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  
+  require(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
 }
