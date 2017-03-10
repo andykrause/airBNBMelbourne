@@ -28,9 +28,9 @@
            
     selectInput(
       'opt', 'Select Options to Update',
-      c('Choose a option' = 'none',
-        'Data Parameters' = 'data',
-        'Analysis Parameters' = 'anys')
+      c('Analysis Parameters' = 'anys',
+        'Data Parameters' = 'data'
+        )
     ),
 
     # Data Panel
@@ -102,6 +102,7 @@
       tabPanel("Occupancy Plot", plotOutput("occplot")),
       tabPanel("Heat map", plotOutput("hmplot")),
       tabPanel("Location map", plotOutput("locplot")),
+      tabPanel("Logistic Model", tableOutput("coefTable")),
       tabPanel("Revenue Plot", plotOutput("rdplot"))
       
      ) # Ends Tab Set Panel  
