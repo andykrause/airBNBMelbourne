@@ -1477,7 +1477,11 @@ Finally, our analysis looks at a single year, beginning in September (spring) an
 
 #### Data, Code and Interactivity
 
-Unfortunately both data sources for this work are proprietarily licenses and are not able to be shared by the authors.  All the code used to complete this analysis, done in the R language, is available for download at www.github.com/andykrause/airbnbmelbourne.  An interactive website that allows readers to examine additional facets, breakdown and subsets of the data and the resulting analytical results can be found at shinyapps.io/somename.  
+Unfortunately both data sources for this work are proprietarily licenses and are not able to be shared by the authors.  All the code used to complete this analysis, done in the R language, is available for download at **[www.github.com/andykrause/airbnbmelbourne](https://www.github.com/andykrause/airbnbmelbourne)**.  An interactive website that allows readers to examine additional facets, breakdown and subsets of the data and the resulting analytical results can be found at **[andykrause/shinyapps.io/shouldiairbnb](https://andykrause.shinyapps.io/ShouldIAirbnb)**.
+
+### Acknowledgements
+
+The authors would like to thank the Real Estate Research Institute (RERI) for funding this work and the Australian Property Monitors (APM) for providing the long-term rental data. 
 
 \pagebreak
 
