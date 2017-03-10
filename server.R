@@ -1,6 +1,6 @@
 ################################################################################
 #                                                                              #
-#   Server for Reproducible Real Estate Analysis                               #
+#   Server for Should I Airbnb My Property Research                            #
 #                                                                              #  
 ################################################################################
 
@@ -15,9 +15,21 @@ library(maptools)
 library(ggplot2)
 library(hexbin)
 library(Hmisc)
+library(gstat)
+library(geosphere)
+library(ggmap)
+library(chron)
+library(rgeos)
+library(reshape2)
+library(stringr)
+library(RColorBrewer)
+library(kernlab)
+library(lmtest)
+library(ROCR)
 
-load("C:/Dropbox/Research/airBNB/data/analyzed/shinyinput.RData")
-#load("shinyinput.RData")
+
+#load("C:/Dropbox/Research/airBNB/data/analyzed/shinyinput.RData")
+load("shinyinput.RData")
 
 ######################################################################################
 ### Shiny Server ---------------------------------------------------------------------
@@ -677,7 +689,7 @@ shinyServer(function(input, output) {
     
     buildOccPlot()
     
-  }, height = 500, width = 500 )
+  }, height = 1000, width = 1000 )
   
 ### Output the revenue density plot ------------------------------------------------------------  
   
@@ -685,7 +697,7 @@ shinyServer(function(input, output) {
     
     buildRevDensPlot()
     
-  }, height = 500, width = 500 )
+  }, height = 1000, width = 1000 )
   
 ### Output the revenue density plot ------------------------------------------------------------  
   
@@ -698,7 +710,7 @@ shinyServer(function(input, output) {
     }  
     
     
-  }, height = 500, width = 500 )
+  }, height = 1000, width = 1000 )
   
 ### Output Location Map ------------------------------------------------------------------  
   
@@ -710,7 +722,7 @@ shinyServer(function(input, output) {
       ggMultiPlots(plotlist=locMapWrapper(), cols=2)
     }  
 
-  }, height = 500, width = 500 )
+  }, height = 1000, width = 1000 )
   
 ### Output preference table  ------------------------------------------------------------- 
   
