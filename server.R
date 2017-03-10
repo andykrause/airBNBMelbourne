@@ -17,7 +17,7 @@ library(hexbin)
 library(Hmisc)
 
 load("C:/Dropbox/Research/airBNB/data/analyzed/shinyinput.RData")
-source('c:/code/research/AirBNBMelbourne/abb_Functions.R')
+#load("shinyinput.RData")
 
 ######################################################################################
 ### Shiny Server ---------------------------------------------------------------------
@@ -690,4 +690,149 @@ shinyServer(function(input, output) {
 
 }) # Close Shiny Server
 
+makeSVM <- function(svm.data,
+                    x.field,
+                    y.field,
+                    z.field,
+                    svm.type='C-svc',
+                    svm.kernel='polydot',
+                    poly.degree=4,
+                    expand.factor=100,
+                    quantile=FALSE,
+                    bins=c(1, 1)){
+  
+  
+  # Create XY data
+  xy.data <- cbind(svm.data[,x.field], svm.data[,y.field])
+  
+  # Hack if all 0s
+  if(sum(svm.data[,z.field]) == 0) svm.data[1,z.field] <- 1
+  
+  # Specificy SVM
+  svm.obj <- ksvm(x=xy.data,
+                  y=svm.data[,z.field],
+                  data=xy.data,
+                  type=svm.type,
+                  kernel=svm.kernel,
+                  kpar=list(degree=poly.degree))
+  
+  # Add the fitted to the data
+  svm.data$fitted <- svm.obj@fitted
+  
+  ## Make predictions over grid
+  
+  # Set up grid
+  if(quantile){
+    
+    pred.grid <- expand.grid(seq(.5, 99.5, by=bins[1]),
+                             seq(.5, 99.5, by=bins[2]))
+    
+  } else {
+    
+    x.range <- max(svm.data[ ,x.field]) - min(svm.data[ ,x.field])
+    x.inc <- x.range / expand.factor
+    xx.min <- min(svm.data[, x.field]) 
+    xx.max <- max(svm.data[, x.field]) 
+    
+    y.range <- max(svm.data[ ,y.field]) - min(svm.data[ ,y.field])
+    y.inc <- y.range / expand.factor
+    yy.min <- min(svm.data[, y.field]) 
+    yy.max <- max(svm.data[, y.field]) 
+    
+    pred.grid <- expand.grid(seq(.5, 99.5, by=bins[1]),
+                             seq(yy.min, yy.max, by=bins[2])) 
+    
+  }
+  
+  # Make the predictions
+  svm.pred <- predict(svm.obj, pred.grid)
+  
+  # Add predictions to the 
+  pred.grid$pred <- svm.pred
+  
+  ## Return values
+  
+  return(list(orig=svm.data,
+              pred=pred.grid))
+  
+}
 
+makeWtdQtl <- function(data.vec, 
+                       wgts=rep(1,length(data.vec)),
+                       return.type='rank')
+{
+  
+  ## Load required library  
+  
+  require(Hmisc)
+  
+  ## Set the adjustment jitter to prevent identical breaks  
+  
+  adj.jit <- abs(mean(data.vec) / 100000)
+  
+  ## Calculate the weighted quantiles 0  to 1000  
+  
+  wtd.qtl <- Hmisc::wtd.quantile(data.vec + runif(length(data.vec), 0, adj.jit), 
+                                 weights=wgts, 
+                                 probs=seq(0, 1, .01))
+  
+  ## Fix the ends
+  
+  # Minimum
+  if(wtd.qtl[1] > min(data.vec)){
+    wtd.qtl[1] <- min(data.vec) - adj.jit
+  }
+  
+  # Maximum
+  if(wtd.qtl[length(wtd.qtl)] < max(data.vec)){
+    wtd.qtl[length(wtd.qtl)] <- max(data.vec) + adj.jit
+  }
+  
+  ##  Convert to a vector of quantile indicators 
+  
+  qtl.vec <- as.numeric(as.factor(cut(data.vec, 
+                                      breaks=(wtd.qtl + seq(0, 1, .01) * adj.jit))))
+  
+  ## Return value
+  
+  if(return.type == 'rank'){
+    return(qtl.vec)
+  } else {
+    return(wtd.qtl)
+  }
+  
+}
+
+
+
+tapply2DF <- function(xData,          # Vector being tapply'd 
+                      byField,        # Field to split vector by
+                      xFunc,          # Function to apply
+                      newName='Var',  # Name of new variable 
+                      idName='ID',
+                      na.rm=FALSE)    # Name of identification field 
+{
+  
+  ## Execute tapply()
+  
+  xTable <- as.data.frame(tapply(xData, byField, xFunc, na.rm=na.rm))
+  
+  ## Add names and new fields
+  
+  # Give calculated field a name
+  names(xTable) <- newName
+  
+  # Add id field and give it a name
+  xTable[ ,2] <- rownames(xTable)
+  names(xTable)[2] <- idName
+  
+  # Reorder columns
+  xTable <- xTable[ ,c(2, 1)]
+  
+  # Remove existing field names
+  rownames(xTable) <- 1:nrow(xTable)
+  
+  ## Return values
+  
+  return(xTable)
+}
