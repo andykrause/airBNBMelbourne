@@ -98,177 +98,465 @@ shinyServer(function(input, output) {
    
   buildOccPlot <- eventReactive(input$plot, {
     
+    ## Obtain data
+    
     occ.data <- filterData()
     
-    ## Get correct occupancy rate field
+    ## If no data is returned
+    if(nrow(occ.data) == 0){
+      xx <- data.frame(x=c(0, 1),
+                       y=c(0, 1))
+      null.plot <- list(plot=ggplot(xx, aes(x=x, y=y)) + 
+                        annotate("text", x = .5, y = .5, 
+                                 label = "You have selected\n no properites",
+                                 size=9))
+      return(null.plot)
+    }  
+      
+    ## Get correct occupancy rate and preference field
     
-    if(input$rev.type=='Potential'){
+    if(input$rev.type=='pot'){
+      
       occ.data$occ <- occ.data$pot.occ.rate
+      occ.data$pref <- occ.data$str.pot.pref
+      
     } else {
-      odd.data$occ <- occ.data$occ.rate
+      
+      occ.data$occ <- occ.data$occ.rate
+      occ.data$pref <- occ.data$str.act.pref
+    
     }
     
     ## Tranform in pcntl is needed
     
-    ## If facet then transform by facet variable
-    
-    
-    
-    # 
-    # 
-    # ## Fixing some variables
-    # 
-    # if(x.field == 'occ' | x.field == 'occ.rate'){
-    #   
-    #   pref.data[, x.field] <- round(100 * pref.data[, x.field], 0)
-    #   
-    # }
-    # 
-    # ## Extract function of analysis
-    # 
-    # metric.fnct <- get(metric)
-    # 
-    # ## Set up capture list
-    # 
-    # pref.list <- list()
-    # 
-    # ## Loop through and create the preference plots  
-    # 
-    # for(i.pl in 1:100){
-    #   
-    #   # Extract the ith data
-    #   if(cumulative){
-    #     pref.df <- pref.data[pref.data[ ,x.field] >= i.pl, ]
-    #   } else {
-    #     pref.df <- pref.data[pref.data[ ,x.field] == i.pl, ]
-    #   }
-    #   
-    #   
-    #   if(split.field != 'none'){
-    #     
-    #     if(nrow(pref.df) > 0){
-    #       # Create the table
-    #       pref.table <- tapply2DF(pref.df$pref, 
-    #                               pref.df[ ,split.field],
-    #                               metric.fnct)
-    #     } else {
-    #       pref.table <- NULL
-    #     }  
-    #   } else {
-    #     
-    #     pref.table <- data.frame(ID='all', 
-    #                              Var=metric.fnct(pref.df$pref, na.rm=T))
-    #   }
-    #   
-    #   if(nrow(pref.df) > 0){
-    #     
-    #     # Add the x variable
-    #     pref.table$x.var <- i.pl
-    #     
-    #     # Add to the capture list
-    #     pref.list[[i.pl]] <- pref.table
-    #   }
-    # }
-    # 
-    # ## Convert to a data.frame  
-    # 
-    # pref.full <- rbind.fill(pref.list)
-    # 
-    # ## Fix Factor Levels
-    # 
-    # if(split.field == 'geo.mrkt'){
-    #   pref.full$ID <- factor(pref.full$ID, 
-    #                          levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
-    # }
-    # if(split.field == 'host.type'){
-    #   pref.full$ID <- factor(pref.full$ID, 
-    #                          levels=c('Profit Seeker', 'Opportunistic Sharer', 
-    #                                   'Multi-Platform User', 'Unknown'))
-    # }
-    # 
-    # ## Creat the base plot  
-    # 
-    # pref.plot <- ggplot(pref.full,
-    #                     aes(x=x.var, y=Var, group=ID, color=ID))
-    # 
-    # ## Add lines  
-    # 
-    # if(smooth){
-    #   pref.plot <- pref.plot + stat_smooth(se=FALSE, size=2, 
-    #                                        span=smooth.span)
-    # } else {
-    #   pref.plot <- pref.plot + geom_line()
-    # }
-    # 
-    # ## Add specific plot outputs
-    # 
-    # if(x.field == 'occ'){
-    #   pref.plot <- pref.plot + 
-    #     xlab('\nOccupancy Rate') +
-    #     scale_x_continuous(breaks=seq(0, 100, by=25),
-    #                        labels=c('0%', '25%', '50%', '75%', '100%')) 
-    # }
-    # if(x.field == 'occ.qtl'){
-    #   pref.plot <- pref.plot + 
-    #     xlab('\nOccupancy Rate (Quantile)') +
-    #     scale_x_continuous(breaks=seq(0, 100, by=25),
-    #                        labels=c('0th', '25th', '50th', '75th', '100th')) 
-    # }
-    # 
-    # 
-    # 
-    # ## Add global plot options
-    # 
-    # pref.plot <- pref.plot +  
-    #   ylab('\n% of Properties where STR is Preferable') +
-    #   scale_y_continuous(breaks=seq(0, 1, by=.25),
-    #                      labels=c('0%', '25%', '50%', '75%', '100%')) +
-    #   scale_colour_manual(values=spl.col,
-    #                       name='')
-    # 
-    # 
-    # ## Return Values
-    # 
-    # return(list(data=pref.full,
-    #             plot=pref.plot))
-    
-  }) 
-  
-  
-    
-  
-  makeOccPlot <- eventReactive(input$plot, {
-    
-    occ.data <- filterData()
-    
-    if(nrow(occ.data) == 0){
-      xx <- data.frame(x=c(0,1),
-                       y=c(0,1))
-      abc <- list(plot=ggplot(xx, aes(x=x, y=y)) + 
-                       annotate("text", x = .5, y = .5, 
-                       label = "You have selected\n no properites",
-                       size=9))
+    if(input$transform=='Pcntl'){
+
+      occ.data$occ <- makeWtdQtl(occ.data$occ, 
+                                 return.type='rank')
     } else {
       
-      abc <- abbPrefPlot(occ.data,
-                         x.field='occ.qtl',
-                         smooth=TRUE,
-                         smooth.span=.5,
-                         spl.col=1)
+      occ.data$occ <- round(100 * occ.data$occ, 0)
+      
+    }
+    
+    ## If facet then transform by facet variable
+    
+    ## Calculate the values
+    
+    occ.list <- list()
+     
+    ## Loop through   
+     
+    for(i.pl in 1:100){
+       
+     # Extract the ith data
+     occ.df <- occ.data[occ.data$occ == i.pl, ]
+     
+     if(nrow(occ.df) > 0){
+        
+       if(input$facet.var == 'none'){
+          occ.table <- data.frame(ID='all',
+                               Var=mean(occ.df$pref, na.rm=T))
+       } else {
+          occ.table <- tapply2DF(occ.df$pref,
+                                 occ.df[ ,input$facet.var],
+                                 mean)
+       } 
+          
+      occ.table$x.var <- i.pl
+       
+     } else {
+       
+       occ.table <- NULL
+       
+     }   
+       
+     # Add to the capture list
+     occ.list[[i.pl]] <- occ.table
+     
+    }
+    
+    occ.full <- rbind.fill(occ.list)
+    
+    if(input$facet.var == 'geo.mrkt'){
+      occ.full$ID <- factor(occ.full$ID, 
+                            levels=c('city-core', 'city', 'suburban', 'rural', 'beach'))
+    }
+    
+    if(input$facet.var == 'host.type'){
+      occ.full$ID <- factor(occ.full$ID,
+                            levels=c('Profit Seeker', 'Opportunistic Sharer',
+                                     'Multi-Platform User', 'Unknown'))
+    }
+    
+    if(input$facet.var == 'host.type'){
+      occ.full$ID <- as.character(occ.full$ID)
+      occ.full$ID[occ.full$ID == '1..1'] <- '1 Bed/1 Bath'
+      occ.full$ID[occ.full$ID == '2..1'] <- '2 Bed/1 Bath'
+      occ.full$ID[occ.full$ID == '2..2'] <- '2 Bed/2 Bath'
+      occ.full$ID[occ.full$ID == '3..1'] <- '3 Bed/1 Bath'
+      occ.full$ID[occ.full$ID == '3..2'] <- '3 Bed/2 Bath'
+      occ.full$ID[occ.full$ID == '4..2'] <- '4 Bed/2 Bath'
+      occ.full$ID <- as.factor(occ.full$ID)
     }
     
     
-    return(abc$plot)
+    
+    occ.plot <- ggplot(occ.full,
+                        aes(x=x.var, y=Var, group=ID, color=ID))
+    
+    occ.plot <- occ.plot + stat_smooth(se=FALSE, size=2, span=.5)
+    
+    occ.plot <- occ.plot +
+      ylab('\n% of Properties where STR is Preferable') +
+      scale_y_continuous(breaks=seq(0, 1, by=.25),
+                         labels=c('0%', '25%', '50%', '75%', '100%')) +
+      theme(legend.position='none')
+      
+    ## Add x scale
+    
+    if(input$transform == 'Raw'){
+      occ.plot <- occ.plot +
+        xlab('\nOccupancy Rate') +
+        scale_x_continuous(breaks=seq(0, 100, by=25),
+                           labels=c('0%', '25%', '50%', '75%', '100%'))
+    } else {
+      occ.plot <- occ.plot + 
+           xlab('\nOccupancy Rate (Percentile)') +
+           scale_x_continuous(breaks=seq(0, 100, by=25),
+                              labels=c('0th', '25th', '50th', '75th', '100th')) 
+    }
+    
+   ## Add colors
+    if(input$facet.var == 'geo.mrkt'){
+      
+      occ.plot <- occ.plot + 
+        scale_color_manual(values=abb.col[c(1, 3, 6, 5, 2)],
+                           name='') +
+        theme(legend.position='bottom')
+      
+    }
+    
+    if(input$facet.var == 'type'){
+      
+      occ.plot <- occ.plot + 
+        scale_color_manual(values=c('grey50', 'black'),
+                           name='') +
+        theme(legend.position='bottom')
+      
+    }
+    
+    if(input$facet.var == 'host.type'){
+      
+      occ.plot <- occ.plot + 
+        scale_color_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]),
+                           name='') +
+        theme(legend.position='bottom')
+      
+    }
+    
+    if(input$facet.var == 'bedbath'){
+      
+      occ.plot <- occ.plot + 
+        scale_color_manual(values=c('black', 'salmon', 'red', 'green', 
+                                    'darkgreen', 'blue'),
+                           name='') +
+        theme(legend.position='bottom')
+      
+    }
+    
+    return(occ.plot)
+
+  }) 
+
+### Make the Heatmaps --------------------------------------------------------------------
+  
+  buildHeatMap <- eventReactive(input$plot, {
+  
+    ## Obtain data
+    
+    occ.data <- filterData()
+    
+    ## If no data is returned
+    if(nrow(occ.data) == 0){
+      xx <- data.frame(x=c(0, 1),
+                       y=c(0, 1))
+      null.plot <- list(plot=ggplot(xx, aes(x=x, y=y)) + 
+                          annotate("text", x = .5, y = .5, 
+                                   label = "You have selected\n no properties",
+                                   size=9))
+      return(null.plot)
+    } 
+    
+    
+    
+      
+  })
+  
+  unction(hm.data,
+                         x.field,
+                         y.field,
+                         pref.field,
+                         bins=NULL,
+                         fill.colors=c('red', 'forestgreen'),
+                         alpha.count=TRUE,
+                         alpha.fill=1,
+                         add.points=FALSE,
+                         hexmap=FALSE,
+                         point.data=NULL,
+                         svm=FALSE,
+                         quantile=FALSE,
+                         return.svm=FALSE,
+                         svm.opts=list(type='C-svc',
+                                       kernel='polydot',
+                                       poly.degree=2,
+                                       expand.factor=100)){
+    
+    ## Set bins
+    
+    if(is.null(bins)){
+      bins <- c(0, 0)
+      if(x.field == 'occ' | x.field == 'occ.rate') bins[1] <- .05
+      if(x.field == 'occ.qtl') bins[1] <- 5
+      if(y.field == 'med.rate') bins[2] <- 25
+      if(y.field == 'rate.qtl') bins[2] <- 5
+    }
+    
+    ## Prepare the plotting data  
+    
+    # If SVM
+    if(svm){
+      
+      # create svm analysis
+      svm.obj <- makeSVM(hm.data,
+                         x.field=x.field,
+                         y.field=y.field,
+                         z.field=pref.field,
+                         svm.type=svm.opts$type,
+                         svm.kernel=svm.opts$kernel,
+                         poly.degree=svm.opts$poly.degree,
+                         expand.factor=svm.opts$expand.factor,
+                         quantile=quantile,
+                         bins=bins)
+      
+      # Convert initial data to point data
+      point.data <- hm.data
+      point.data$x <- point.data[,x.field]
+      point.data$y <- point.data[,y.field]
+      
+      # Add predicted values to data
+      hm.data <- svm.obj$pred
+      names(hm.data) <- c('x.var', 'y.var', 'fill.var')
+      
+      # if not SVM  
+    } else {
+      
+      # Set up X, Y and fill variables
+      hm.data$x.var <- hm.data[ ,x.field]
+      hm.data$y.var <- hm.data[ ,y.field]
+      hm.data$fill.var <- hm.data[ ,pref.field] 
+      
+    }
+    
+    ## Make the plot  
+    
+    # Set up the basics
+    hm.plot <- ggplot(data=hm.data,
+                      aes(x=x.var, y=y.var))
+    
+    
+    # If adding by count
+    if(alpha.count){
+      
+      # If Hex
+      if(hexmap){
+        hm.plot <- hm.plot + 
+          stat_binhex(data=hm.data,
+                      aes(alpha=..count.., fill=as.factor(fill.var)),
+                      binwidth=bins, 
+                      na.rm=T) +
+          guides(alpha=FALSE)
+        
+        # If not hex
+      } else {
+        hm.plot <- hm.plot + 
+          stat_bin2d(data=hm.data,
+                     aes(alpha=..count.., fill=as.factor(fill.var)),
+                     binwidth=bins) +
+          guides(alpha=FALSE)
+      }
+      
+      # if not adding by count  
+    } else {
+      
+      # if hex
+      if(hexmap){
+        hm.plot <- hm.plot + 
+          stat_binhex(data=hm.data,
+                      aes(fill=as.factor(fill.var)),
+                      binwidth=bins) +
+          guides(alpha=FALSE)
+        
+        # if not hex
+      } else {
+        hm.plot <- hm.plot + 
+          stat_bin2d(data=hm.data,
+                     aes(fill=as.factor(fill.var)),
+                     binwidth=bins)  +
+          guides(alpha=FALSE)
+      }
+    }
+    
+    # Adding points
+    
+    if(add.points){
+      if(is.null(point.data)){
+        hm.plot <- hm.plot + geom_point(size=.1, color='gray50', alpha=.35, 
+                                        show.legend=FALSE)
+      } else {
+        hm.plot <- hm.plot + geom_point(data=point.data,
+                                        aes(x=x, y=y),
+                                        size=.1, color='gray50', alpha=.35, 
+                                        show.legend=FALSE)
+      }
+    }
+    
+    ## Tidy up plot
+    
+    if(x.field == 'occ' | x.field == 'occ.rate'){
+      hm.plot <- hm.plot +
+        xlab('\n Occupancy Rate') +
+        scale_x_continuous(breaks=seq(0, 1, by=.25),
+                           labels=c('0%', '25%', '50%', '75%', '100%'))  
+    }
+    if(x.field == 'occ.qtl'){
+      hm.plot <- hm.plot +
+        xlab('\n Occupancy Rate (Quantile)') +
+        scale_x_continuous(breaks=seq(0, 100, by=25),
+                           labels=c('0th', '25th', '50th', '75th', '100th'))  
+    }
+    if(y.field == 'nightly.rate'){
+      hm.plot <- hm.plot +
+        ylab('\n Nightly Rate') 
+    }
+    if(y.field == 'rate.qtl'){
+      hm.plot <- hm.plot +
+        ylab('\n Nightly Rate (Quantile)') +
+        scale_y_continuous(breaks=seq(0, 100, by=25),
+                           labels=c('0th', '25th', '50th', '75th', '100th'))  
+    }
+    
+    # Add fill legend
+    hm.plot <- hm.plot + 
+      scale_fill_manual(values=fill.colors,
+                        name='',
+                        labels=c('Long Term Preferred     ',
+                                 'Short Term Preferred     ')) +
+      theme(legend.position='bottom')
+    
+    ## Return Values  
+    
+    # If return SVM data
+    if(return.svm){
+      return(list(svm=hm.data,
+                  map=hm.plot))
+      
+      # if not returnign SVM data  
+    } else {
+      return(hm.plot)
+    }
+    
+  }
+  
+  
+  
+### Make the Revenue Density Plot  
+  
+  buildRevDensPlot <- eventReactive(input$plot, {
+    
+    rd.data <- filterData()
+    
+    ## If no data is returned
+    if(nrow(rd.data) == 0){
+      xx <- data.frame(x=c(0, 1),
+                       y=c(0, 1))
+      null.plot <- list(plot=ggplot(xx, aes(x=x, y=y)) + 
+                          annotate("text", x = .5, y = .5, 
+                                   label = "You have selected\n no properties",
+                                   size=9))
+      return(null.plot)
+    } 
+    
+    # Long-Term
+    ltr.rev <- rd.data[,c('property.id', 'ltr.imp.revenue')]
+    ltr.rev$tenure <- 'Long-Term   '
+    names(ltr.rev)[2] <- 'revenue'
+    
+    if(input$rev.type=='pot'){
+      str.rev <- rd.data[,c('property.id', 'str.pot.revenue')]
+      str.rev$tenure <- 'Short-Term (Potential)   '
+      names(str.rev)[2] <- 'revenue'
+    } else {
+      str.rev <- rd.data[,c('property.id', 'str.act.revenue')]
+      str.rev$tenure <- 'Short-Term (Actual)   '
+      names(str.rev)[2] <- 'revenue'
+    }
+    
+    # Combine
+    revdens.data <- rbind(str.rev, ltr.rev)
+    
+    # Make the plot
+    rd.plot <- ggplot(revdens.data, 
+                      aes(x=revenue, fill=tenure, color=tenure)) +
+      geom_density(alpha=.5) +
+      scale_fill_manual(values=c('red', 'green')) +
+      scale_color_manual(values=c('red', 'green')) +
+      xlab('\nAnnual Revenue') +
+      scale_x_continuous(breaks=c(seq(0, 75000, by=25000)),
+                         labels=c('$0', '$25k', '$50k', '$75k'))+
+      theme(legend.position='none',
+            legend.title = element_blank(),
+            plot.title = element_text(hjust = 0.5),
+            axis.text.y = element_blank(),
+            axis.ticks.y = element_blank(),
+            axis.title.y=element_blank()) +
+      coord_cartesian(xlim=c(0, 85000)) +
+      facet_wrap(~tenure)
+    
+  ## Return 
+    
+    return(rd.plot)
     
   })
+ 
+  
+  
+  
+### Output the occupancy plot ------------------------------------------------------------  
   
   output$occplot <- renderPlot({
     
-    makeOccPlot()
+    buildOccPlot()
     
-  }, height = 400, width = 400 )
+  }, height = 500, width = 500 )
   
-})  
+### Output the revenue density plot ------------------------------------------------------------  
+  
+  output$rdplot <- renderPlot({
+    
+    buildRevDensPlot()
+    
+  }, height = 500, width = 500 )
+  
+  
+# --- #  
+  
+}) # Close Shiny Server
+
+
+
+
+
   #   
   # getCountyData <- eventReactive(input$county, {
   #   if(input$county != 'none'){

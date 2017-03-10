@@ -62,14 +62,42 @@
       checkboxInput('hostmu', "Hosts - Multiplatform Users", TRUE),
       checkboxInput('hostun', "Host - Unknowns", TRUE)
       
-    ) # Ends Conditional Panel
+    ), # Ends Conditional Panel
+    
+    # Analysis Panel
+    conditionalPanel(
+      
+      condition = "input.opt == 'anys'", 
+      
+      selectInput('rev.type', 'Select Revenue Type to Use',
+                  c('Actual' = 'act', 
+                    'Potential' = 'pot')
+      ),
+      
+      selectInput('transform', 'Use Percentiles?',
+                  c('No' = 'Raw', 
+                    'Yes' = 'Pcntl')
+      ),
+      
+      selectInput('facet.var', 'Choose Comparison Variable',
+                  c('None'= 'none',
+                    'Property Type' = 'type', 
+                    'Geographic Submarket' = 'geo.mrkt',
+                    'Product (Bed/Bath)' = 'bedbath',
+                    'Host Type' = 'host.type'),
+                  selected='none'
+      )
+    ) # Ends conditional panel
    ), # Ends sidebarPanel(
     
 ## Show main panel -----------------------------------------------------  
     
     # Show the caption and plot of the requested variable against mpg
     mainPanel(
-      tabPanel("Plot", plotOutput("occplot"))
+     tabsetPanel(
+      tabPanel("Occupancy Plot", plotOutput("occplot")),
+      tabPanel("Revenue Plot", plotOutput("rdplot"))
+     ) # Ends Tab Set Panel  
     ) # Ends MainPanel(
    ) # Ends sidebarLayout(
   ) # Ends FluidPage(
