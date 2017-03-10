@@ -480,7 +480,8 @@ shinyServer(function(input, output) {
     
     loc.data <- filterData()
     
-    loc.data$pref.x <- ifelse(loc.data$pref == 1, 'Short-Term', 'Long-Term')
+    loc.data$pref.x <- ifelse(loc.data$pref == 1, 'Short-Term Preference',
+                              'Long-Term Preference')
     loc.data$pref.x <- as.factor(loc.data$pref.x)
     
     xlims <- c(min(loc.data$longitude), max(loc.data$longitude))
@@ -514,6 +515,18 @@ shinyServer(function(input, output) {
 
   })
 
+### Location map wrapper -----------------------------------------------------------------
+  
+  locMapWrapper <- eventReactive(input$plot, {
+    
+    loc.data <- filterData()
+    
+    loc.list <- split(loc.data, loc.data[, input$facet.var])
+    loc.plots <- lapply(loc.list, makeOneLocMap, name.field=input$facet.var)
+    return(loc.plots)
+    
+  })
+  
 ### Create Preference Table --------------------------------------------------------------  
   
   createPrefTable <- eventReactive(input$plot, {
@@ -691,8 +704,12 @@ shinyServer(function(input, output) {
   
   output$locplot <- renderPlot({
     
-    buildLocMap()
-    
+    if(input$facet.var == 'none'){
+      buildLocMap()
+    } else {
+      ggMultiPlots(plotlist=locMapWrapper(), cols=2)
+    }  
+
   }, height = 500, width = 500 )
   
 ### Output preference table  ------------------------------------------------------------- 
@@ -1015,4 +1032,44 @@ ggMultiPlots <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
                                       layout.pos.col = matchidx$col))
     }
   }
+}
+
+
+makeOneLocMap <- function(loc.data,
+                          name.field){
+  
+  loc.name <- names(table(as.character(loc.data[ ,name.field])))
+  
+  loc.data$pref.x <- ifelse(loc.data$pref == 1, 'Short-Term Preference',
+                            'Long-Term Preference')
+  loc.data$pref.x <- as.factor(loc.data$pref.x)
+  
+  xlims <- c(min(loc.data$longitude), max(loc.data$longitude))
+  ylims <- c(min(loc.data$latitude), max(loc.data$latitude))
+  
+  ggplot() +
+    geom_polygon(data=subs, aes(x=long, y=lat, group=group), 
+                 fill='white', color='grey70') +
+    geom_point(data=loc.data, aes(x=longitude, y=latitude, color=pref.x),
+               size=.4, alpha=.5) +
+    scale_color_manual(values=c('red', 'forestgreen'),
+                       name='Preference    ') +
+    xlab('') + ylab('')+
+    theme(legend.position = 'bottom',
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(fill = "white"),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+    guides(colour = guide_legend(override.aes = list(size=3,
+                                                     alpha=1))) + 
+    ggtitle(paste0(loc.name, ' Locations')) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    coord_cartesian(xlim=xlims, ylim=ylims) 
 }
