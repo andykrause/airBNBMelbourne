@@ -508,7 +508,7 @@ Realizing that the imputed long-term rental values may be more accurate when est
 
 ## Results
 
-We will begin our analysis by making a comparison of the short and long-term markets at the metropolitan level.  Of our sample of 5,783 short-term rental units, 1,600 or 31.6\% of those units recorded a net revenue greater than what would likely have been garnered in the long-term market.  
+We will begin our analysis by making a comparison of the short and long-term markets at the metropolitan level.  Of our sample of 5,783 short-term rental units, 1,600 or 27.7\% of those units recorded a net revenue greater than what would likely have been garnered in the long-term market.  
 
 Occupancy rates are one of the most important components in determining the profitability of short-term rentals. For reference, the mean occupancy rate in the sample is 27.6\%, with a median value of 19.4\%. In \autoref{occpref} (left panel) we show the percentage of properties for which short-term rental is more profitable versus the occupancy rate over the year analyzed. We see that likelihood of short-term rental being a better option increases sharply with occupancy rate up from about 25\% up to 75\% occupancy. For occupancy rates less than 40\%, long-term rental is more likely to be preferable. 
 
@@ -632,48 +632,6 @@ Both the occupancy rates and the nightly rates are not uniformly distributed and
 
 To gain a deeper understanding of the differences in short-term preference, we break the data down across a variety of characteristics and examine the preferability metrics in these submarkets. First, we bifurcate our data into houses and apartments.  Within the houses, 17.5\% of the properties are short-term preferable, while for the apartment that figure is nearly double at 30.5\%. Plotting the changes in short-term preferability against occupancy rates shows considerable similarity between houses and apartments (\autoref{smocc}).  The only measurable difference is in that for houses a property's occupancy rate needs to be 10 percentiles higher than apartments to show the same likelihood of short-term preference as an apartment. Or, in other words, a given house needs to outperform its peers by a greater extent than an apartment to achieve short-term preference. 
 
-
-<!-- ```{r build_occ_type, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE} -->
-
-<!--  ## Create dataset -->
-
-<!--   type.data.ic <- str.data.ic -->
-
-<!--   # Id the types -->
-<!--   apt.id <- which(str.data.ic$type == 'Apartment') -->
-<!--   house.id <- which(str.data.ic$type == 'House') -->
-
-<!--   # Recalculate the percentiles -->
-<!--   type.data.ic$occ.qtl[apt.id] <- makeWtdQtl(type.data.ic$occ.rate[apt.id], -->
-<!--                                       return.type='rank') -->
-<!--   type.data.ic$occ.qtl[house.id] <- makeWtdQtl( -->
-<!--     type.data.ic$occ.rate[house.id], return.type='rank') -->
-
-<!--   type.data.ic$rate.qtl[apt.id] <- makeWtdQtl(type.data.ic$med.rate[apt.id], -->
-<!--                                   return.type='rank') -->
-<!--   type.data.ic$rate.qtl[house.id] <- makeWtdQtl( -->
-<!--     type.data.ic$med.rate[house.id], return.type='rank') -->
-
-<!--  ## Calc the occ rate numbers -->
-
-<!--   ptrocc <- abbPrefPlot(type.data.ic, -->
-<!--                          x.field='occ.rate', -->
-<!--                          split.field='type', -->
-<!--                          smooth=TRUE, -->
-<!--                          smooth.span=.5 , -->
-<!--                          spl.col=c('black', 'grey40')) -->
-
-<!--   ptqocc <- abbPrefPlot(type.data.ic, -->
-<!--                          x.field='occ.qtl', -->
-<!--                          split.field='type', -->
-<!--                          smooth=TRUE, -->
-<!--                          smooth.span=.5 , -->
-<!--                          spl.col=c('black', 'grey40')) -->
-
-<!-- ``` -->
-
-
-
 ```{r plot_occ_type, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{smocc}Preference vs Occ. Rates: By Type'}
   
  ## Build raw plot
@@ -764,7 +722,7 @@ Extending this analysis to include nightly rates shows a similar situation (\aut
 
 #### By Geography
 
-Next, we divide the data into the five geographic sub-market shown in \autoref{pointmaps}. Within the City-Core, greater than one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to three in ten for rural, one in four for beach , one in fix for other city location and about one in six for suburban locations. 
+Next, we divide the data into the five geographic sub-market shown in \autoref{pointmaps}. Within the City-Core, greater than one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to one in four for beach and rural, one in six for other city location and about one in nine for suburban locations. 
 
 ```{r table_geo, message=FALSE, warning=FALSE, results='asis', comment=FALSE, echo=FALSE}
 
@@ -939,7 +897,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
 
 ## Explaining Preference
 
-The analyses above show that, overall, just less than one out of every four short-term rental properties was actually more profitable as a short-term rental than it would have been if rented long-term over the course of the year. This proportion, however, varied by location and property type, with apartments and city-core properties showing the highest likelihood of short-term preference. While illustrative, the above do not fully control for property characteristics or owner actions -- which are a key component of short-term rental success.  To better understand which factors are related to a higher likelihood of short-term preference, we develop a set of logistic regression models below. 
+The analyses above show that, overall, more than one out of every four short-term rental properties was actually more profitable as a short-term rental than it would have been if rented long-term over the course of the year. This proportion, however, varied by location and property type, with apartments and city-core properties showing the highest likelihood of short-term preference. While illustrative, the above do not fully control for property characteristics or owner actions -- which are a key component of short-term rental success.  To better understand which factors are related to a higher likelihood of short-term preference, we develop a set of logistic regression models below. 
 
 We specify three, increasingly complex, logistic regression models.  Model 1 takes the form of:
 
@@ -1493,7 +1451,7 @@ Table 8 compares logistic models results from three of the host types.  The Oppo
 
 Although it gathers considerable interest in both economic and public policy circles, analyses of short-term markets and their comparison to more traditional long-term leasing strategies remains relatively unaddressed. The Airbnb market is Melbourne is rapidly expanding as total listings on the portal have jumped from around 7,000 in 2014 to more than 20,000 in August 2016.  However, of this total only 7,400 or so of the properties are entire homes or apartments that were listed as available for at least one day during the September 1, 2015 to August 31, 2016 time frame.  Of these, only 5,788 are common bed/bath configurations with non-outlying rates and were booked for at least one night over the period of study. Overall, the Airbnb market is very small relative to the long-term market. We caution future researchers and policy analysts to look deeply at initial estimates of Airbnb counts as many of the listings on the market are either room shares and/or not active.
 
-Comparing annual revenues from the two leasing strategies shows that revenues from more traditional long-term rentals are, on average, higher and much less variable than those from the Airbnb market (\autoref{revdens}).  However, there is a long right tail to the distibution of short-term revenues suggesting that some owners are doing better, and occasionally much better, in the short-term market than they would on the long-term market. This univariate comparison of revenues does not tell the entire story, as the Airbnb market does not have the same spatial distribution as the long-term market (Figure 8).  Short-term leasing is much more common in the central areas of the city, with small clusters showing up in suburban beach locations and rural tourist destinations like the Yarra Valley wine district.
+Comparing annual revenues from the two leasing strategies shows that revenues from more traditional long-term rentals are, on average, higher and much less variable than those from the Airbnb market (\autoref{revdens}).  However, there is a long right tail to the distribution of short-term revenues suggesting that some owners are doing better, and occasionally much better, in the short-term market than they would on the long-term market. This univariate comparison of revenues does not tell the entire story, as the Airbnb market does not have the same spatial distribution as the long-term market (Figure 8).  Short-term leasing is much more common in the central areas of the city, with small clusters showing up in suburban beach locations and rural tourist destinations like the Yarra Valley wine district.
 
 In analyzing the short-term observations with estimated long-term rents we found that approximately one in four Airbnb properties brought in more revenue with its short-term leasing strategy than it would have with a long-term approach. As expected, this probability is not equal across space, property type or property size (bed and bath count).  Apartments are much more likely than houses to be more profitable as a short-term rental.  Core city properties are more likely than other properties to prefer a short-term strategy, as are smaller properties versus larger ones. For instance, 36\% of apartments in the city core generated more revenue on Airbnb than they likely would have on the long-term market while only 8\% of suburban houses did. Looking at potential revenues -- through eliminating the impact of blocked days -- increases the overall likelihood of short-term preference considerably. 
 
@@ -1503,7 +1461,7 @@ The logistic regression models (Table 4, 6 and 8) than we estimate show that mos
 
 Testing for the sensitivity of the initial results through consideration of potential revenue figures and by dividing the sample up by likely host motivation, we find the qualitative finding to be generally robust.  While the use of potential revenue does increase the base probability of short-term preference, the same factors -- small inner city apartments with low minimum stays, strict cancellation and liberal guest capacity -- explain a higher likelihood of short-term preference.  
 
-In short, about 30\% of current Airbnb properties are outperforming their potential in the long-term market.  If owners all operated as profit maximizers this figure could be 50\% or higher given that the overall demand for short-term rental could match the assumed supply increase in such a case.  
+In short, about 28\% of current Airbnb properties are outperforming their potential in the long-term market.  If owners all operated as profit maximizers this figure could be 50\% or higher given that the overall demand for short-term rental could match the assumed supply increase in such a case.  
 
 ### Limitations and Future Research
 
