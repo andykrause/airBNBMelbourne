@@ -9,6 +9,7 @@
 library(shiny)
 library(xtable)
 library(sp)
+library(plyr)
 library(spdep)
 library(maptools)
 library(ggplot2)
@@ -90,6 +91,47 @@ shinyServer(function(input, output) {
       x.data <- x.data[x.data$host.type != 'Unknown', ]
     }
     
+    ## Get correct occupancy rate and preference field
+    
+    if(input$rev.type=='pot'){
+      
+      x.data$occ <- x.data$pot.occ.rate
+      x.data$pref <- x.data$str.pot.pref
+      
+    } else {
+      
+      x.data$occ <- x.data$occ.rate
+      x.data$pref <- x.data$str.act.pref
+      
+    }
+    
+    ## Transform in pcntl is needed
+    
+    if(input$transform=='Pcntl'){
+      
+      x.data$occ <- makeWtdQtl(x.data$occ, 
+                                 return.type='rank')
+      x.data$rate <- makeWtdQtl(x.data$med.rate, 
+                                return.type='rank')
+    } else {
+      
+      x.data$occ <- round(100 * x.data$occ, 0)
+      x.data$rate <- x.data$med.rate
+      
+    }
+    
+    ## If doing comparison, calc percentiles separately
+    
+    if(input$facet.var != 'none'){
+      
+      x.list <- split(x.data, x.data[,input$facet.var])
+      for(ix in 1:length(x.list)){
+        x.list[[ix]] <- makeWtdQtl(x.list[[ix]]$occ, return.type='rank')
+      }
+      x.data <- rbind.fill(x.data)
+    }
+    
+    
     return(x.data)
         
   })
@@ -113,32 +155,6 @@ shinyServer(function(input, output) {
       return(null.plot)
     }  
       
-    ## Get correct occupancy rate and preference field
-    
-    if(input$rev.type=='pot'){
-      
-      occ.data$occ <- occ.data$pot.occ.rate
-      occ.data$pref <- occ.data$str.pot.pref
-      
-    } else {
-      
-      occ.data$occ <- occ.data$occ.rate
-      occ.data$pref <- occ.data$str.act.pref
-    
-    }
-    
-    ## Tranform in pcntl is needed
-    
-    if(input$transform=='Pcntl'){
-
-      occ.data$occ <- makeWtdQtl(occ.data$occ, 
-                                 return.type='rank')
-    } else {
-      
-      occ.data$occ <- round(100 * occ.data$occ, 0)
-      
-    }
-    
     ## If facet then transform by facet variable
     
     ## Calculate the values
@@ -189,7 +205,7 @@ shinyServer(function(input, output) {
                                      'Multi-Platform User', 'Unknown'))
     }
     
-    if(input$facet.var == 'host.type'){
+    if(input$facet.var == 'bedbath'){
       occ.full$ID <- as.character(occ.full$ID)
       occ.full$ID[occ.full$ID == '1..1'] <- '1 Bed/1 Bath'
       occ.full$ID[occ.full$ID == '2..1'] <- '2 Bed/1 Bath'
@@ -199,8 +215,6 @@ shinyServer(function(input, output) {
       occ.full$ID[occ.full$ID == '4..2'] <- '4 Bed/2 Bath'
       occ.full$ID <- as.factor(occ.full$ID)
     }
-    
-    
     
     occ.plot <- ggplot(occ.full,
                         aes(x=x.var, y=Var, group=ID, color=ID))
@@ -275,10 +289,10 @@ shinyServer(function(input, output) {
   
     ## Obtain data
     
-    occ.data <- filterData()
+    hm.data <- filterData()
     
     ## If no data is returned
-    if(nrow(occ.data) == 0){
+    if(nrow(hm.data) == 0){
       xx <- data.frame(x=c(0, 1),
                        y=c(0, 1))
       null.plot <- list(plot=ggplot(xx, aes(x=x, y=y)) + 
@@ -288,188 +302,105 @@ shinyServer(function(input, output) {
       return(null.plot)
     } 
     
-    
-    
-      
-  })
-  
-  unction(hm.data,
-                         x.field,
-                         y.field,
-                         pref.field,
-                         bins=NULL,
-                         fill.colors=c('red', 'forestgreen'),
-                         alpha.count=TRUE,
-                         alpha.fill=1,
-                         add.points=FALSE,
-                         hexmap=FALSE,
-                         point.data=NULL,
-                         svm=FALSE,
-                         quantile=FALSE,
-                         return.svm=FALSE,
-                         svm.opts=list(type='C-svc',
-                                       kernel='polydot',
-                                       poly.degree=2,
-                                       expand.factor=100)){
-    
     ## Set bins
     
-    if(is.null(bins)){
-      bins <- c(0, 0)
-      if(x.field == 'occ' | x.field == 'occ.rate') bins[1] <- .05
-      if(x.field == 'occ.qtl') bins[1] <- 5
-      if(y.field == 'med.rate') bins[2] <- 25
-      if(y.field == 'rate.qtl') bins[2] <- 5
+    if(input$transform == 'Pcntl'){
+      
+      bins <- c(5, 5)
+      quantile=TRUE
+      
+    } else {
+      
+      bins <- c(5, 25)
+      quantile <- FALSE
+      
     }
     
-    ## Prepare the plotting data  
+  ## Build SVM data
     
-    # If SVM
-    if(svm){
-      
-      # create svm analysis
+    if(input$svm){
       svm.obj <- makeSVM(hm.data,
-                         x.field=x.field,
-                         y.field=y.field,
-                         z.field=pref.field,
-                         svm.type=svm.opts$type,
-                         svm.kernel=svm.opts$kernel,
-                         poly.degree=svm.opts$poly.degree,
-                         expand.factor=svm.opts$expand.factor,
+                         x.field='occ',
+                         y.field='rate',
+                         z.field='pref',
+                         svm.type='C-svc',
+                         svm.kernel='polydot',
+                         poly.degree=2,
+                         expand.factor=100,
                          quantile=quantile,
                          bins=bins)
-      
-      # Convert initial data to point data
+    
       point.data <- hm.data
-      point.data$x <- point.data[,x.field]
-      point.data$y <- point.data[,y.field]
+      point.data$x <- point.data$occ
+      point.data$y <- point.data$rate
       
-      # Add predicted values to data
       hm.data <- svm.obj$pred
       names(hm.data) <- c('x.var', 'y.var', 'fill.var')
       
-      # if not SVM  
     } else {
-      
+    
       # Set up X, Y and fill variables
-      hm.data$x.var <- hm.data[ ,x.field]
-      hm.data$y.var <- hm.data[ ,y.field]
-      hm.data$fill.var <- hm.data[ ,pref.field] 
+      hm.data$x.var <- hm.data$occ
+      hm.data$y.var <- hm.data$rate
+      hm.data$fill.var <- hm.data$pref 
+      
+      point.data <- hm.data
+      point.data$x <- point.data$occ
+      point.data$y <- point.data$rate
       
     }
     
-    ## Make the plot  
-    
+  ## Make Plot  
     # Set up the basics
-    hm.plot <- ggplot(data=hm.data,
-                      aes(x=x.var, y=y.var))
     
+     hm.plot <- ggplot(data=hm.data,
+                       aes(x=x.var, y=y.var))
     
-    # If adding by count
-    if(alpha.count){
-      
-      # If Hex
-      if(hexmap){
-        hm.plot <- hm.plot + 
-          stat_binhex(data=hm.data,
-                      aes(alpha=..count.., fill=as.factor(fill.var)),
-                      binwidth=bins, 
-                      na.rm=T) +
-          guides(alpha=FALSE)
-        
-        # If not hex
-      } else {
-        hm.plot <- hm.plot + 
-          stat_bin2d(data=hm.data,
-                     aes(alpha=..count.., fill=as.factor(fill.var)),
-                     binwidth=bins) +
-          guides(alpha=FALSE)
-      }
-      
-      # if not adding by count  
-    } else {
-      
-      # if hex
-      if(hexmap){
-        hm.plot <- hm.plot + 
-          stat_binhex(data=hm.data,
-                      aes(fill=as.factor(fill.var)),
-                      binwidth=bins) +
-          guides(alpha=FALSE)
-        
-        # if not hex
-      } else {
-        hm.plot <- hm.plot + 
-          stat_bin2d(data=hm.data,
-                     aes(fill=as.factor(fill.var)),
-                     binwidth=bins)  +
-          guides(alpha=FALSE)
-      }
-    }
-    
-    # Adding points
-    
-    if(add.points){
-      if(is.null(point.data)){
-        hm.plot <- hm.plot + geom_point(size=.1, color='gray50', alpha=.35, 
-                                        show.legend=FALSE)
-      } else {
-        hm.plot <- hm.plot + geom_point(data=point.data,
-                                        aes(x=x, y=y),
-                                        size=.1, color='gray50', alpha=.35, 
-                                        show.legend=FALSE)
-      }
-    }
-    
+     
+    # Add the colors/counts
+     hm.plot <- hm.plot +
+         stat_bin2d(data=hm.data,
+                    aes(alpha=..count.., fill=as.factor(fill.var)),
+                    binwidth=bins) +
+         guides(alpha=FALSE)
+
+     # Add points
+     hm.plot <- hm.plot + geom_point(data=point.data,
+                                     aes(x=x, y=y),
+                                     size=.1, color='gray50', alpha=.35,
+                                     show.legend=FALSE)
     ## Tidy up plot
-    
-    if(x.field == 'occ' | x.field == 'occ.rate'){
+
+    if(input$transform == 'Raw'){
+         hm.plot <- hm.plot +
+           xlab('\n Occupancy Rate') +
+           ylab('\n Nightly Rate') + 
+           scale_x_continuous(breaks=seq(0, 100, by=25),
+                              labels=c('0%', '25%', '50%', '75%', '100%'))
+    } else {
       hm.plot <- hm.plot +
-        xlab('\n Occupancy Rate') +
-        scale_x_continuous(breaks=seq(0, 1, by=.25),
-                           labels=c('0%', '25%', '50%', '75%', '100%'))  
-    }
-    if(x.field == 'occ.qtl'){
-      hm.plot <- hm.plot +
-        xlab('\n Occupancy Rate (Quantile)') +
+        xlab('\n Occupancy Rate (Pcntl)') +
         scale_x_continuous(breaks=seq(0, 100, by=25),
-                           labels=c('0th', '25th', '50th', '75th', '100th'))  
-    }
-    if(y.field == 'nightly.rate'){
-      hm.plot <- hm.plot +
-        ylab('\n Nightly Rate') 
-    }
-    if(y.field == 'rate.qtl'){
-      hm.plot <- hm.plot +
-        ylab('\n Nightly Rate (Quantile)') +
+                           labels=c('0th', '25th', '50th', '75th', '100th')) +
+        ylab('\n Nightly Rate (Pcntl)') +
         scale_y_continuous(breaks=seq(0, 100, by=25),
-                           labels=c('0th', '25th', '50th', '75th', '100th'))  
+                           labels=c('0th', '25th', '50th', '75th', '100th'))
+      
     }
-    
-    # Add fill legend
-    hm.plot <- hm.plot + 
-      scale_fill_manual(values=fill.colors,
+
+  ## Add legend   
+     
+    hm.plot <- hm.plot +
+      scale_fill_manual(values=c('red', 'forestgreen'),
                         name='',
                         labels=c('Long Term Preferred     ',
                                  'Short Term Preferred     ')) +
-      theme(legend.position='bottom')
-    
-    ## Return Values  
-    
-    # If return SVM data
-    if(return.svm){
-      return(list(svm=hm.data,
-                  map=hm.plot))
-      
-      # if not returnign SVM data  
-    } else {
-      return(hm.plot)
-    }
-    
-  }
-  
-  
-  
+     theme(legend.position='bottom')
+
+  return(hm.plot)  
+       
+  })
+ 
 ### Make the Revenue Density Plot  
   
   buildRevDensPlot <- eventReactive(input$plot, {
@@ -529,9 +460,104 @@ shinyServer(function(input, output) {
     
   })
  
+### Make a map of the data points --------------------------------------------------------  
   
+  buildLocMap <- eventReactive(input$plot, {
+    
+    loc.data <- filterData()
+    
+    loc.data$pref.x <- ifelse(loc.data$pref == 1, 'Short-Term', 'Long-Term')
+    loc.data$pref.x <- as.factor(loc.data$pref.x)
+    
+    xlims <- c(min(loc.data$longitude), max(loc.data$longitude))
+    ylims <- c(min(loc.data$latitude), max(loc.data$latitude))
+    
+    ggplot() +
+      geom_polygon(data=subs, aes(x=long, y=lat, group=group), 
+                   fill='white', color='grey70') +
+      geom_point(data=loc.data, aes(x=longitude, y=latitude, color=pref.x),
+                 size=.4, alpha=.5) +
+      scale_color_manual(values=c('red', 'forestgreen'),
+                         name='Preference    ') +
+      xlab('') + ylab('')+
+      theme(legend.position = 'bottom',
+            legend.title = element_blank(),
+            plot.title = element_text(hjust = 0.5),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "white"),
+            axis.text.x = element_blank(),
+            axis.text.y = element_blank(),
+            axis.ticks = element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank(),
+            panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+      guides(colour = guide_legend(override.aes = list(size=3,
+                                                       alpha=1))) + 
+      ggtitle('Short-Term Rental Locations')+
+      theme(plot.title = element_text(hjust = 0.5)) +
+      coord_cartesian(xlim=xlims, ylim=ylims) 
+
+  })
+
+### Create Preference Table --------------------------------------------------------------  
   
+  createPrefTable <- eventReactive(input$plot, {
+    
+    pt.data <- filterData() 
+    
+    
+    if(input$facet.var == 'none'){
+      
+      rate.table <- data.frame(ID='All Metro',
+                               var=mean(pt.data$pref))
+      
+    } else {
+      
+      # Calculate cross-tab values
+      rate.table <- tapply2DF(pt.data$pref, pt.data[ ,input$facet.var], mean)
+
+    } 
+    
+    rate.table[,2] <- paste0(sprintf('%.2f', round(rate.table[,2] * 100, 2)), '%')
+    names(rate.table) <- c('Market', '% Short-Term Preference')
+    rate.table <- xtable(rate.table)
+    
+  ## Return Values
   
+  return(rate.table)
+    
+ })
+  # 
+  # createCoefTable <- eventReactive(input$rerun, {
+  #   rNames <- buildModSpec()$namesRows
+  #   modRes <- try(estimateModel(), silent=T)
+  #   if(class(modRes) == 'try-error'){
+  #     xtable(data.frame(
+  #       message="You have filtered out too many sales, include more sales and try again"))
+  #   } else {
+  #     if(class(modRes) == 'sarlm'){
+  #       valTable <- data.frame(Coef = modRes$coefficients,
+  #                              StErr = modRes$rest.se)
+  #       
+  #       errorCheck <- try(rownames(valTable) <- c('Constant', rNames), silent=T)      
+  #     } else {
+  #       valTable <- summary(modRes)[[4]]       
+  #       errorCheck <- try(rownames(valTable) <- c('Constant', rNames), silent=T)
+  #       colnames(valTable) <- c("Coef","StErr", "tval", "pval")
+  #     }
+  #     
+  #     if(class(errorCheck) == 'try-error'){
+  #       xtable(data.frame(
+  #         message="You have filtered out too many sales, include more sales and try againv"))    
+  #     } else {
+  #       xtable(valTable, digits=4)      
+  #     }
+  #   }   
+  # })
+  # 
+  # 
+  # 
 ### Output the occupancy plot ------------------------------------------------------------  
   
   output$occplot <- renderPlot({
@@ -548,7 +574,27 @@ shinyServer(function(input, output) {
     
   }, height = 500, width = 500 )
   
+### Output the revenue density plot ------------------------------------------------------------  
   
+  output$hmplot <- renderPlot({
+    
+    buildHeatMap()
+    
+  }, height = 500, width = 500 )
+  
+### Output Location Map ------------------------------------------------------------------  
+  
+  output$locplot <- renderPlot({
+    
+    buildLocMap()
+    
+  }, height = 500, width = 500 )
+  
+### Output preference table  
+  
+  output$prefTable <- renderTable({    
+    createPrefTable()
+  })
 # --- #  
   
 }) # Close Shiny Server

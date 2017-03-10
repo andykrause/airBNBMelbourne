@@ -86,7 +86,10 @@
                     'Product (Bed/Bath)' = 'bedbath',
                     'Host Type' = 'host.type'),
                   selected='none'
-      )
+      ),
+      
+      checkboxInput('svm', "Use SVM Heat Map", TRUE)
+      
     ) # Ends conditional panel
    ), # Ends sidebarPanel(
     
@@ -95,8 +98,12 @@
     # Show the caption and plot of the requested variable against mpg
     mainPanel(
      tabsetPanel(
+      tabPanel("Preference Summary", tableOutput("prefTable")),
       tabPanel("Occupancy Plot", plotOutput("occplot")),
+      tabPanel("Heat map", plotOutput("hmplot")),
+      tabPanel("Location map", plotOutput("locplot")),
       tabPanel("Revenue Plot", plotOutput("rdplot"))
+      
      ) # Ends Tab Set Panel  
     ) # Ends MainPanel(
    ) # Ends sidebarLayout(
