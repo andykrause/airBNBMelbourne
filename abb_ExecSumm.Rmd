@@ -1,8 +1,14 @@
 ---
-title: "Should I Airbnb my Property?:  \n Executive Summary"
-author: "Andy Krause and Gideon Aschwanden"
+title: 'Should I Airbnb my Property?: Executive Summary'
+author:
+- Andy Krause
+- '&'
+- Gideon Aschwanden
+- University of Melbourne
 date: "March 13, 2017"
-output: pdf_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 This research sets out to test under which conditions, if any, a short-term leasing strategy (Airbnb) generates more net revenue than a traditional long-term approach.  Our data and analysis focus on the Melbourne metropolitan region.  To make comparisons between short- and long-term markets we analyze observed and estimated revenues for a particular scenario where a property owner purchases a property on September 1 2015 and makes a decision between long- or short-term rental for the next 12 months.  
@@ -26,4 +32,5 @@ Sensitivity test suggest that using a measure of potential revenue (ignoring eff
 
 In sum, slightly more than one in four Airbnb'd units is making more than they would on the long-term market.  If we look only at those host who are aggressively chasing revenue this proportion increases to just over 50\%.  In both instances, the cases of short-term preference are not evenly distributed but focused on small apartments in the city center leased by hosts with liberal use but strict cancellation policies. It is no surprise, given these results, that inner city apartments make up a large proportion of the Airbnb market in Melbourne.  The market appears aware, to some extent, of the profitability of this property type under a short-term approach.  It will be interesting to examine the market moving forward to see if supply in these area has already or will eventually outstrip demand.  
 
+Finally, all code used to create this analysis can be found at:  [www.github.com/andykrause/airbnbMelbourne](https://www.github.com/andykrause/airbnbMelbourne).  An interactive website that allows for deeper exploration of the data and intermediate results is available at: [andykrause.shinyapps.io/ShouldIAirbnb](https://andykrause.shinyapps.io/ShouldIAirbnb).
 
