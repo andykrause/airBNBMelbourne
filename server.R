@@ -31,6 +31,7 @@ library(ROCR)
 #load("C:/Dropbox/Research/airBNB/data/analyzed/shinyinput.RData")
 load("shinyinput.RData")
 
+
 ######################################################################################
 ### Shiny Server ---------------------------------------------------------------------
 
@@ -404,7 +405,7 @@ shinyServer(function(input, output) {
   ## Add legend   
      
     hm.plot <- hm.plot +
-      scale_fill_manual(values=c('red', 'forestgreen'),
+      scale_fill_manual(values=c("#00758C", "#FCB30E"),
                         name='',
                         labels=c('Long Term Preferred     ',
                                  'Short Term Preferred     ')) +
@@ -466,8 +467,8 @@ shinyServer(function(input, output) {
     rd.plot <- ggplot(revdens.data, 
                       aes(x=revenue, fill=tenure, color=tenure)) +
       geom_density(alpha=.5) +
-      scale_fill_manual(values=c('red', 'green')) +
-      scale_color_manual(values=c('red', 'green')) +
+      scale_fill_manual(values=c("#00758C", '#FCB30E')) +
+      scale_color_manual(values=c("#00758C", '#FCB30E')) +
       xlab('\nAnnual Revenue') +
       scale_x_continuous(breaks=c(seq(0, 75000, by=25000)),
                          labels=c('$0', '$25k', '$50k', '$75k'))+
@@ -504,7 +505,7 @@ shinyServer(function(input, output) {
                    fill='white', color='grey70') +
       geom_point(data=loc.data, aes(x=longitude, y=latitude, color=pref.x),
                  size=.4, alpha=.5) +
-      scale_color_manual(values=c('red', 'forestgreen'),
+      scale_color_manual(values=c("#00758C", "#FCB30E"),
                          name='Preference    ') +
       xlab('') + ylab('')+
       theme(legend.position = 'bottom',
@@ -994,7 +995,7 @@ makeOneHeatMap <- function(hm.data,
   ## Add legend   
   
   hm.plot <- hm.plot +
-    scale_fill_manual(values=c('red', 'forestgreen'),
+    scale_fill_manual(values=c("#00758C", "#FCB30E"),
                       name='',
                       labels=c('Long Term Preferred     ',
                                'Short Term Preferred     ')) +
@@ -1064,7 +1065,7 @@ makeOneLocMap <- function(loc.data,
                  fill='white', color='grey70') +
     geom_point(data=loc.data, aes(x=longitude, y=latitude, color=pref.x),
                size=.4, alpha=.5) +
-    scale_color_manual(values=c('red', 'forestgreen'),
+    scale_color_manual(values=c("#00758C", "#FCB30E"),
                        name='Preference    ') +
     xlab('') + ylab('')+
     theme(legend.position = 'bottom',
