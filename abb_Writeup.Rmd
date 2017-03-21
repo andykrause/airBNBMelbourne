@@ -211,11 +211,11 @@ Though the analysis we will refer to any situations where the short-term net rev
 
 ## Data
 
-Data for this study were gathered from two different sources, one for short-term rental market and one for the long-term rental market.  Short-term rental market observations are from the Airbnb online portal. Airbnb is the largest short-term rental hub in the Melbourne region. As opposed to similar sites such as VRBO.com and Homeaway.com which focus on vacation homes in tourist dominated areas such as beaches and ski resorts, Airbnb offers considerable coverage in urban areas and, therefore, directly competes to a greater degree with more traditional long-term rentals than the other sites. The data on the Airbnb market in Melbourne have been purchased from www.airdna.co, a data provider specializing in Airbnb data collection and analysis. The short-term data include two types of observations, property level and nightly. Property-level data consists of a single observation for each property that is or has been listed on the Airbnb portal over the October 2014 to August 2016 period.^[This time period represents the period in which AirDNA was engaged in data collection in Melbourne.]  The nightly data offer one observation for each property for each night of the year during its time on the portal.  These nightly data indicate the advertised price, the occupancy status and a unique reservation identification.
+Data for this study were gathered from two different sources, one for short-term rental market and one for the long-term rental market.  Short-term rental market observations are from the Airbnb online portal. Airbnb is the largest short-term rental hub in the Melbourne region. As opposed to similar sites such as VRBO.com and Homeaway.com which focus on vacation homes in tourist dominated areas such as beach towns and ski resorts, Airbnb offers considerable coverage in urban areas as well and, therefore, directly competes to a greater degree with more traditional long-term rentals than the other sites. The data on the Airbnb market in Melbourne have been purchased from www.airdna.co, a data provider specializing in Airbnb data collection and analysis. The short-term data include two types of observations, property-level and nightly-per-property. Property-level data consists of a single observation for each property that is or has been listed on the Airbnb portal over the October 2014 to August 2016 period.^[This time period represents the period in which AirDNA was engaged in data collection in Melbourne.]  The nightly data offer one observation for each property for each night of the year during its time on the portal.  The nightly data indicate the advertised price, the occupancy status and a unique reservation identification.
 
-The Airbnb data cover the Melbourne metropolitan region from October 1st, 2014 to August 30th, 2016. There are missing nightly observations during the time period before September 1, 2015. After initially imputing these observations we found the results unreliable and have structured the analysis to only cover the time period containing complete data.  All monetary values in the Airbnb data are in US dollars and have been converted to Australian dollars using the median of the exchange rate during this time period, 1.32 Australian dollars to 1 US dollar.
+The Airbnb data cover the Melbourne metropolitan region from October 1st, 2014 to August 30th, 2016. There are missing nightly observations during the time period before September 1, 2015. After initially imputing these observations we found the results unreliable and have structured the analysis to cover only the time period containing complete data.  All monetary values in the Airbnb data are in US dollars and have been converted to Australian dollars using the median of the exchange rate during this time period, 1.32 Australian dollars to 1 US dollar.
 
-Data on the long-term rental market was provided by Australia Property Monitors (APM), a Fairfax Group company. In raw form this dataset includes an observation for each rental property listing for each time a detail of the listing changed. For example, if a property were listed for rent for one month and the price was dropped once each week there would be four observations in the dataset. These four observations are grouped by an event-specific identification number. This number is specific to the listing event, not the property. In each case the last observation signifies the final price of the rental contract. We separate this data into two sets for efficiency reasons. The first data set includes all information about the property, physical and economic (date and amount of rental contract), while the second contains a property ID, a rental event ID, the list price and the date of the change. As such, the first dataset is a set of market observations with associated characteristics and the second is a listing history of each rental event. The long-term lease data cover the period from January 2014 to December 2015.
+Data on the long-term rental market was provided by Australia Property Monitors (APM), a Fairfax Group company. In raw form this dataset includes an observation for each rental property listing for each time a detail of the listing changed. For example, if a property was listed for rent for one month and the price was dropped once each week there would be four observations in the dataset. These four observations are grouped by an event-specific identification number. This number is specific to the listing event, not the property. In each case the last observation signifies the final price of the rental contract. We separate this data into two sets for efficiency reasons. The first data set includes all information about the property, physical and economic (date and amount of rental contract), while the second contains a property ID, a rental event ID, the list price and the date of the change. As such, the first dataset is a set of market observations with associated characteristics and the second is a listing history of each rental event. The long-term lease data cover the period from January 2014 to December 2015.
 
 Unfortunately, there are no common identifiers between the two datasets as the Airbnb data does not include address. Both sets of data do include latitude and longitude, but in a dense urban area with many multiple-family dwellings it is impossible to match apartments based on a two-dimensional coordinates. As a result of this, we are unable to directly match observations from the two datasets. However, the number of properties that rented long-term for the 2014 to 2015 period and then switched to Airbnb for the 2015 to 2016 period are likely very small and this inability to directly match properties does not greatly impact our modeling strategy.
 
@@ -312,23 +312,25 @@ After removing property level observations that are missing price data, we plot 
 
 ### Location and Submarkets
 
-Location is an important determinant in both the short- and long-term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high-end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts. The specific suburb of a property is the second, or finer scale, at which the market operates. \autoref{locmap} shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries.
+Location is an important determinant in both the short- and long-term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs. Inner suburbs are < 10km from the CBD, Middle suburbs 10 to 20km from CBD and Outer suburbs > 20km from CBD. In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high-end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts. The specific suburb of a property is the second, or finer scale, at which the market operates. 
 
-```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.height=3.5, fig.width=3.5, fig.cap='\\label{locmap}Melbourne Submarkets'}
+<!-- \autoref{locmap} shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries. -->
 
- load(paste0(fig.path, 'suburbMap.RData'))
+<!-- ```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.height=3.5, fig.width=3.5, fig.cap='\\label{locmap}Melbourne Submarkets'} -->
 
- loc.map <- loc.map +
-   theme(axis.title.y=element_blank(),
-         axis.text.y=element_blank(),
-         axis.ticks.y=element_blank(),
-         axis.title.x=element_blank(),
-         axis.text.x=element_blank(),
-         axis.ticks.x=element_blank())
+<!--  load(paste0(fig.path, 'suburbMap.RData')) -->
 
- loc.map
+<!--  loc.map <- loc.map + -->
+<!--    theme(axis.title.y=element_blank(), -->
+<!--          axis.text.y=element_blank(), -->
+<!--          axis.ticks.y=element_blank(), -->
+<!--          axis.title.x=element_blank(), -->
+<!--          axis.text.x=element_blank(), -->
+<!--          axis.ticks.x=element_blank()) -->
 
-```
+<!--  loc.map -->
+
+<!-- ``` -->
 
 It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beaches; and 2) Proximity to key tourist activities and events. Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analyzing short and long-term rentals in Melbourne: 
 
@@ -459,9 +461,11 @@ For the long-term data, over half of the observations fall outside of our consid
 
 #### Revenue Calculations
 
-Within the remainder of this report when we refer to revenues we mean the net revenues from equations 1 and 3, respectively. Calculations of revenue for the observed and hypothetical long-term rentals are straightforward, weekly rent -- real or imputed -- times 52 minus search cost time and agency fees.  For the short-term rentals it is somewhat more complicated.  First, we must deal with those properties that were not listed for the entire 12-month period.  Our data cleaning eliminated all properties that were listed for less than six months, however, it would be incorrect to compare the revenue of a property listed on Airbnb for seven months with the hypothetical annual revenue from a long-term rental.  
+Within the remainder of this report when we refer to revenues we mean the net revenues from equations 1 and 3, respectively. Calculations of revenue for the observed and hypothetical long-term rentals are straightforward, weekly rent -- real or imputed -- times 52 minus search cost time and agency fees.  For the short-term rentals it is somewhat more complicated.  
 
-Second, many of the short-term properties have a significant number of blocked days, days in which the property was not offered on Airbnb.  Here too, there is a problem with comparing observed revenues from a property with a 40\% block rate with a hypothetical year long revenue stream, especially if the property was leased out on other portal during those blocked days.  And, even if we knew that the blocked days were simply due to the host wanting to use the property themselves during that time, this deduction in revenue should not necessarily apply to the hypothetical investor in our examined scenario.  In short, in either case, the actual observed short-term revenue would be biased on the low end compared to what a revenue maximizing owner would be likely able to accomplish.  
+First, we must deal with those properties that were not listed for the entire 12-month period.  Our data cleaning eliminated all properties that were listed for less than six months, however, it would be incorrect to compare the revenue of a property listed on Airbnb for seven months with the hypothetical annual revenue from a long-term rental.  
+
+Second, many of the short-term properties have a significant number of blocked days, days in which the property was not offered on Airbnb.  Here too, there is a problem with comparing observed revenues from a property with a 40\% block rate with a hypothetical year long revenue stream, especially if the property was leased out on other portals during those blocked days.  And, even if we knew that the blocked days were simply due to the host wanting to use the property themselves during that time, this deduction in revenue should not necessarily apply to the hypothetical investor in our examined scenario.  In short, in either case, the actual observed short-term revenue would be biased on the low end compared to what a revenue maximizing owner would be likely able to accomplish.  
 
 As a result, we have calculated three separate revenues values for the short-term properties:
 
@@ -471,7 +475,7 @@ As a result, we have calculated three separate revenues values for the short-ter
 
 As the observed calculation systematically under counts the revenue from properties that were not on the Airbnb portal for the entire year we disregard it going forward and consider the Actual revenue metric to be a better measure of actual market performance. We chart the distribution of the Actual ($REV_a$) and Potential ($REV_p$) short-term revenues against a distribution of the observed long-term revenues for the long-term properties. Revenues from the long-term rentals are far more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year (\autoref{revdens}).  Actual short-term revenues range from neglible to highs of greater than \$80,000, with many of the properties showing very limited (less than \$10,000) revenue. The range of the distribution for the Potential short-term revenue is similar, however, the distribution itself is much flatter, with many more properties showing potential incomes in the \$20,000 to \$40,000 range. 
 
-While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not.  When looking at potential revenues, however, a great deal more may have the potential to produce more revenue.  The high number of very low yield Airbnb properties in the Actual condition suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing^[Do note that we have not considered any overall market demand issues when analyzing potential revenue.].
+While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not.  When looking at potential revenues, however, a great deal more may have the potential to produce additional revenue.  The high number of very low yield Airbnb properties in the Actual condition suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing^[Do note that we have not considered any overall market demand issues when analyzing potential revenue.].
 
 ```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='\\label{revdens}Comparison of Revenue Distributions'}
 
@@ -768,7 +772,7 @@ There is a noticable variability in the relationship between occupancy rates and
   smr.occ <- ggplot(rawocc.geo$data,
                     aes(x=x.var, y=Var, group=ID, color=ID)) +  
     geom_point(alpha=.5, size=.4) +
-    stat_smooth(se=FALSE, size=2, span=.5) +
+    stat_smooth(se=FALSE, size=1.5, span=.5) +
     xlab('\nOccupancy Rate') +
     scale_color_manual(values=sm.col,
                        name='') +
@@ -784,7 +788,7 @@ There is a noticable variability in the relationship between occupancy rates and
   smq.occ <- ggplot(pctocc.geo$data,
                     aes(x=x.var, y=Var, group=ID, color=ID)) +  
     geom_point(alpha=.5, size=.4) +
-    stat_smooth(se=FALSE, size=2, span=.5) +
+    stat_smooth(se=FALSE, size=1.5, span=.5) +
     xlab('\nOccupancy Rate (Pcntl)') +
     scale_color_manual(values=sm.col,
                        name='') +
@@ -820,8 +824,8 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    quantile=T,
                    fill.colors=c(abb.col[1], abb.col[5])) +
   theme(legend.position='none') +
-    ylab('') +
-    xlab('') +
+    ylab('Nightly Rate Percentile') +
+    xlab('Occupancy Rate Percentile') +
   annotate("text", x = 50, y = 50, label = "City-Core", size=9)
 
 
@@ -836,8 +840,8 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    quantile=T,
                    fill.colors=c(abb.col[1], abb.col[5]))+
   theme(legend.position='none')+
-    ylab('') +
-    xlab('')+
+    ylab('Nightly Rate Percentile') +
+    xlab('Occupancy Rate Percentile') +
   annotate("text", x = 50, y = 50, label = "City", size=9)
 
 
@@ -852,8 +856,8 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    quantile=T,
                    fill.colors=c(abb.col[1], abb.col[5]))+
   theme(legend.position='none')+
-    ylab('') +
-    xlab('')+
+    ylab('Nightly Rate Percentile') +
+    xlab('Occupancy Rate Percentile') +
   annotate("text", x = 50, y = 50, label = "Suburban", size=9)
 
 
@@ -868,8 +872,8 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    quantile=T,
                    fill.colors=c(abb.col[1], abb.col[5]))+
   theme(legend.position='none')+
-    ylab('') +
-    xlab('')+
+    ylab('Nightly Rate Percentile') +
+    xlab('Occupancy Rate Percentile') +
   annotate("text", x = 50, y = 50, label = "Rural", size=9)
 
 
@@ -884,13 +888,13 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    quantile=T,
                    fill.colors=c(abb.col[1], abb.col[5]))+
   theme(legend.position='none')+
-    ylab('') +
-    xlab('')+
+    ylab('Nightly Rate Percentile') +
+    xlab('Occupancy Rate Percentile') +
   annotate("text", x = 50, y = 50, label = "Beach", size=9)
 
 ```
 
-```{r plot_svm_geo, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='\\label{smhmps}Geographic Submarket Heatmaps'}
+```{r plot_svm_geo, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='\\label{smhmps}Geographic Submarket Heatmaps (SVM)'}
 
   ggMultiPlots(core.hm.svm, city.hm.svm, sub.hm.svm,
                rural.hm.svm, beach.hm.svm, cols=2)
