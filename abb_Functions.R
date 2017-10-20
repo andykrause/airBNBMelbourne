@@ -178,10 +178,9 @@ apmFixDates <- function(x.date){
 
 ### Calculate the booking status ---------------------------------------------------------
 
-abbCalcBookStr <- function(id, 
-                           book.data){
+abbCalcBookStr <- function(id.book.data){
   
-  id.book.data <- book.data[book.data$property.id == id, ]
+  # id.book.data <- book.data[book.data$property.id == id, ]
   id.data <- id.book.data$status
   
   if(length(id.data) > 1){
@@ -273,8 +272,7 @@ abbCalcBookStr <- function(id,
   
   ## Return Values
   
-  return(data.frame(id=id,
-                    min.date=id.min,
+  return(data.frame(min.date=id.min,
                     max.date=id.max,
                     total.days=total.days,
                     block.rate=block.rate,

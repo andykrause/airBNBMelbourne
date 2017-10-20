@@ -9,6 +9,9 @@
   library(chron)
   library(plyr)
   library(stringr)
+  library(lubridate)
+  library(dplyr)
+  library(multidplyr)
 
   ## Set location
 
@@ -17,7 +20,8 @@
 
   # Assign path based on computer name
   if(comp.name == '7020D-121777-W' | 
-     comp.name == 'DESKTOP-1D7JO4J'){
+     comp.name == 'DESKTOP-1D7JO4J' |
+     comp.name == 'GREENFIELD15'){
   
     data.path <- 'c:/dropbox/research/airBNB/data/'
   
@@ -35,11 +39,11 @@
    
   # Property Information
 
-  str.data <- read.csv(paste0(data.path, '/raw/melbproperties.csv'), header=T)
+  str.data <- read.csv(file.path(data.path, '/raw/melbproperties.csv'), header=T)
 
   # Daily rental information
 
-  daily.data  <- read.csv(paste0(data.path, '/raw/melbDaily.csv'), header=T)
+  daily.data  <- read.csv(file.path(data.path, '/raw/melbDaily.csv'), header=T)
 
  ## Fix Names
   
@@ -53,18 +57,22 @@
 
   # Property level data
   str.data$created.date <- as.Date(str.data$created.date)
-  str.data$created.year <- as.numeric(substr(str.data$created.date, 1, 4))
+  str.data$created.year <- lubridate::year(str.data$created.date)
 
  ## Add Summary Information
 
-  # Summarize daily by property
-  daily.summ.list <- lapply(as.list(str.data$property.id), abbCalcBookStr,
-                            book.data=daily.data)
+  # Create new cluster
+  cluster <- get_default_cluster() 
+  # Register function and variable
+  cluster_copy(cluster, abbCalcBookStr)
 
-  # Extract to a df
-  daily.summ <- rbind.fill(daily.summ.list)
+  # Summarize daily by property
+  daily.summ <- daily.data %>% 
+    multidplyr::partition(property.id, cluster=cluster) %>% 
+    dplyr::do(abbCalcBookStr(.)) %>% 
+    dplyr::collect()
   
-  # Add summary data to property data
+ # Add summary data to property data
   
   str.data <- merge(str.data, daily.summ, 
                     by.x='property.id',
