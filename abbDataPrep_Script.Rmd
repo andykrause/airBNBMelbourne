@@ -16,6 +16,14 @@ This file details the initial data preparation and cleaning that we have applied
 ### Preliminary Commands
 
 &nbsp;
+```{r set_dates}
+  
+  library(lubridate)
+  data_name <- 'jun'
+  strike_date <- lubridate::as_date('2015-06-01')
+  
+```
+
 
 We begin with a number of preliminary commands.  First we load all of the necessary R libraries for this analysis. 
 
@@ -28,7 +36,7 @@ We begin with a number of preliminary commands.  First we load all of the necess
   library(geosphere)
   library(ggmap)
   library(xtable)
-  library(chron)
+  # library(chron)
   library(plyr)
   library(sp)
   library(rgeos)
@@ -36,6 +44,9 @@ We begin with a number of preliminary commands.  First we load all of the necess
   library(stringr)
   library(RColorBrewer)
   library(Hmisc)
+  library(dplyr)
+  library(multidplyr)
+  library(lubridate)
 
 ```
 
@@ -47,23 +58,9 @@ We then set the paths to the data and the code, conditional on which of the auth
 
   # Get computer names
 
-  comp.name <- Sys.info()['nodename']
-
-  # Assign path based on computer name
-  
-  if(comp.name == '7020D-121777-W' | comp.name == 'DESKTOP-1D7JO4J'){
-  
-    data.path <- 'c:/dropbox/research/airBNB/data/'
-    code.path <- 'c:/code/'
-    fig.path <- 'c:/dropbox/research/airBNB/figures/'
-
-  } else {
-  
-    data.path <- 'alternate data path'
-    code.path <- 'alternate data path'
-    fig.path <- 'alternate data path'
-    
-  }
+  data.path <- 'c:/dropbox/research/airBNB/data/'
+  code.path <- 'c:/code/'
+  fig.path <- 'c:/dropbox/research/airBNB/figures/'
 
 ```
  
@@ -79,10 +76,10 @@ Next, we source the necessary custom code files for the analysis.
 
   if(offline){
 
-  source(paste0(code.path, '/dataVizTools/ggPlotTools.R'))
-  source(paste0(code.path, '/datamgmttools/dataMungeTools.R'))
-  source(paste0(code.path, '/spatialTools/spatialLogitModels.R'))
-  source(paste0(code.path, '/spatialTools/point2surface_Tools.R'))
+  source(paste0(code.path, 'tools/dataVizTools/ggPlotTools.R'))
+  source(paste0(code.path, 'tools/datamgmttools/dataMungeTools.R'))
+  source(paste0(code.path, 'tools/spatialTools/spatialLogitModels.R'))
+  source(paste0(code.path, 'tools/spatialTools/point2surface_Tools.R'))
     
   } else {
     
@@ -215,7 +212,7 @@ We start by trimming the property-level short term data.  No fields need to be r
                      'block.rate', 'avail.rate', 'longest.block', 'nbr.block', 
                      'med.block', 'created.year') 
   
-  str.data <- str.data[, str.keep.flds]
+  str_df <- str_df[, str.keep.flds]
 
 ```
 
@@ -243,7 +240,7 @@ For the short term data, it already uses the *word-.-word* convention.  Here our
 
 ```{r rename_st, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
-  names(str.data) <- c('property.id', 'host.id', 'listing.title', 'property.type',
+  names(str_df) <- c('property.id', 'host.id', 'listing.title', 'property.type',
                        'listing.type', 'created.date', 'latitude', 'longitude',
                        'average.daily.rate', 'overall.rating',
                        'max.guests', 'cancel.policy', 'cleaning.fee',
@@ -294,18 +291,19 @@ We then clip by time.  For the short-term data we will consider any Airbnb prope
  
  # Limit short term data
   
-  str.data <- str.data[(str.data$max.date - str.data$min.date) >= 178, ]
-  str.data <- str.data[str.data$max.date >= '2016-03-01' &
-                         str.data$min.date <= '2016-03-01', ]
+  str_df <- str_df[(str_df$max.date - str_df$min.date) >= 178, ]
+  
+  str_df <- str_df[str_df$max.date >= (strike_date + 182) &
+                         str_df$min.date <= (strike_date + 182), ]
  
-  daily.data <- daily.data[daily.data$date >= '2015-09-01', ]
+  daily_df <- daily_df[daily_df$date >= strike_date, ]
 
  # Limit long term data  
   
-  ltr.data <- ltr.data[ltr.data$event.date >= '2014-09-01' & 
-                            ltr.data$event.date <= '2015-08-31', ]
+  ltr.data <- ltr.data[ltr.data$event.date >= (strike_date - 365) & 
+                            ltr.data$event.date <= (strike_date - 1), ]
   listing.data <- listing.data[listing.data$id.key %in% ltr.data$id.key, ]
-  
+   
  # Count cleaning
   
   countCleaning('time')
@@ -318,8 +316,8 @@ Next we add a monthly variable to the data for use in future modeling exercises.
 
   # Short term data
 
-  str.data$str.month <- 1
-  daily.data$str.month <- as.numeric(as.factor(substr(daily.data$date, 1, 7)))
+  str_df$str.month <- 1
+  daily_df$str.month <- as.numeric(as.factor(substr(daily_df$date, 1, 7)))
 
   # Long term data
 
@@ -353,9 +351,9 @@ We then create a new variable in each dataset and give each one of the three cat
 
  # Short Term data  
 
-  str.data$type <- 'Other'
-  str.data$type[str.data$property.type %in% c('Apartment', 'Condominium')] <- 'Apartment'
-  str.data$type[str.data$property.type %in% c('House', 'Townhouse')] <- 'House'
+  str_df$type <- 'Other'
+  str_df$type[str_df$property.type %in% c('Apartment', 'Condominium')] <- 'Apartment'
+  str_df$type[str_df$property.type %in% c('House', 'Townhouse')] <- 'House'
 
  # Long Term data  
 
@@ -372,7 +370,7 @@ As the chart below show, the **Other** category only makes up a very small perce
 
   # Create Airbnb plot
 
-  str.types <- ggplot(str.data, aes(x=type)) + 
+  str.types <- ggplot(str_df, aes(x=type)) + 
     geom_bar(color=str.col, fill=str.col) +
     xlab('\nProperty Type\n') + 
     ggtitle('\nShort Term Rentals\n')  +
@@ -403,7 +401,7 @@ As the chart below show, the **Other** category only makes up a very small perce
 
 ```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
 
-  str.data <- subset(str.data, type != 'Other')
+  str_df <- subset(str_df, type != 'Other')
   ltr.data <- subset(ltr.data, type != 'Other')
   
   # Count Cleaning
@@ -422,10 +420,10 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
 ```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
 
   # Fix data types and names
-  str.data$listing.type <- as.character(str.data$listing.type)
-  str.data$listing.type[str.data$listing.type == 'Entire home/apt'] <- 'Entire home'
+  str_df$listing.type <- as.character(str_df$listing.type)
+  str_df$listing.type[str_df$listing.type == 'Entire home/apt'] <- 'Entire home'
 
-  list.types <- ggplot(str.data, aes(x=listing.type)) + 
+  list.types <- ggplot(str_df, aes(x=listing.type)) + 
       geom_bar(color=str.col, fill=str.col) +
       xlab('\nListing Type\n') + 
       ggtitle('\nShort Term Rentals by Listing Type\n')  +
@@ -447,7 +445,7 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
 
 ```{r keep_entire_home, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str.data <- str.data[str.data$listing.type == 'Entire home', ]
+  str_df <- str_df[str_df$listing.type == 'Entire home', ]
   
   # Count cleaning 
   countCleaning('listing.type')
@@ -489,8 +487,8 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
   ltr.data <- ltr.data[ltr.data$bedrooms <= 10, ]
 
   # Short term data
-  str.data <- str.data[!is.na(str.data$bedrooms), ]
-  str.data <- str.data[str.data$bedrooms <= 10, ]
+  str_df <- str_df[!is.na(str_df$bedrooms), ]
+  str_df <- str_df[str_df$bedrooms <= 10, ]
 
 ```
 
@@ -511,7 +509,7 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
  
  # Build short term bar plot
 
-  strbed <- ggplot(str.data, aes(x=bedrooms)) + 
+  strbed <- ggplot(str_df, aes(x=bedrooms)) + 
     geom_bar(fill=str.col, color=str.col) +
     facet_wrap(~type,scales='free_y') +
     scale_x_continuous(labels=0:10, breaks=0:10) +
@@ -537,19 +535,19 @@ For both short and long term rentals we see that most apartments have less than 
 
  # Remove all with more than 4 beds
 
-  str.data <- str.data[str.data$bedrooms < 5, ]
+  str_df <- str_df[str_df$bedrooms < 5, ]
   ltr.data <- ltr.data[ltr.data$bedrooms < 5, ]
 
  # Remove apartments with more than 3
   
-  str.id <- which(str.data$bedrooms > 3 & str.data$type =='Apartment')
+  str.id <- which(str_df$bedrooms > 3 & str_df$type =='Apartment')
   ltr.id <- which(ltr.data$bedrooms > 3 & ltr.data$type =='Apartment')
 
-  if(length(str.id) > 0) str.data <- str.data[-str.id, ]
+  if(length(str.id) > 0) str_df <- str_df[-str.id, ]
   if(length(ltr.id) > 0) ltr.data <- ltr.data[-ltr.id, ]
 
   # Convert 0 Bed to 1 Bed  
-  str.data$bedrooms[str.data$bedrooms == 0] <- 1
+  str_df$bedrooms[str_df$bedrooms == 0] <- 1
   
   # Count Data Cleaning
   countCleaning('bedrooms')
@@ -565,7 +563,7 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
  # Remove missing data
   
   ltr.data <- ltr.data[!is.na(ltr.data$baths), ]
-  str.data <- str.data[!is.na(str.data$baths), ]
+  str_df <- str_df[!is.na(str_df$baths), ]
 
 ```
 
@@ -584,7 +582,7 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
 
  # Build short term plot 
 
-  stbath <- ggplot(str.data, aes(x=baths)) + 
+  stbath <- ggplot(str_df, aes(x=baths)) + 
     geom_bar(fill=str.col, color=str.col) +
     facet_wrap(~type, scales='free_y') +
     scale_x_continuous(labels=0:8, breaks=0:8)+
@@ -613,15 +611,15 @@ Here we see that nearly all properties have 3 or fewer bathrooms and we filter t
  # Filter by bath count
 
   # Short term data
-  str.data <- str.data[str.data$baths < 4, ]
-  str.data <- str.data[str.data$baths > 0, ]
+  str_df <- str_df[str_df$baths < 4, ]
+  str_df <- str_df[str_df$baths > 0, ]
 
   # Long term data
   ltr.data <- ltr.data[ltr.data$baths < 4, ]
   
  # Round baths up  
 
-  str.data$baths <- round(str.data$baths + .01, 0)
+  str_df$baths <- round(str_df$baths + .01, 0)
 
   # Count cleaning
   countCleaning('baths')
@@ -637,7 +635,7 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
  # Create combination variable
 
   ltr.data$bedbath <- paste0(ltr.data$bedrooms, '..', ltr.data$baths)
-  str.data$bedbath <- paste0(str.data$bedrooms, '..', str.data$baths)
+  str_df$bedbath <- paste0(str_df$bedrooms, '..', str_df$baths)
 
 ```
 
@@ -656,7 +654,7 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
 
  # Make short term plots
 
-  stbb <- ggplot(str.data, aes(x=bedbath)) +
+  stbb <- ggplot(str_df, aes(x=bedbath)) +
     geom_bar(fill=str.col, color=str.col) + 
     xlab('\nBed/Bath Combo\n') +
     ylab('Number of Properties\n') +
@@ -690,7 +688,7 @@ From this analysis we see that there are 6 combinations that make up most all pr
  # Filter data
 
   ltr.data <- ltr.data[ltr.data$bedbath %in% acc.bb, ]
-  str.data <- str.data[str.data$bedbath %in% acc.bb, ]
+  str_df <- str_df[str_df$bedbath %in% acc.bb, ]
 
  # Count Cleaning
   
@@ -704,14 +702,14 @@ Finally, we re-order the factor levels on the bed/bath combinations to make a 2-
 
   # Re-order factors
 
-  str.data$bedbath <- factor(str.data$bedbath, 
+  str_df$bedbath <- factor(str_df$bedbath, 
                               levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
   ltr.data$bedbath <- factor(ltr.data$bedbath, 
                                levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
 
   # Add product as a variable
   
-  str.data$product <- paste0(substr(str.data$type, 1, 1), str.data$bedbath)
+  str_df$product <- paste0(substr(str_df$type, 1, 1), str_df$bedbath)
   ltr.data$product <- paste0(substr(ltr.data$type, 1, 1), ltr.data$bedbath)
 
 ```
@@ -724,7 +722,7 @@ We now turn to filtering by the prices -- the nightly rates and weekly rental va
 ```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   ltr.data <- ltr.data[!is.na(ltr.data$event.price), ]
-  str.data <- str.data[!is.na(str.data$nightly.rate), ]
+  str_df <- str_df[!is.na(str_df$nightly.rate), ]
   
 ```
 
@@ -734,14 +732,14 @@ Next, we convert the Airbnb values to Australian dollars from US dollars using t
 
   # Property level data
 
-  str.data$average.daily.rate <- str.data$average.daily.rate * exch.rate
-  str.data$nightly.rate <- str.data$nightly.rate * exch.rate
-  str.data$weekly.rate <- str.data$weekly.rate * exch.rate
-  str.data$monthly.rate <- str.data$monthly * exch.rate
+  str_df$average.daily.rate <- str_df$average.daily.rate * exch.rate
+  str_df$nightly.rate <- str_df$nightly.rate * exch.rate
+  str_df$weekly.rate <- str_df$weekly.rate * exch.rate
+  str_df$monthly.rate <- str_df$monthly * exch.rate
   
   # Daily data
   
-  daily.data$price <- daily.data$price * exch.rate
+  daily_df$price <- daily_df$price * exch.rate
 
 ```
 
@@ -750,16 +748,16 @@ Next we extract all of the daily reservation data for the reserved nightly. From
 ```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
    # Get all of the reservations
-  resv.daily <- daily.data[daily.data$status == 'R', ]
+  resv.daily <- daily_df[daily_df$status == 'R', ]
 
   # Calculate the property specific median nightly rate
   med.daily <- tapply2DF(resv.daily$price, resv.daily$property.id, median)
   
   # Add median rate to the property  
-  str.data$med.rate <- med.daily$Var[match(str.data$property.id, med.daily$ID)] 
+  str_df$med.rate <- med.daily$Var[match(str_df$property.id, med.daily$ID)] 
   
   # Remove those with no valid median rate
-  str.data <- str.data[!is.na(str.data$med.rate), ]
+  str_df <- str_df[!is.na(str_df$med.rate), ]
    
 ```
 
@@ -782,7 +780,7 @@ From these density plots we see that most long-term Rentals are greater than $20
 
 
   # Nightly Rate plot
-  rate.plot <- ggplot(str.data, aes(x=nightly.rate)) + 
+  rate.plot <- ggplot(str_df, aes(x=nightly.rate)) + 
     geom_density(fill=str.col, alpha=.8) + 
     ylab('') +
     xlab('Nightly Rate') +
@@ -818,8 +816,8 @@ From these density plots we see that most long-term Rentals are greater than $20
   ltr.data <- ltr.data[ltr.data$event.price >= 200 & 
                          ltr.data$event.price <= 1000, ]
 
-  str.data <- str.data[str.data$med.rate >= 50 &
-                         str.data$med.rate <= 500, ]
+  str_df <- str_df[str_df$med.rate >= 50 &
+                         str_df$med.rate <= 500, ]
 
   # Count Cleaning
   countCleaning('rates.rents')
@@ -838,17 +836,17 @@ Looking at the distribution of the revenues from each tenure type, we see that t
 
  # Compute bookings count
 
-  str.data$bookings <- round(str.data$total.days * 
-                               (1 - (str.data$block.rate + str.data$avail.rate)), 0)
+  str_df$bookings <- round(str_df$total.days * 
+                               (1 - (str_df$block.rate + str_df$avail.rate)), 0)
  
  # Remove those with 0 
 
-  str.data <- str.data[str.data$bookings > 0, ]
+  str_df <- str_df[str_df$bookings > 0, ]
 
-  str.data$gross.revenue <- (str.data$bookings * str.data$med.rate) 
+  str_df$gross.revenue <- (str_df$bookings * str_df$med.rate) 
   ltr.data$gross.revenue <- ltr.data$event.price * (52 - ltr.data$dom / 7)
  
-  str.small <- str.data[,c('baths', 'gross.revenue')]
+  str.small <- str_df[,c('baths', 'gross.revenue')]
   str.small$tenure <- 'short-term'
   ltr.small <- ltr.data[,c('baths', 'gross.revenue')]
   ltr.small$tenure <- 'long-term'
@@ -1031,8 +1029,8 @@ We then apply a 500 meter buffer to the beach along Port Phillip Bay.
 
  # Determine centroid of study area
  
-  latMid <- median(str.data$latitude)
-  longMid <- median(str.data$longitude)
+  latMid <- median(str_df$latitude)
+  longMid <- median(str_df$longitude)
 
  # Calculate Degress to Meters conversion 
  
@@ -1053,31 +1051,31 @@ Next we assign the suburb, SA1, city-core and beach designations to observations
  ## Short term data  
 
   # Convert to point shapefile
-  str.prop.shp <- SpatialPointsDataFrame(cbind(str.data$longitude,
-                                               str.data$latitude),
-                                         str.data,
+  str.prop.shp <- SpatialPointsDataFrame(cbind(str_df$longitude,
+                                               str_df$latitude),
+                                         str_df,
                                          proj4string=CRS("+init=epsg:4283")) 
 
   # Add suburb name 
   spJoin <- over(str.prop.shp, suburbs.shp)
-  str.data$suburb <- as.character(spJoin$name_2006)
-  str.data$suburb[is.na(str.data$suburb)] <- 'missing'
+  str_df$suburb <- as.character(spJoin$name_2006)
+  str_df$suburb[is.na(str_df$suburb)] <- 'missing'
 
   # Add suburb designation
-  str.data$sub.class <- as.character(spJoin$suburbdesi)
-  str.data$sub.class[is.na(str.data$sub.class)] <- 'missing'
+  str_df$sub.class <- as.character(spJoin$suburbdesi)
+  str_df$sub.class[is.na(str_df$sub.class)] <- 'missing'
   
   # Add SA1 designation
   spJoin <- over(str.prop.shp, sa1s.shp)
-  str.data$sa1 <- spJoin$sa1_main11
+  str_df$sa1 <- spJoin$sa1_main11
  
   ## Add Beach Designation
   spJoin <- over(str.prop.shp, beach.buffer)
-  str.data$beach <- ifelse(is.na(spJoin), 0 ,1)
+  str_df$beach <- ifelse(is.na(spJoin), 0 ,1)
   
   # Remove those missing a suburb classification (out of area)
-  str.data <- str.data[str.data$sub.class != 'missing', ]
-  str.data <- str.data[str.data$sa1 != 'missing', ]
+  str_df <- str_df[str_df$sub.class != 'missing', ]
+  str_df <- str_df[str_df$sa1 != 'missing', ]
 
 ```
 
@@ -1086,14 +1084,14 @@ Next we assign the suburb, SA1, city-core and beach designations to observations
  ## Add the submarket designations
 
   # Add individual classes
-  str.data$geo.mrkt <- 'rural'
-  str.data$geo.mrkt[str.data$sub.class == 'Middle'] <- 'suburban'
-  str.data$geo.mrkt[str.data$sub.class == 'Inner'] <- 'city'
-  str.data$geo.mrkt[str.data$suburb %in% core.suburbs] <- 'city-core'
-  str.data$geo.mrkt[str.data$beach == 1] <- 'beach'
+  str_df$geo.mrkt <- 'rural'
+  str_df$geo.mrkt[str_df$sub.class == 'Middle'] <- 'suburban'
+  str_df$geo.mrkt[str_df$sub.class == 'Inner'] <- 'city'
+  str_df$geo.mrkt[str_df$suburb %in% core.suburbs] <- 'city-core'
+  str_df$geo.mrkt[str_df$beach == 1] <- 'beach'
   
   # Order the factors properly
-  str.data$geo.mrkt <- factor(str.data$geo.mrkt, 
+  str_df$geo.mrkt <- factor(str_df$geo.mrkt, 
                               levels=c('city-core', 'city', 'suburban', 
                                         'rural', 'beach'))
   
@@ -1197,7 +1195,7 @@ The location of the short and long term rentals, colored by submarket, are shown
 
   str.map <- ggplot() +
     geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
-    geom_point(data=str.data, aes(x=longitude, y=latitude, color=geo.mrkt), size=.2,
+    geom_point(data=str_df, aes(x=longitude, y=latitude, color=geo.mrkt), size=.2,
                alpha=.2) +
     scale_color_manual(values=sm.col) +
     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
@@ -1280,7 +1278,7 @@ The chart below break down the relative frequency of short and long term rental 
   # Make Airbnb submarket map
   
   strtype.map <- ggplot() +
-    geom_bar(data=str.data, aes(x=geo.mrkt, fill=geo.mrkt)) +
+    geom_bar(data=str_df, aes(x=geo.mrkt, fill=geo.mrkt)) +
     scale_fill_manual(values=sm.col) +
     facet_wrap(~type) +
     ylab('# of Properties\n') + xlab('')+
@@ -1327,7 +1325,7 @@ Finally, we convert the suburb names from factors to character, which will help 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   # Convert suburbs from factor to character
-  str.data$suburb <- as.character(str.data$suburb)
+  str_df$suburb <- as.character(str_df$suburb)
   ltr.data$suburb <- as.character(ltr.data$suburb)
   
 ```
@@ -1342,7 +1340,7 @@ The previous exercises filtered the property-level data.  We now filter the tran
 
  ## Short term data
   
-  daily.data <- daily.data[daily.data$property.id %in% str.data$property.id,]
+  daily_df <- daily_df[daily_df$property.id %in% str_df$property.id,]
 
  ## Long term list data
   
@@ -1356,23 +1354,26 @@ As we have limited the time period of analysis from the expanse of the raw data,
 
 ```{r redo.daily.summ, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
- # Calculate the new daily summaries
 
- daily.summ.list <- lapply(as.list(str.data$property.id), abbCalcBookStr,
-                            book.data=daily.data)
- daily.summ <- rbind.fill(daily.summ.list)
- daily.summ$min.date <- daily.summ$max.date <- NULL  
+    # Create new cluster
+  abb_cl <- get_default_cluster() 
+  
+  # Register function and variable
+  cluster_copy(abb_cl, abbCalcBookStr)
 
+  # Summarize daily by property
+  daily_summ <- daily_df %>% 
+    multidplyr::partition(property.id, cluster=abb_cl) %>% 
+    dplyr::do(abbCalcBookStr(.)) %>% 
+    dplyr::collect()
+  
  # Remove existing 
- cut.fields <- which(names(str.data) %in% c('total.days', 'block.rate', 'avail.rate',
-                                     'longest.block', 'nbr.block', 'med.block', 'bookings'))
- str.data <- str.data[ ,-cut.fields]
-
+ str_df <- str_df %>%
+   dplyr::select(-c(total.days, block.rate, avail.rate, longest.block, nbr.block,
+                    med.block, bookings))
+ 
  # Add summary data to property data
- str.data <- merge(str.data, 
-                   daily.summ, 
-                   by.x='property.id',
-                   by.y='id')
+ str_df <- str_df %>% dplyr::left_join(daily_summ, by='property.id')
 
 
 ```
@@ -1386,13 +1387,13 @@ Here we combine the two Strict (regular and super) cancellation policies into on
 
  ## ID those with missing cancel policies and remove
 
-  cpmiss <- which(str.data$cancel.policy == '')
-  str.data <- str.data[-cpmiss, ]
+  str_df <- str_df %>% 
+    dplyr::filter(cancel.policy %in% c('Flexible', 'Moderate', 'Strict'))
 
  ## ID those with Super Strict and change to Strict  
   
-  ss60 <- which(str.data$cancel.policy == 'Super Strict 60 Days')
-  str.data$cancel.policy[ss60] <- 'Strict'
+  ss60 <- which(str_df$cancel.policy == 'Super Strict 60 Days')
+  str_df$cancel.policy[ss60] <- 'Strict'
 
   # Count Cleaning
   countCleaning('hostpolicy')
@@ -1404,10 +1405,10 @@ Here we combine the two Strict (regular and super) cancellation policies into on
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  save(str.data, ltr.data, daily.data, listing.data, subs, abb.col, 
+  save(str_df, ltr.data, daily_df, listing.data, subs, abb.col, 
        beach.shp, core.suburbs, exch.rate, ltr.col, str.col, sa1s.shp, 
        suburbs.shp, study.suburbs, clean.count, daily.run.total, list.run.total,
        ltr.run.total, str.run.total,
-       file=paste0(data.path, 'prepared/prep_workspace.RData'))
+       file=paste0(data.path, 'prepared/prep_workspace_', data_name, '.RData'))
 
 ```

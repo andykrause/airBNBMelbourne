@@ -174,6 +174,7 @@ apmFixDates <- function(x.date){
   ## Return values as date format  
   
   return(as.Date(temp.date, "%d/%m/%y"))   
+  
 }
 
 ### Calculate the booking status ---------------------------------------------------------
@@ -288,8 +289,8 @@ abbCalcBookStr <- function(id.book.data){
 setCleanCount <- function(){
   
   # Make counts of initial sizes
-  str.orig <- nrow(str.data)
-  daily.orig <- nrow(daily.data)
+  str.orig <- nrow(str_df)
+  daily.orig <- nrow(daily_df)
   ltr.orig <- nrow(ltr.data)
   list.orig <- nrow(listing.data)
   
@@ -302,10 +303,10 @@ setCleanCount <- function(){
   
   # Assign initial values to globalEnv
   assign('clean.count', clean.df, envir=.GlobalEnv)
-  assign('str.run.total', nrow(str.data), envir=.GlobalEnv)
+  assign('str.run.total', nrow(str_df), envir=.GlobalEnv)
   assign('ltr.run.total', nrow(ltr.data), envir=.GlobalEnv)
   assign('list.run.total', nrow(listing.data), envir=.GlobalEnv)
-  assign('daily.run.total', nrow(daily.data), envir=.GlobalEnv)
+  assign('daily.run.total', nrow(daily_df), envir=.GlobalEnv)
   
 }
 
@@ -314,8 +315,8 @@ setCleanCount <- function(){
 countCleaning <- function(operation){
 
   # Count recent cuts  
-  str.cut <- str.run.total - nrow(str.data)
-  daily.cut <- daily.run.total - nrow(daily.data)
+  str.cut <- str.run.total - nrow(str_df)
+  daily.cut <- daily.run.total - nrow(daily_df)
   ltr.cut <- ltr.run.total - nrow(ltr.data)
   listing.cut <- list.run.total - nrow(listing.data)
   
@@ -331,10 +332,10 @@ countCleaning <- function(operation){
   
   # Assign temp data to globalEnv
   assign('clean.count', comb.df, envir=.GlobalEnv)
-  assign('str.run.total', nrow(str.data), envir=.GlobalEnv)
+  assign('str.run.total', nrow(str_df), envir=.GlobalEnv)
   assign('ltr.run.total', nrow(ltr.data), envir=.GlobalEnv)
   assign('list.run.total', nrow(listing.data), envir=.GlobalEnv)
-  assign('daily.run.total', nrow(daily.data), envir=.GlobalEnv)
+  assign('daily.run.total', nrow(daily_df), envir=.GlobalEnv)
   
 }
 
@@ -515,7 +516,7 @@ abbImputeCompare <- function(str.df,
     ltr.list <- split(ltr.df, ltr.df[ ,split.field])
     
     if(verbose){
-      split.levels <- levels(as.factor(str.data[,split.field]))
+      split.levels <- levels(as.factor(str_df[,split.field]))
       cat('Splitting data into: ', paste(split.levels,
                                          collapse='\n'), '\n')
     }
@@ -1196,7 +1197,7 @@ abbPrefAnalysisViz <- function(ic.df,
   
   # Complete Table
   market.stats <- data.frame(type=c('rate', 'qtl'),
-                             actual=rep(mean(str.data.ic$str.act.pref), 2),
+                             actual=rep(mean(str_df.ic$str.act.pref), 2),
                              fitted=c(mean(svm.rate$orig$fitted),
                                       mean(svm.qtl$orig$fitted)),
                              svm=c(mean(svm.rate$pred$pred),
@@ -1245,7 +1246,7 @@ logDx <- function(log.model, data, resp.var){
 ### Custom function for building revenue density plots -----------------------------------
 
 
-buildRevDensPlot <- function(str.data,
+buildRevDensPlot <- function(str_df,
                              rev.types=c('act', 'pot'),
                              rev.cols=1:(length(rev.types) + 1),
                              facet=TRUE){
@@ -1254,7 +1255,7 @@ buildRevDensPlot <- function(str.data,
   
   # Actual
   if('act' %in% rev.types){
-    stra.rev <- str.data[,c('property.id', 'str.act.revenue')]
+    stra.rev <- str_df[,c('property.id', 'str.act.revenue')]
     stra.rev$tenure <- 'Short-Term (Actual)   '
     names(stra.rev)[2] <- 'revenue'
   } else {
@@ -1263,7 +1264,7 @@ buildRevDensPlot <- function(str.data,
   
   # Potential
   if('pot' %in% rev.types){
-    strp.rev <- str.data[,c('property.id', 'str.pot.revenue')]
+    strp.rev <- str_df[,c('property.id', 'str.pot.revenue')]
     strp.rev$tenure <- 'Short-Term (Potential)   '
     names(strp.rev)[2] <- 'revenue'
   } else {
@@ -1271,7 +1272,7 @@ buildRevDensPlot <- function(str.data,
   }
   
   # Long-Term
-  ltr.rev <- str.data[,c('property.id', 'ltr.imp.revenue')]
+  ltr.rev <- str_df[,c('property.id', 'ltr.imp.revenue')]
   ltr.rev$tenure <- 'Long-Term   '
   names(ltr.rev)[2] <- 'revenue'
   
