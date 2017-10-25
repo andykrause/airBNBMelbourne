@@ -1,7 +1,8 @@
 ---
-title: "Should I Airbnb My Property?"
-author: "Andy Krause and Gideon Aschwanden"
-date: "March 17, 2017"
+title: "To Airbnb?: A Question of Returns"
+subtitle: "Andy Krause and Gideon Aschwanden"
+author: "Greenfield Advisors and University of Melbourne"
+date: "October 25th, 2017"
 output:
   pdf_document: default
   html_document: default
@@ -38,25 +39,9 @@ bibliography: abb.bib
 
 ```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'}
 
-  # Get computer names
-
-  comp.name <- Sys.info()['nodename']
-
-  # Assign path based on computer name
-  
-  if(comp.name == '7020D-121777-W' | comp.name == 'DESKTOP-1D7JO4J'){
-  
-    data.path <- 'c:/dropbox/research/airBNB/data/'
-    code.path <- 'c:/code/'
-    fig.path <- 'c:/dropbox/research/airBNB/figures/'
-    
-  } else {
-  
-    data.path <- 'alternate data path'
-    code.path <- 'alternate code path'
-    fig.path <- 'alternate fig path'
-   
-  }
+ data.path <- 'c:/dropbox/research/airBNB/data/'
+ code.path <- 'c:/code/'
+ fig.path <- 'c:/dropbox/research/airBNB/figures/'
 
  ## Set options
 
@@ -67,8 +52,8 @@ bibliography: abb.bib
 
 ```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'}
 
-  source(paste0(code.path, "dataviztools/ggplottools.R"))
-  source(paste0(code.path, "datamgmttools/dataMungetools.R"))
+  source(paste0(code.path, "tools/dataviztools/ggplottools.R"))
+  source(paste0(code.path, "tools/datamgmttools/dataMungetools.R"))
   source(paste0(code.path, "research/AirbnbMelbourne/abb_Functions.R"))
 
 ```
@@ -92,14 +77,14 @@ bibliography: abb.bib
   str.col <- abb.col[1]
   ltr.col <- abb.col[3]
   
-  abb.col[1] <- abb.col[3]
-  abb.col[5] <- abb.col[6]
-  
+  strp.col <- abb.col[3]
+  ltrp.col <- abb.col[6]
+
 ```
 
 ```{r load_workspace, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, cache=FALSE}
 
-   load(paste0(data.path, '/analyzed/analyzed_workspace.RData'))
+   load(paste0(data.path, '/analyzed/analyzed_workspace_sep.RData'))
    a<-1
 
 ```
@@ -572,26 +557,26 @@ An SVM can be used as a classifier to delineate the boundaries between two (or m
 
  ## Create the rate heat map
 
-  rate.hm <- abbHeatMap(str.data.ic,
+  rate.hm <- abbHeatMap(str_df.ic,
                 x.field='occ.rate',
                 y.field='med.rate',
                 pref.field='str.act.pref',
                 svm=F, 
                 alpha.count=T,
                 add.points=T,
-                fill.colors=c(abb.col[1], abb.col[5]))
+                fill.colors=c(strp.col, ltrp.col))
   rate.hm <- rate.hm + ylab('Nightly Rate')
 
  ## Create raw SVM heatmap  
   
-  rate.hm.svm <- abbHeatMap(str.data.ic,
+  rate.hm.svm <- abbHeatMap(str_df.ic,
                             x.field='occ.rate',
                             y.field='med.rate',
                             pref.field='str.act.pref',
                             svm=T, 
                             alpha.count=F,
                             add.points=T,
-                            fill.colors=c(abb.col[1], abb.col[5]))
+                            fill.colors=c(strp.col, ltrp.col))
   rate.hm.svm <- rate.hm.svm + ylab('Nightly Rate')
   
  ## Plot  
@@ -606,19 +591,19 @@ Both the occupancy rates and the nightly rates are not uniformly distributed and
 
  ## Build percentile heatmap
 
-  qtl.hm <- abbHeatMap(str.data.ic,
+  qtl.hm <- abbHeatMap(str_df.ic,
                 x.field='occ.qtl',
                 y.field='rate.qtl',
                 pref.field='str.act.pref',
                 svm=F, 
                 alpha.count=T,
                 add.points=T,
-                fill.colors=c(abb.col[1], abb.col[5]))
+                fill.colors=c(strp.col, ltrp.col))
   qtl.hm <- qtl.hm + ylab('Nightly Rate (Pcntl)') + xlab('Occupancy Rate (Pcntl)')
  
  ## Build percentile SVM  
   
-  qtl.hm.svm <- abbHeatMap(str.data.ic,
+  qtl.hm.svm <- abbHeatMap(str_df.ic,
                    x.field='occ.qtl',
                    y.field='rate.qtl',
                    pref.field='str.act.pref',
@@ -626,7 +611,7 @@ Both the occupancy rates and the nightly rates are not uniformly distributed and
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))
+                   fill.colors=c(strp.col, ltrp.col))
   qtl.hm.svm <- qtl.hm.svm + ylab('Nightly Rate (Pcntl)') + xlab('Occupancy Rate (Pcntl)')
  
   ## Make Plots
@@ -700,7 +685,7 @@ Extending this analysis to include nightly rates shows a similar situation (\aut
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5])) +
+                   fill.colors=c(strp.col, ltrp.col)) +
   theme(legend.position='none') +
   annotate("text", x = 50, y = 50, label = "Houses", size=9) +
   ylab('Nightly Rate (Pcntl)') +
@@ -717,7 +702,7 @@ Extending this analysis to include nightly rates shows a similar situation (\aut
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))+
+                   fill.colors=c(strp.col, ltrp.col))+
   theme(legend.position='none')+
   annotate("text", x = 50, y = 50, label = "Apartments", size=9)+
   ylab('Nightly Rate (Pcntl)') +
@@ -736,7 +721,7 @@ Next, we divide the data into the five geographic sub-market shown in \autoref{p
 ```{r table_geo, message=FALSE, warning=FALSE, results='asis', comment=FALSE, echo=FALSE}
 
  # Make Basic comparison table
-  pref.table <- abbCreateCompTable(ic.df=str.data.ic,
+  pref.table <- abbCreateCompTable(ic.df=str_df.ic,
                                    split.field='geo.mrkt')
 
  # Convert to wide format for output
@@ -825,7 +810,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5])) +
+                   fill.colors=c(strp.col, ltrp.col)) +
   theme(legend.position='none') +
     ylab('Nightly Rate Percentile') +
     xlab('Occupancy Rate Percentile') +
@@ -841,7 +826,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))+
+                   fill.colors=c(strp.col, ltrp.col))+
   theme(legend.position='none')+
     ylab('Nightly Rate Percentile') +
     xlab('Occupancy Rate Percentile') +
@@ -857,7 +842,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))+
+                   fill.colors=c(strp.col, ltrp.col))+
   theme(legend.position='none')+
     ylab('Nightly Rate Percentile') +
     xlab('Occupancy Rate Percentile') +
@@ -873,7 +858,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))+
+                   fill.colors=c(strp.col, ltrp.col))+
   theme(legend.position='none')+
     ylab('Nightly Rate Percentile') +
     xlab('Occupancy Rate Percentile') +
@@ -889,7 +874,7 @@ Plotting out the nightly rate versus occupancy rate heat maps for all five geogr
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))+
+                   fill.colors=c(strp.col, ltrp.col))+
   theme(legend.position='none')+
     ylab('Nightly Rate Percentile') +
     xlab('Occupancy Rate Percentile') +
@@ -987,9 +972,9 @@ Finally, in Model 3 we add in host behavior or policies. Allowing a greater numb
  ## Create model diagnostics  
   
   # Extract diagnostics
-  str.dx <- logDx(pref.models[[1]], str.data.ic, str.data.ic$str.act.pref)
-  sm.dx <- logDx(pref.models[[2]], str.data.ic, str.data.ic$str.act.pref)
-  host.dx <- logDx(pref.models[[3]], str.data.ic, str.data.ic$str.act.pref)
+  str.dx <- logDx(pref.models[[1]], str_df.ic, str_df.ic$str.act.pref)
+  sm.dx <- logDx(pref.models[[2]], str_df.ic, str_df.ic$str.act.pref)
+  host.dx <- logDx(pref.models[[3]], str_df.ic, str_df.ic$str.act.pref)
   
   # Create diagnostic table
   diag.table <- data.frame(Variable=c('', 'Diagnostics', 'AIC', 'LogLik',
@@ -1040,13 +1025,13 @@ Using the potential revenue, 53.3% of all properties are short-term preferable. 
 ```{r pot_table, results='asis', echo=FALSE, message=FALSE, comment=FALSE}
 
  # Make Basic comparison table of type
-  tpref.table <- abbCreateCompTable(ic.df=str.data.ic,
+  tpref.table <- abbCreateCompTable(ic.df=str_df.ic,
                                     split.field='type')
  # Extract Potential Results
   tpref.table <- tpref.table[tpref.table$rev.type == 'Potential', ]
   
  # Make baseic comparison table of submarkets  
-  spref.table <- abbCreateCompTable(ic.df=str.data.ic,
+  spref.table <- abbCreateCompTable(ic.df=str_df.ic,
                                     split.field='geo.mrkt')
 
  # Extract potential results  
@@ -1084,7 +1069,7 @@ Examining the SVM heat maps for the entire metro region under the Actual revenue
                 svm=F, 
                 alpha.count=T,
                 add.points=T,
-                fill.colors=c(abb.col[1], abb.col[5]))
+                fill.colors=c(strp.col, ltrp.col))
   pqtl.hm <- pqtl.hm + ylab('Nightly Rate (Qtl)')
   
  ## Make percentile SVM heatmap  
@@ -1097,7 +1082,7 @@ Examining the SVM heat maps for the entire metro region under the Actual revenue
                    alpha.count=F,
                    add.points=T,
                    quantile=T,
-                   fill.colors=c(abb.col[1], abb.col[5]))
+                   fill.colors=c(strp.col, ltrp.col))
   pqtl.hm.svm <- pqtl.hm.svm + ylab('Nightly Rate (Pcntl)')+
     xlab('Occupancy Rate (Pcntl)') +
   annotate("text", x = 50, y = 50, label = "Potential", size=9)
@@ -1163,9 +1148,9 @@ Our final test of the potential revenue case is to re-run the logistic regressio
  ## Create model diagnostics  
   
   # Extract diagnostics
-  pstr.dx <- logDx(pref.models[[4]], str.data.ic, str.data.ic$str.pot.pref)
-  psm.dx <- logDx(pref.models[[5]], str.data.ic, str.data.ic$str.pot.pref)
-  phost.dx <- logDx(pref.models[[6]], str.data.ic, str.data.ic$str.pot.pref)
+  pstr.dx <- logDx(pref.models[[4]], str_df.ic, str_df.ic$str.pot.pref)
+  psm.dx <- logDx(pref.models[[5]], str_df.ic, str_df.ic$str.pot.pref)
+  phost.dx <- logDx(pref.models[[6]], str_df.ic, str_df.ic$str.pot.pref)
   
   # Create diagnostic table
   pdiag.table <- data.frame(Variable=c('', 'Diagnostics', 'AIC', 'LogLik',
@@ -1226,7 +1211,7 @@ There is also a third potential host type, that of the host who utilizies multip
 
   ## Create table of host block frequencies
 
-  host.block.freq <- ggplot(str.data, aes(x=block.rate)) + 
+  host.block.freq <- ggplot(str_df, aes(x=block.rate)) + 
   geom_density(fill=str.col, color=str.col) +
   ylab('Frequency\n') + 
   xlab('\n% of Time Property is Blocked') +
@@ -1242,7 +1227,7 @@ There is also a third potential host type, that of the host who utilizies multip
 
  ## Create scatter of block rate vs block periods
 
-  block.rate.period <- ggplot(str.data, aes(x=block.rate, y=nbr.block*extr.par)) + 
+  block.rate.period <- ggplot(str_df, aes(x=block.rate, y=nbr.block*extr.par)) + 
   geom_point(fill=str.col, color=str.col, size=.2) +
   ylab('Nbr of Blocked Periods\n') + 
   xlab('\n% of Time Property is Blocked') +
@@ -1265,13 +1250,13 @@ Attempts to divide the hosts up with unsupervised^[As there are no official host
 
  ## Split Hosts into groups
 
-  str.data$blockpertime <- round(str.data$nbr.block * str.data$extr.par, 1)
+  str_df$blockpertime <- round(str_df$nbr.block * str_df$extr.par, 1)
 
-  str.data$host.type <- 'Unknown'
-  str.data$host.type[str.data$blockpertime > 12] <- 'Multi-Platform User'
-  str.data$host.type[str.data$block.rate <= .25] <- 'Profit Seeker'
-  str.data$host.type[str.data$block.rate >= .75] <- 'Opportunistic Sharer'
-  str.data$host.type <- factor(str.data$host.type,
+  str_df$host.type <- 'Unknown'
+  str_df$host.type[str_df$blockpertime > 12] <- 'Multi-Platform User'
+  str_df$host.type[str_df$block.rate <= .25] <- 'Profit Seeker'
+  str_df$host.type[str_df$block.rate >= .75] <- 'Opportunistic Sharer'
+  str_df$host.type <- factor(str_df$host.type,
                                levels=c('Profit Seeker', 'Opportunistic Sharer', 
                                         'Multi-Platform User', 'Unknown'))
 ```
@@ -1280,7 +1265,7 @@ Attempts to divide the hosts up with unsupervised^[As there are no official host
 
   # Create a background plot for the host location plots
 
-  base.host <- ggplot(str.data, 
+  base.host <- ggplot(str_df, 
                     aes(x=block.rate, y=blockpertime)) + 
                 geom_point(alpha=.7, size=.4, shape=16, color='gray70') +
                 ylab('# Blckd Periods\n') + 
@@ -1303,21 +1288,21 @@ Attempts to divide the hosts up with unsupervised^[As there are no official host
   ## Create individual host location plots
 
   ps.host <- base.host + 
-    geom_point(data=str.data[str.data$host.type == 'Profit Seeker', ], size=.4)  +
+    geom_point(data=str_df[str_df$host.type == 'Profit Seeker', ], size=.4)  +
     ggtitle('Profit Seekers')
 
   os.host <- base.host + 
-    geom_point(data=str.data[str.data$host.type == 'Opportunistic Sharer', ], 
+    geom_point(data=str_df[str_df$host.type == 'Opportunistic Sharer', ], 
                size=.4)  +
     ggtitle('Opportunistic Sharer')
 
   mu.host <- base.host + 
-    geom_point(data=str.data[str.data$host.type == 'Multi-Platform User', ], 
+    geom_point(data=str_df[str_df$host.type == 'Multi-Platform User', ], 
                size=.4)  +
     ggtitle('Multi-Platform User')
 
   un.host <- base.host + 
-    geom_point(data=str.data[str.data$host.type == 'Unknown', ], size=.4)  +
+    geom_point(data=str_df[str_df$host.type == 'Unknown', ], size=.4)  +
     ggtitle('Unknown')
 
 ```
@@ -1332,7 +1317,7 @@ Attempts to divide the hosts up with unsupervised^[As there are no official host
 
  ## Build plot
 
-  host.type.bar <- ggplot(str.data, aes(host.type, fill=host.type)) +
+  host.type.bar <- ggplot(str_df, aes(host.type, fill=host.type)) +
     geom_bar() +
     scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
     theme(legend.position='none') +
@@ -1353,7 +1338,7 @@ Looking at the differences in short-term preference under both revenue cases, we
 ```{r host_table, results='asis', message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
 
  # Make Basic comparison table
-  apref.table <- abbCreateCompTable(ic.df=str.data.ic,
+  apref.table <- abbCreateCompTable(ic.df=str_df.ic,
                                     split.field='host.type')
 
  # Limit to the extrapolated pref type
@@ -1418,9 +1403,9 @@ Table 8 compares logistic models results from three of the host types.  The Oppo
  ## Create model diagnostics  
   
   # Extract diagnostics
-  hstr.dx <- logDx(host.models[[1]], str.data.ic, str.data.ic$str.act.pref)
-  hsm.dx <- logDx(host.models[[3]], str.data.ic, str.data.ic$str.act.pref)
-  hhost.dx <- logDx(host.models[[4]], str.data.ic, str.data.ic$str.act.pref)
+  hstr.dx <- logDx(host.models[[1]], str_df.ic, str_df.ic$str.act.pref)
+  hsm.dx <- logDx(host.models[[3]], str_df.ic, str_df.ic$str.act.pref)
+  hhost.dx <- logDx(host.models[[4]], str_df.ic, str_df.ic$str.act.pref)
   
   # Create diagnostic table
   hdiag.table <- data.frame(Variable=c('', 'Diagnostics', 'AIC', 'LogLik',
