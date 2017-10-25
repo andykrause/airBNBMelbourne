@@ -4,36 +4,29 @@
 #                                                                                        #  
 ##########################################################################################
 
+
  ## Load Libraries
 
+  library(plyr)
   library(stringr)
+  library(lubridate)
+  library(dplyr)
+  library(multidplyr)
   
- ## Load custom functions  
+  ## Set locations
 
-  source('c:/code/research/airbnbmelbourne/abb_Functions.R')
-  
- ## Load Data  
-  
-  # Get computer names
-  comp.name <- Sys.info()['nodename']
-  
   # Assign path based on computer name
-  if(comp.name == '7020D-121777-W' | 
-     comp.name == 'DESKTOP-1D7JO4J'){
-    
-    data.path <- 'c:/dropbox/research/airBNB/data/'
-    
-  } else {
-    
-    data.path <- 'gideon path'
-    
-  }
-  
-  # Set Raw path
-  raw.path <- paste0(data.path, '/raw/')
+  data_path <- 'c:/dropbox/research/airBNB/data/'
+
+  # Code Path
+  code_path <- getwd()
+
+ ## Load sources
+
+  source(file.path(code_path, "abb_Functions.R"))
   
   # Load the raw rent data
-  rent16 <- read.csv(paste0(raw.path, 'rentData.csv'), header=T)
+  rent16 <- read.csv(file.path(data_path, 'raw', 'rentData.csv'), header=T)
 
  ## Remove observations without sufficient keys
   
@@ -52,11 +45,11 @@
   r16$last.adv.date <- apmFixDates(r16$LastAdvertisedEventDate)
   r16$first.adv.date <- apmFixDates(r16$FirstAdvertisedEventDate)
   r16$event.date <- apmFixDates(r16$EventDate)
-  r16$event.year <- as.numeric(substr(r16$event.date, 1, 4))
+  r16$event.year <- lubridate::year(r16$event.date)
   
  ## Remove those not occuring in 2015 or later
   
-  r16 <- r16[r16$event.year >= 2014, ]
+  r16 <- r16 %>% dplyr::filter(event.year >= 2014)
   
  ## Add an identifier that signifies last record in a set of advertisements (of record)  
     
@@ -90,23 +83,14 @@
   listing.data$id.key <- as.character(listing.data$id.key)
   
   # Calculate all maximums
-  list.max <- as.data.frame(tapply(listing.data$event.date, 
-                                   listing.data$id.key, 
-                                   max))
-  
-  # Calculate all minimums
-  list.min <- as.data.frame(tapply(listing.data$event.date, 
-                                   listing.data$id.key, 
-                                   min))
-  
-  # Calc the DOM and convert to a data.frame
-  dom <- list.max - list.min
-  dom.df <- data.frame(id.key = rownames(list.max),
-                       dom = dom)
-  names(dom.df)[2] <- 'dom'
+  dom.data <- listing.data %>%
+    dplyr::group_by(id.key) %>%
+    dplyr::summarize(min=min(event.date),
+                     max=max(event.date),
+                     dom=as.numeric(max-min))
   
   # Add to property data
-  ltr.data$DOM <- dom.df$dom[match(ltr.data$id.key, dom.df$id.key)]
+  ltr.data$DOM <- dom.data$dom[match(ltr.data$id.key, dom.data$id.key)]
   
   # Convert all names to lower case
   names(ltr.data) <- tolower(names(ltr.data))
@@ -114,7 +98,7 @@
   
  ## Write out data
   
-  export.path <- paste0(data.path, '/prepared/')
+  export.path <- paste0(data_path, '/prepared/')
   save(ltr.data, file=paste0(export.path, 'ltpropdata.RData'))
   save(listing.data, file=paste0(export.path, 'ltlistdata.RData'))
   

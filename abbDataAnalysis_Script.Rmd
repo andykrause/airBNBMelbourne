@@ -37,31 +37,22 @@ We begin by loading the libraries necessary to do this analysis.
 
 ```
 
+&nbsp;
+
+```{r set_dates}
+  
+  data_name <- 'jun'
+  strike_date <- lubridate::as_date('2015-06-01')
+  
+```
+
 We then set the paths to the data, code and figures, based on the user of the document.  We also set a variable indicating whether or not we are working offline. 
 
 ```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
-  # Get computer names
-
-  comp.name <- Sys.info()['nodename']
-
-  # Assign path based on computer name
-  
-  if(comp.name == '7020D-121777-W' | comp.name == 'DESKTOP-1D7JO4J'){
-  
     data.path <- 'c:/dropbox/research/airBNB/data/'
     code.path <- 'c:/code/'
     fig.path <- 'c:/dropbox/research/airBNB/figures/'
-
-  } else {
-  
-    data.path <- 'alternate data path'
-    code.path <- 'alternate data path'
-    fig.path <- 'alternate data path'
-    
-  }
-
-  offline <- TRUE
 
 ```
 
@@ -77,10 +68,10 @@ Next, we source the necessary custom code files for the analysis.  We also set a
 
   if(offline){
 
-  source(paste0(code.path, '/dataVizTools/ggPlotTools.R'))
-  source(paste0(code.path, '/datamgmttools/dataMungeTools.R'))
-  source(paste0(code.path, '/spatialTools/spatialLogitModels.R'))
-  source(paste0(code.path, '/spatialTools/point2surface_Tools.R'))
+  source(paste0(code.path, 'tools/dataVizTools/ggPlotTools.R'))
+  source(paste0(code.path, 'tools/datamgmttools/dataMungeTools.R'))
+  source(paste0(code.path, 'tools/spatialTools/spatialLogitModels.R'))
+  source(paste0(code.path, 'tools/spatialTools/point2surface_Tools.R'))
     
   } else {
     
@@ -108,7 +99,7 @@ We load the workspace from the data clean script that includes the prepared data
 
   # Property Information
 
-  load(paste0(data.path, 'prepared/prep_workspace.RData'))
+  load(file.path(data.path, 'prepared', paste0('prep_workspace_', data_name, '.RData')))
 
 ```
 
@@ -120,39 +111,39 @@ Before we start, we estimate two figures necessary to determine utility costs: 1
 
 ```{r utility_estimates, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str.data$cpppd <- 4.5
-  str.data$avg.guests <- str.data$bedrooms * 1.5
+  str_df$cpppd <- 4.5
+  str_df$avg.guests <- str_df$bedrooms * 1.5
 
 ```
 
 ```{r obs_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str.data$str.obs.revenue <- ((str.data$bookings * str.data$med.rate) - 
-                                 (str.data$bookings * str.data$avg.guests *
-                                    str.data$cpppd))
+  str_df$str.obs.revenue <- ((str_df$bookings * str_df$med.rate) - 
+                                 (str_df$bookings * str_df$avg.guests *
+                                    str_df$cpppd))
 
 ```
 
 ```{r act_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str.data$extr.par <- 366 / str.data$total.days
+  str_df$extr.par <- 366 / str_df$total.days
 
-  str.data$str.act.revenue <- ((str.data$bookings * str.data$extr.par *
-                                  str.data$med.rate) - 
-                                 (str.data$bookings * str.data$avg.guests * 
-                                    str.data$cpppd * str.data$extr.par))
+  str_df$str.act.revenue <- ((str_df$bookings * str_df$extr.par *
+                                  str_df$med.rate) - 
+                                 (str_df$bookings * str_df$avg.guests * 
+                                    str_df$cpppd * str_df$extr.par))
 ```
 
 ```{r pot_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str.data$occ.rate <- 1 - (str.data$block.rate + str.data$avail.rate)
+  str_df$occ.rate <- 1 - (str_df$block.rate + str_df$avail.rate)
 
-  str.data$pot.occ.rate <- ((str.data$bookings * str.data$extr.par) / 
-    (366 - (366 * str.data$block.rate))) 
+  str_df$pot.occ.rate <- ((str_df$bookings * str_df$extr.par) / 
+    (366 - (366 * str_df$block.rate))) 
   
-  str.data$str.pot.revenue <- ((str.data$pot.occ.rate * 366 * str.data$med.rate) - 
-                                 (str.data$pot.occ.rate * 366 * 
-                                    str.data$avg.guests * str.data$cpppd))
+  str_df$str.pot.revenue <- ((str_df$pot.occ.rate * 366 * str_df$med.rate) - 
+                                 (str_df$pot.occ.rate * 366 * 
+                                    str_df$avg.guests * str_df$cpppd))
   
 
 ```
@@ -182,7 +173,7 @@ We then employ a custom function to impute the long term rents for the short-ter
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   imp.data <- imputeLtrRents(ltr.df=ltr.data,
-                               str.df=str.data,
+                               str.df=str_df,
                                mod.spec=ltr.mod.spec,
                                match.factor='suburb')
 
@@ -193,7 +184,7 @@ From the imputed results, we extract the imputed rental values and merge to the 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   # Extract out DFs (only those that imputed)
-  str.metro <- merge(str.data, imp.data$imp.rent, by='property.id')
+  str.metro <- merge(str_df, imp.data$imp.rent, by='property.id')
 
 ```
 
@@ -225,18 +216,18 @@ Finally we make a comparison of the observed short term revenues and the imputed
 
 ```
 
-The above process of long-term revenue estimation treated the entire market as operating similarly. Realizing that the imputed long term rental values and search times may be more accurate when estimated at smaller scales, we functionalize the above processes and then apply it to short-term rentals, broken into submarkets by type, bed/bath and geographic area.  In other words, we separately estimate LTR rents for Apartments with 1bed/1bath in the city core, Apartments with 1bed/1bath in the beach submarket, etc. for all compbinations of type, bed/bath and geographic area. We then combine the results form all estimates back into a single data.frame that contains all of the short-term rentals. We use these finer scale estimates going forward (the data in the **str.data.ic** object).
+The above process of long-term revenue estimation treated the entire market as operating similarly. Realizing that the imputed long term rental values and search times may be more accurate when estimated at smaller scales, we functionalize the above processes and then apply it to short-term rentals, broken into submarkets by type, bed/bath and geographic area.  In other words, we separately estimate LTR rents for Apartments with 1bed/1bath in the city core, Apartments with 1bed/1bath in the beach submarket, etc. for all compbinations of type, bed/bath and geographic area. We then combine the results form all estimates back into a single data.frame that contains all of the short-term rentals. We use these finer scale estimates going forward (the data in the **str_df.ic** object).
 
 ```{r build.tbg.data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
  # Create the type, bed/bath and geo sub market variable
 
- str.data$tbg <- paste0(str.data$product,'.', str.data$geo.mrkt)
+ str_df$tbg <- paste0(str_df$product,'.', str_df$geo.mrkt)
  ltr.data$tbg <- paste0(ltr.data$product,'.', ltr.data$geo.mrkt)
 
  # Make IC estimates at TBG level
 
- str.data.ic <- abbImputeCompare(str.df=str.data,
+ str_df.ic <- abbImputeCompare(str.df=str_df,
                                  ltr.df=ltr.data,
                                  mod.spec=ltr.mod.spec,
                                  match.factor='suburb',
@@ -251,17 +242,17 @@ Having calculated the revenues, both short-term and long-term imputed, we now co
 ```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5}
 
   # Actual
-   stra.rev <- str.data.ic[,c('property.id', 'str.act.revenue')]
+   stra.rev <- str_df.ic[,c('property.id', 'str.act.revenue')]
    stra.rev$tenure <- 'Short-Term (Actual)   '
    names(stra.rev)[2] <- 'revenue'
   
   # Potential
-   strp.rev <- str.data.ic[,c('property.id', 'str.pot.revenue')]
+   strp.rev <- str_df.ic[,c('property.id', 'str.pot.revenue')]
    strp.rev$tenure <- 'Short-Term (Potential)   '
    names(strp.rev)[2] <- 'revenue'
   
   # Long-Term
-   ltr.rev <- str.data.ic[,c('property.id', 'ltr.imp.revenue')]
+   ltr.rev <- str_df.ic[,c('property.id', 'ltr.imp.revenue')]
    ltr.rev$tenure <- 'Long-Term   '
    names(ltr.rev)[2] <- 'revenue'
   
@@ -299,7 +290,7 @@ We will begin by analyzing the above estimates at the entire metro scale. Analys
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
-  table(str.data.ic$str.act.pref) / nrow(str.data.ic)
+  table(str_df.ic$str.act.pref) / nrow(str_df.ic)
 
 ```
 
@@ -309,23 +300,23 @@ Next, we plot the \% of properties that have short-term preference versus the oc
 
  ## Set Preference data field
 
-  str.data.ic$pref <- str.data.ic$str.act.pref
+  str_df.ic$pref <- str_df.ic$str.act.pref
 
  ## Calculate the percentile fields
 
-  str.data.ic$occ.qtl <- makeWtdQtl(str.data.ic$occ.rate, 
+  str_df.ic$occ.qtl <- makeWtdQtl(str_df.ic$occ.rate, 
                                       return.type='rank') 
-  str.data.ic$rate.qtl <- makeWtdQtl(str.data.ic$med.rate, 
+  str_df.ic$rate.qtl <- makeWtdQtl(str_df.ic$med.rate, 
                                   return.type='rank') 
 
  ## Calculate raw and percentile occupancies
 
-  rawocc.metro <- abbPrefPlot(str.data.ic,
+  rawocc.metro <- abbPrefPlot(str_df.ic,
                          x.field='occ.rate',
                          smooth=TRUE,
                          smooth.span=.5)
   
-  qtlocc.metro <- abbPrefPlot(str.data.ic,
+  qtlocc.metro <- abbPrefPlot(str_df.ic,
                         x.field='occ.qtl',
                         smooth=TRUE,
                         smooth.span=.5)
@@ -372,7 +363,7 @@ Next we build a heat map that shows which combinations of occupancy rate and nig
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
-  rate.hm <- abbHeatMap(str.data.ic,
+  rate.hm <- abbHeatMap(str_df.ic,
                 x.field='occ.rate',
                 y.field='med.rate',
                 pref.field='str.act.pref',
@@ -388,7 +379,7 @@ To make the distinction more clear, we employ a Support Vector Machine to classi
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  rate.hm.svm <- abbHeatMap(str.data.ic,
+  rate.hm.svm <- abbHeatMap(str_df.ic,
                             x.field='occ.rate',
                             y.field='med.rate',
                             pref.field='str.act.pref',
@@ -405,7 +396,7 @@ As the distributions of occupancy rate and nightly rate are not uniform, we stan
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
-  qtl.hm <- abbHeatMap(str.data.ic,
+  qtl.hm <- abbHeatMap(str_df.ic,
                 x.field='occ.qtl',
                 y.field='rate.qtl',
                 pref.field='str.act.pref',
@@ -419,7 +410,7 @@ As the distributions of occupancy rate and nightly rate are not uniform, we stan
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
-  qtl.hm.svm <- abbHeatMap(str.data.ic,
+  qtl.hm.svm <- abbHeatMap(str_df.ic,
                    x.field='occ.qtl',
                    y.field='rate.qtl',
                    pref.field='str.act.pref',
@@ -441,7 +432,7 @@ First we make a comparison table of the results.
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
  # Make Basic comparison table
-  pref.table.type <- abbCreateCompTable(ic.df=str.data.ic,
+  pref.table.type <- abbCreateCompTable(ic.df=str_df.ic,
                                    split.field='type')
 
  # Limit to the extrapolated pref type
@@ -470,11 +461,11 @@ We then look at the relationship between occ rate and preference.  Before we sta
 
  ## Create dataset
 
-  type.data.ic <- str.data.ic
+  type.data.ic <- str_df.ic
 
   # Id the types
-  apt.id <- which(str.data.ic$type == 'Apartment')
-  house.id <- which(str.data.ic$type == 'House')
+  apt.id <- which(str_df.ic$type == 'Apartment')
+  house.id <- which(str_df.ic$type == 'House')
 
   # Recalculate the percentiles
   type.data.ic$occ.qtl[apt.id] <- makeWtdQtl(type.data.ic$occ.rate[apt.id],
@@ -608,7 +599,7 @@ We now repeat the three analyses -- table, occupancy plot, heat map -- for the f
 ```{r table_geo, message=FALSE, warning=FALSE, results='asis', comment=FALSE, cache=TRUE, echo=FALSE, fig.cap='Geographic Submarket Preferability'}
 
  # Make Basic comparison table
-  pref.table <- abbCreateCompTable(ic.df=str.data.ic,
+  pref.table <- abbCreateCompTable(ic.df=str_df.ic,
                                    split.field='geo.mrkt')
 
  # Convert to wide format for output
@@ -639,14 +630,14 @@ We now repeat the three analyses -- table, occupancy plot, heat map -- for the f
 
  ## Build data
 
-  subm.data.ic <- str.data.ic
+  subm.data.ic <- str_df.ic
 
   # Get IDs
-  cc.id <- which(str.data.ic$geo.mrkt == 'city-core')
-  city.id <- which(str.data.ic$geo.mrkt == 'city')
-  sub.id <- which(str.data.ic$geo.mrkt == 'suburban')
-  rural.id <- which(str.data.ic$geo.mrkt == 'rural')
-  beach.id <- which(str.data.ic$geo.mrkt == 'beach')
+  cc.id <- which(str_df.ic$geo.mrkt == 'city-core')
+  city.id <- which(str_df.ic$geo.mrkt == 'city')
+  sub.id <- which(str_df.ic$geo.mrkt == 'suburban')
+  rural.id <- which(str_df.ic$geo.mrkt == 'rural')
+  beach.id <- which(str_df.ic$geo.mrkt == 'beach')
   
   # Recalc the percentiles
   subm.data.ic$occ.qtl[cc.id] <- makeWtdQtl(subm.data.ic$occ.rate[cc.id],
@@ -839,16 +830,16 @@ First, a basic model with just structural characteristics.
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str.data.ic$bedbath <- factor(str.data.ic$bedbath,
+  str_df.ic$bedbath <- factor(str_df.ic$bedbath,
                                 levels=c('1..1', '2..1', '2..2',
                                          '3..1', '3..2', '4..2'))
 
   mod.act.str <- glm(str.act.pref~type+as.factor(bedbath),
                      family=binomial(link='logit'),
-                     data=str.data.ic)
+                     data=str_df.ic)
   mod.pot.str <- glm(str.pot.pref~type+as.factor(bedbath),
                      family=binomial(link='logit'),
-                     data=str.data.ic)
+                     data=str_df.ic)
 ```
 
 Then a model that adds in the geographic submarkets
@@ -858,11 +849,11 @@ Then a model that adds in the geographic submarkets
   mod.act.loc <- glm(str.act.pref~type+as.factor(bedbath)+
                                   geo.mrkt,
                      family=binomial(link='logit'),
-                     data=str.data.ic)
+                     data=str_df.ic)
   mod.pot.loc <- glm(str.pot.pref~type+as.factor(bedbath)+
                                   geo.mrkt,
                      family=binomial(link='logit'),
-                     data=str.data.ic)
+                     data=str_df.ic)
 ```
 
 Finally a model that adds in host policies. 
@@ -874,13 +865,13 @@ Finally a model that adds in host policies.
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       family=binomial(link='logit'),
-                      data=str.data.ic)
+                      data=str_df.ic)
   mod.pot.host <- glm(str.pot.pref~type+as.factor(bedbath)+
                         geo.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                       family=binomial(link='logit'),
-                      data=str.data.ic)
+                      data=str_df.ic)
 ```
 
 We combine all model results in to a list for easy export. 
@@ -899,29 +890,29 @@ We then also run a set of regression models where the premium (or discount) for 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   mod.act.str.prem <- lm(str.act.prem~type+as.factor(bedbath),
-                    data=str.data.ic)
+                    data=str_df.ic)
   mod.pot.str.prem <- lm(str.pot.prem~type+as.factor(bedbath),
-                    data=str.data.ic)
+                    data=str_df.ic)
   
   mod.act.loc.prem <- glm(str.act.pref~type+as.factor(bedbath)+
                                   geo.mrkt,
                      family=binomial(link='logit'),
-                     data=str.data.ic)
+                     data=str_df.ic)
   mod.pot.loc.prem <- glm(str.pot.pref~type+as.factor(bedbath)+
                                   geo.mrkt,
                      family=binomial(link='logit'),
-                     data=str.data.ic)
+                     data=str_df.ic)
 
   mod.act.host.prem <- lm(str.act.prem~type+as.factor(bedbath)+
                         geo.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
-                      data=str.data.ic)
+                      data=str_df.ic)
   mod.pot.host.prem <- lm(str.pot.prem~type+as.factor(bedbath)+
                         geo.mrkt+
                         I(max.guests/bedrooms)+min.stay+
                         I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
-                      data=str.data.ic)
+                      data=str_df.ic)
 ```
   
 We then package these into a list for easy export  
@@ -944,13 +935,13 @@ To test for the sensitivity of the result to the revenue type, we re-do some of 
 ```{r pot_table, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Potential Short-Term Preference'}
 
  # Make Basic comparison table of type
-  tpref.table <- abbCreateCompTable(ic.df=str.data.ic,
+  tpref.table <- abbCreateCompTable(ic.df=str_df.ic,
                                     split.field='type')
  # Extract Potential Results
   tpref.table <- tpref.table[tpref.table$rev.type == 'Potential', ]
   
  # Make baseic comparison table of submarkets  
-  spref.table <- abbCreateCompTable(ic.df=str.data.ic,
+  spref.table <- abbCreateCompTable(ic.df=str_df.ic,
                                     split.field='geo.mrkt')
 
  # Extract potential results  
@@ -979,7 +970,7 @@ Next we recrate the SVM percentile heat maps.
 
  ## create data and re-estimate the percentiles
 
-  pot.data.ic <- str.data.ic
+  pot.data.ic <- str_df.ic
 
   pot.data.ic$occ.qtl <- makeWtdQtl(pot.data.ic$pot.occ.rate, return.type='rank')
   
@@ -1031,7 +1022,7 @@ First we must divide hosts up.  We start by looking at block rate.
     
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  host.block.freq <- ggplot(str.data, aes(x=block.rate)) + 
+  host.block.freq <- ggplot(str_df, aes(x=block.rate)) + 
   geom_density(fill=str.col, color=str.col) +
   ylab('Frequency\n') + 
   xlab('\n% of Time Property is Blocked') +
@@ -1059,7 +1050,7 @@ We then add the number of blocked periods
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  block.rate.period <- ggplot(str.data, aes(x=block.rate, y=nbr.block*extr.par)) + 
+  block.rate.period <- ggplot(str_df, aes(x=block.rate, y=nbr.block*extr.par)) + 
   geom_point(fill=str.col, color=str.col, size=.2) +
   ylab('Nbr of Blocked Periods\n') + 
   xlab('\n% of Time Property is Blocked') +
@@ -1087,17 +1078,17 @@ No real pattern emerges, so we divide manually.
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-str.data.ic$blockpertime <- round(str.data.ic$nbr.block * str.data.ic$extr.par, 1)
+str_df.ic$blockpertime <- round(str_df.ic$nbr.block * str_df.ic$extr.par, 1)
 
-str.data.ic$host.type <- 'Unknown'
-str.data.ic$host.type[str.data.ic$blockpertime > 12] <- 'Multi-Platform User'
-str.data.ic$host.type[str.data.ic$block.rate <= .25] <- 'Profit Seeker'
-str.data.ic$host.type[str.data.ic$block.rate >= .75] <- 'Opportunistic Sharer'
-str.data.ic$host.type <- factor(str.data.ic$host.type,
+str_df.ic$host.type <- 'Unknown'
+str_df.ic$host.type[str_df.ic$blockpertime > 12] <- 'Multi-Platform User'
+str_df.ic$host.type[str_df.ic$block.rate <= .25] <- 'Profit Seeker'
+str_df.ic$host.type[str_df.ic$block.rate >= .75] <- 'Opportunistic Sharer'
+str_df.ic$host.type <- factor(str_df.ic$host.type,
                              levels=c('Profit Seeker', 'Opportunistic Sharer', 
                                       'Multi-Platform User', 'Unknown'))
 
-host.type <- ggplot(str.data.ic, 
+host.type <- ggplot(str_df.ic, 
        aes(x=block.rate, y=blockpertime, color=host.type)) + 
   geom_point(alpha=.5, size=.8, shape=16) +
   ylab('Number of Blocked Periods\n') + 
@@ -1132,7 +1123,7 @@ See the counts of each group
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-host.type.bar <- ggplot(str.data.ic, aes(host.type, fill=host.type)) +
+host.type.bar <- ggplot(str_df.ic, aes(host.type, fill=host.type)) +
   geom_bar() +
   scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
   theme(legend.position='none') +
@@ -1162,7 +1153,7 @@ We then re-estimate the preference table.
 ```{r host_table, results='asis', message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
 
  # Make Basic comparison table
-  apref.table <- abbCreateCompTable(ic.df=str.data.ic,
+  apref.table <- abbCreateCompTable(ic.df=str_df.ic,
                                     split.field='host.type')
 
  # Limit to the extrapolated pref type
@@ -1188,10 +1179,10 @@ And re-run the logistic regression models.
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  ps <- which(str.data.ic$host.type == 'Profit Seeker')
-  os <- which(str.data.ic$host.type == 'Opportunistic Sharer')
-  mu <- which(str.data.ic$host.type == 'Multi-Platform User')
-  un <- which(str.data.ic$host.type == 'Unknown')
+  ps <- which(str_df.ic$host.type == 'Profit Seeker')
+  os <- which(str_df.ic$host.type == 'Opportunistic Sharer')
+  mu <- which(str_df.ic$host.type == 'Multi-Platform User')
+  un <- which(str_df.ic$host.type == 'Unknown')
   
   
   mod.pot.ps <- glm(str.pot.pref~type+as.factor(bedbath)+
@@ -1199,7 +1190,7 @@ And re-run the logistic regression models.
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
-                 data=str.data.ic[ps,])
+                 data=str_df.ic[ps,])
   
   
   mod.pot.os <- glm(str.pot.pref~type+as.factor(bedbath)+
@@ -1207,28 +1198,28 @@ And re-run the logistic regression models.
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
-                 data=str.data.ic[os,])
+                 data=str_df.ic[os,])
   
   mod.pot.mu <- glm(str.pot.pref~type+as.factor(bedbath)+
                     geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
-                 data=str.data.ic[mu,])
+                 data=str_df.ic[mu,])
   
   mod.pot.un <- glm(str.pot.pref~type+as.factor(bedbath)+
                     geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
-                 data=str.data.ic[un,])
+                 data=str_df.ic[un,])
   
   mod.act.ps <- glm(str.act.pref~type+as.factor(bedbath)+
                     geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
-                 data=str.data.ic[ps,])
+                 data=str_df.ic[ps,])
   
   
   mod.act.os <- glm(str.act.pref~type+as.factor(bedbath)+
@@ -1236,21 +1227,21 @@ And re-run the logistic regression models.
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
-                 data=str.data.ic[os,])
+                 data=str_df.ic[os,])
   
   mod.act.mu <- glm(str.act.pref~type+as.factor(bedbath)+
                     geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
-                 data=str.data.ic[mu,])
+                 data=str_df.ic[mu,])
   
   mod.act.un <- glm(str.act.pref~type+as.factor(bedbath)+
                     geo.mrkt+
                     I(max.guests/bedrooms)+min.stay+
                     I(cancel.policy=='Flexible') + I(cancel.policy=='Strict'),
                  family=binomial(link='logit'),
-                 data=str.data.ic[un,])
+                 data=str_df.ic[un,])
 
 host.models <- list(mod.act.ps, mod.act.os, mod.act.mu, mod.act.un,
                     mod.pot.ps, mod.pot.os, mod.pot.mu, mod.pot.un)
@@ -1262,14 +1253,17 @@ names(host.models) <- c('act.ps', 'act.os', 'act.mu', 'act.un',
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-save(clean.count, daily.data, listing.data, ltr.data, pref.table,
-     pref.table.wide, revdens.data, rawocc.metro, qtlocc.metro, rawocc.type,
-     pctocc.type, subm.data.ic, rawocc.geo, pctocc.geo, type.data.ic, pot.data.ic,
-     str.data, str.data.ic, subs,
-     core.suburbs,  exch.rate, host.models, pref.models, prem.models,
-     file=paste0(data.path, 'analyzed/analyzed_workspace.RData'))
+  save(clean.count, daily_df, listing.data, ltr.data, pref.table,
+       pref.table.wide, revdens.data, rawocc.metro, qtlocc.metro, rawocc.type,
+       pctocc.type, subm.data.ic, rawocc.geo, pctocc.geo, type.data.ic, pot.data.ic,
+       str_df, str_df.ic, subs,
+       core.suburbs,  exch.rate, host.models, pref.models, prem.models,
+       file=file.path(data.path, 'analyzed', paste0('analyzed_workspace_', data_name, 
+                                                    '.RData')))
 
-save(str.data.ic, subs, abb.col, file=paste0(data.path,'analyzed/shinyinput.RData'))
+  save(str_df.ic, subs, abb.col, file=file.path(data.path,'analyzed', 
+                                                paste0('shinyinput_', data_name, 
+                                                       '.RData')))
 
  #all.mwl.coefs, all.mwl.surfs,est.points,  s.subs, sssubs,
 
@@ -1284,7 +1278,7 @@ save(str.data.ic, subs, abb.col, file=paste0(data.path,'analyzed/shinyinput.RDat
 <!--                               proj4string=CRS("+init=epsg:4283"), -->
 <!--                               delete_null_obj=TRUE) -->
 
-<!--  ssubs <- table(str.data.ic$suburb) -->
+<!--  ssubs <- table(str_df.ic$suburb) -->
 <!--  s.subs <- subs[subs$id %in% names(ssubs),] -->
 <!--  s.suburbs <- suburbs.shp[suburbs.shp@data$NAME_2006 %in% names(ssubs),] -->
 <!--  sssubs <- fortify(s.suburbs) -->
@@ -1307,7 +1301,7 @@ save(str.data.ic, subs, abb.col, file=paste0(data.path,'analyzed/shinyinput.RDat
 <!--  scale <- mean(xrange, yrange)/100 -->
 
 <!--  # Create estimation points -->
-<!--  est.data <- str.data.ic -->
+<!--  est.data <- str_df.ic -->
 <!--  est.points <- createGridPoints(s.suburbs, scale, T) -->
 
 <!-- ``` -->
