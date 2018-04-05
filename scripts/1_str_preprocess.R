@@ -25,30 +25,31 @@
    
   # Property Information
 
-  str.data <- read.csv(file.path(data_path, '/raw/melbproperties.csv'), header=T)
-  str.data2 <- read.csv(file.path(data_path, '/raw/melbproperties_to_mar2017.csv'), 
+  str_raw <- read.csv(file.path(data_path, 'raw', 'melbproperties.csv'), header=T)
+  st2_raw <- read.csv(file.path(data_path, '/raw/melbproperties_to_mar2017.csv'), 
                         header=T)
   
   # Daily rental information
 
-  daily.data  <- read.csv(file.path(data_path, '/raw/melbDaily.csv'), header=T)
-  daily.data2  <- read.csv(file.path(data_path, '/raw/melbDaily_to_mar2017.csv'), header=T)
+  daily_raw  <- read.csv(file.path(data_path, '/raw/melbDaily.csv'), header=T)
+  daily2_raw  <- read.csv(file.path(data_path, '/raw/melbDaily_to_mar2017.csv'), 
+                           header=T)
   
  ## Fix Names
   
-  names(str.data) <- tolower(names(str.data))
-  names(str.data2) <- tolower(names(str.data2))
-  names(daily.data) <- tolower(names(daily.data))
-  names(daily.data2) <- tolower(names(daily.data2))
+  names(str_raw) <- tolower(names(str_raw))
+  names(str2_raw) <- tolower(names(str2_raw))
+  names(daily_raw) <- tolower(names(daily_raw))
+  names(daily2_raw) <- tolower(names(daily2_raw))
   
  ## Determine unique observations
   
   # Structure Data
-  str_df <- dplyr::bind_rows(str.data2, str.data)
+  str_df <- dplyr::bind_rows(str2_raw, str_raw)
   str_df <- str_df %>% dplyr::filter(!duplicated(property.id))  
   
   # Daily Data
-  daily_df <- dplyr::bind_rows(daily.data2, daily.data) %>%
+  daily_df <- dplyr::bind_rows(daily2_raw, daily_raw) %>%
     dplyr::mutate(uniq_id = paste0(property.id, '_', date)) %>%
     dplyr::filter(!duplicated(uniq_id)) %>%
     dplyr::select(property.id, date, status, price, booked.date, reservation.id)
@@ -82,9 +83,10 @@
     dplyr::inner_join(daily_summ, 
                       by='property.id')
   
-
  ## Write out data  
 
-  save(str_df, file=paste0(data_path, 'prepared/stpropdata.RData'))
-  save(daily_df, file=paste0(data_path, 'prepared/stdailydata.RData'))
+  saveRDS(str_df, file=file.path(data_path, 'prepared', 'stpropdata.RDS'))
+  saveRDS(daily_df, file=file.path(data_path, 'prepared', 'stdailydata.RDS'))
   
+#*****************************************************************************************
+#*****************************************************************************************
