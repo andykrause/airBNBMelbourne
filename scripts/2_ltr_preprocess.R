@@ -87,7 +87,7 @@
                      dom=as.numeric(max-min))
   
   # Add to property data
-  ltr_df$DOM <- dom.data$dom[match(ltr_df$id.key, dom.data$id.key)]
+  ltr_df$DOM <- dom_df$dom[match(ltr_df$id.key, dom_df$id.key)]
   
   # Convert all names to lower case
   names(ltr_df) <- tolower(names(ltr_df))
@@ -96,7 +96,7 @@
  ## Write out data
   
   export_path <- file.path(data_path, 'prepared')
-  saveRDS(ltr_df, file=paste0(export_path, 'ltpropdata.RDS'))
-  saveRDS(listing_df, file=paste0(export_path, 'ltlistdata.RDS'))
+  saveRDS(ltr_df, file=file.path(export_path, 'lt_prop.RDS'))
+  saveRDS(listing_df, file=file.path(export_path, 'lt_list.RDS'))
   
  

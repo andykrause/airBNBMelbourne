@@ -26,7 +26,7 @@
   # Property Information
 
   str_raw <- read.csv(file.path(data_path, 'raw', 'melbproperties.csv'), header=T)
-  st2_raw <- read.csv(file.path(data_path, '/raw/melbproperties_to_mar2017.csv'), 
+  str2_raw <- read.csv(file.path(data_path, '/raw/melbproperties_to_mar2017.csv'), 
                         header=T)
   
   # Daily rental information
@@ -85,8 +85,8 @@
   
  ## Write out data  
 
-  saveRDS(str_df, file=file.path(data_path, 'prepared', 'stpropdata.RDS'))
-  saveRDS(daily_df, file=file.path(data_path, 'prepared', 'stdailydata.RDS'))
+  saveRDS(str_df, file=file.path(data_path, 'prepared', 'st_prop.RDS'))
+  saveRDS(daily_df, file=file.path(data_path, 'prepared', 'st_daily.RDS'))
   
 #*****************************************************************************************
 #*****************************************************************************************

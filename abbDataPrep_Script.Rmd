@@ -58,9 +58,9 @@ We then set the paths to the data and the code, conditional on which of the auth
 
   # Get computer names
 
-  data.path <- 'c:/dropbox/research/airBNB/data/'
-  code.path <- 'c:/code/'
-  fig.path <- 'c:/dropbox/research/airBNB/figures/'
+  data_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'data')
+  code_path <- file.path('c:', 'code')
+  fig_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'figures')
 
 ```
  
@@ -70,16 +70,16 @@ Next, we source the necessary custom code files for the analysis.
 
  # Current Project files
 
-  source(paste0(code.path, "research/AirBNBMelbourne/abb_Functions.R"))
+  source(file.path(getwd(), 'functions', 'abb_Functions.R'))
 
  # Other custom files
 
   if(offline){
 
-  source(paste0(code.path, 'tools/dataVizTools/ggPlotTools.R'))
-  source(paste0(code.path, 'tools/datamgmttools/dataMungeTools.R'))
-  source(paste0(code.path, 'tools/spatialTools/spatialLogitModels.R'))
-  source(paste0(code.path, 'tools/spatialTools/point2surface_Tools.R'))
+    source(file.path(code_path, 'tools', 'dataVizTools', 'ggPlotTools.R'))
+    source(file.path(code_path, 'tools', 'datamgmttools', 'dataMungeTools.R'))
+    source(file.path(code_path, 'tools', 'spatialTools', 'spatialLogitModels.R'))
+    source(file.path(code_path, 'tools', 'spatialTools', 'point2surface_Tools.R'))
     
   } else {
     
@@ -94,6 +94,7 @@ Next, we source the necessary custom code files for the analysis.
 
   }
   
+### HERE
 
 ```
 
@@ -113,9 +114,9 @@ Finally, we set the color to be used in the analysis.  We use AirBnb's official 
 
  # Set all colors
 
-  abb.colors.names=c('rausch', 'hackberry', 'kazan', 'babu', 'lima', 'beach',
+  abb_colors.names=c('rausch', 'hackberry', 'kazan', 'babu', 'lima', 'beach',
                      'ebisu', 'tirol', 'foggy', 'hof')
-  abb.col <- c(rgb(250,88,99, maxColorValue=255), rgb(139,14,82, maxColorValue=255),
+  abb_col <- c(rgb(250,88,99, maxColorValue=255), rgb(139,14,82, maxColorValue=255),
                rgb(0,117,140, maxColorValue=255), rgb(4,211,191, maxColorValue=255), 
                rgb(77,226,110, maxColorValue=255), rgb(252,179,14, maxColorValue=255),
                rgb(249,177,139, maxColorValue=255), rgb(191,166,100, maxColorValue=255),
@@ -123,8 +124,8 @@ Finally, we set the color to be used in the analysis.  We use AirBnb's official 
 
   # Set specific colors
   
-  str.col <- abb.col[1]
-  ltr.col <- abb.col[3]
+  str_col <- abb_col[1]
+  ltr_col <- abb_col[3]
   
 ```
 
@@ -137,11 +138,11 @@ Next we load in the raw data.  The short-term rental (Airbnb) data is found in t
 
   # Property Information
 
-  load(paste0(data.path, 'prepared/stpropdata.RData'))
+  str_df <- readRDS(file.path(data_path, 'prepared', 'st_prop.RDS'))
 
   # Daily rental information
 
-  load(paste0(data.path, 'prepared/stdailydata.RData'))
+  daily_df <- readRDS(file.path(data_path, 'prepared', 'st_daily.RDS'))
 
 ```
 
@@ -151,11 +152,11 @@ We then load the long term rental data.  This includes property level data (incl
 
  # Property level long term ltral information
 
-  load(paste0(data.path, 'prepared/ltpropdata.RData'))
+  ltr_df <- readRDS(file.path(data_path, 'prepared', 'lt_prop.RDS'))
 
  # Long term ltral listing information
 
-  load(paste0(data.path, 'prepared/ltlistdata.RData'))
+  list_df <- readRDS(file.path(data_path, 'prepared', 'lt_list.RDS'))
 
 ```
 
@@ -165,24 +166,24 @@ And, finally, we load three GIS shapefiles.  The first two denote suburb and Sta
 
   # Suburb shapefile
 
-  suburbs.shp <- readShapePoly(paste0(data.path, 'geographic/melbSuburbs.shp'),
+  suburbs_shp <- readShapePoly(file.path(data_path, 'geographic', 'melbSuburbs.shp'),
                                proj4string=CRS("+init=epsg:4283"),
                                delete_null_obj=TRUE)
-  names(suburbs.shp@data) <- tolower(names(suburbs.shp@data))
+  names(suburbs_shp@data) <- tolower(names(suburbs_shp@data))
   
   # SA1 shapefile
 
-  sa1s.shp <- readShapePoly(paste0(data.path, 'geographic/sa1s.shp'),
+  sa1s_shp <- readShapePoly(file.path(data_path, 'geographic', 'sa1s.shp'),
                             proj4string=CRS("+init=epsg:4283"),
                             delete_null_obj=TRUE)
-  names(sa1s.shp@data) <- tolower(names(sa1s.shp@data))
+  names(sa1s_shp@data) <- tolower(names(sa1s_shp@data))
   
   # Beach file
 
-  beach.shp <- readShapePoly(paste0(data.path, 'geographic/portPhillipBeach.shp'),
+  beach_shp <- readShapePoly(file.path(data_path, 'geographic','portPhillipBeach.shp'),
                              proj4string=CRS("+init=epsg:4283"),
                              delete_null_obj=TRUE)
-  names(beach.shp@data) <- tolower(names(beach.shp@data))
+  names(beach_shp@data) <- tolower(names(beach_shp@data))
   
 ```
 
@@ -230,7 +231,7 @@ We then limit the fields of the long-term property-specific data
                       'hasgarage', 'dom') 
   
 
-  ltr.data <- ltr.data[ ,ltr.keep.flds]
+  ltr_df <- ltr_df[ ,ltr.keep.flds]
   
 ```
 
@@ -255,7 +256,7 @@ Periods are inserted between relevant words for the ltral data.
 
 ```{r rename_lt, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
   
-  names(ltr.data) <- c('id.key', 'geographical.id', 
+  names(ltr_df) <- c('id.key', 'geographical.id', 
                         'event.id', 'address.id', 'activity.id',
                         'flat.number', 'street.number', 'street.name', 'street.type',
                         'suburb', 'postcode', 'latitude', 'longitude',
@@ -300,9 +301,9 @@ We then clip by time.  For the short-term data we will consider any Airbnb prope
 
  # Limit long term data  
   
-  ltr.data <- ltr.data[ltr.data$event.date >= (strike_date - 365) & 
-                            ltr.data$event.date <= (strike_date - 1), ]
-  listing.data <- listing.data[listing.data$id.key %in% ltr.data$id.key, ]
+  ltr_df <- ltr_df[ltr_df$event.date >= (strike_date - 365) & 
+                            ltr_df$event.date <= (strike_date - 1), ]
+  listing.data <- listing.data[listing.data$id.key %in% ltr_df$id.key, ]
    
  # Count cleaning
   
@@ -321,7 +322,7 @@ Next we add a monthly variable to the data for use in future modeling exercises.
 
   # Long term data
 
-  ltr.data$ltr.month <- as.numeric(as.factor(substr(ltr.data$event.date, 1, 7)))
+  ltr_df$ltr.month <- as.numeric(as.factor(substr(ltr_df$event.date, 1, 7)))
   listing.data$ltr.month <- as.numeric(as.factor(substr(
     listing.data$event.date, 1, 7))) - 8
   
@@ -357,10 +358,10 @@ We then create a new variable in each dataset and give each one of the three cat
 
  # Long Term data  
 
-  ltr.data$type <- 'Other'
-  ltr.data$type[ltr.data$property.type %in% c('Duplex', 'House',
+  ltr_df$type <- 'Other'
+  ltr_df$type[ltr_df$property.type %in% c('Duplex', 'House',
                                            'Terrace', 'Townhouse')] <- 'House'
-  ltr.data$type[ltr.data$property.type %in% c('Studio', 'Unit')] <- 'Apartment'
+  ltr_df$type[ltr_df$property.type %in% c('Studio', 'Unit')] <- 'Apartment'
 
 ```
 
@@ -371,7 +372,7 @@ As the chart below show, the **Other** category only makes up a very small perce
   # Create Airbnb plot
 
   str.types <- ggplot(str_df, aes(x=type)) + 
-    geom_bar(color=str.col, fill=str.col) +
+    geom_bar(color=str_col, fill=str_col) +
     xlab('\nProperty Type\n') + 
     ggtitle('\nShort Term Rentals\n')  +
     ylab('# of Properties\n') +
@@ -379,8 +380,8 @@ As the chart below show, the **Other** category only makes up a very small perce
 
   # Create long term rental plot
 
-  ltr.types <- ggplot(ltr.data, aes(x=type)) + 
-    geom_bar(color=ltr.col, fill=ltr.col) +
+  ltr.types <- ggplot(ltr_df, aes(x=type)) + 
+    geom_bar(color=ltr_col, fill=ltr_col) +
     xlab('\nProperty Type\n') + 
     ggtitle('\nLong Term Rentals\n')  +
     ylab('# of Properties\n') +
@@ -402,7 +403,7 @@ As the chart below show, the **Other** category only makes up a very small perce
 ```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
 
   str_df <- subset(str_df, type != 'Other')
-  ltr.data <- subset(ltr.data, type != 'Other')
+  ltr_df <- subset(ltr_df, type != 'Other')
   
   # Count Cleaning
   countCleaning('property.type')
@@ -424,7 +425,7 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
   str_df$listing.type[str_df$listing.type == 'Entire home/apt'] <- 'Entire home'
 
   list.types <- ggplot(str_df, aes(x=listing.type)) + 
-      geom_bar(color=str.col, fill=str.col) +
+      geom_bar(color=str_col, fill=str_col) +
       xlab('\nListing Type\n') + 
       ggtitle('\nShort Term Rentals by Listing Type\n')  +
       ylab('# of Properties\n') +
@@ -464,11 +465,11 @@ Before beginning, we fix a few of the boolean variables in the long term data th
 
 ```{r fix_lt_bools, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  ltr.data$has.study <- ifelse(ltr.data$has.study == 'True', 1, 0)
-  ltr.data$has.courtyard <- ifelse(ltr.data$has.courtyard == 'True', 1, 0)
-  ltr.data$has.aircon <- ifelse(ltr.data$has.aircon == 'True', 1, 0)
-  ltr.data$has.balcony <- ifelse(ltr.data$has.balcony == 'True', 1, 0)
-  ltr.data$has.garage <- ifelse(ltr.data$has.garage == 'True', 1, 0)
+  ltr_df$has.study <- ifelse(ltr_df$has.study == 'True', 1, 0)
+  ltr_df$has.courtyard <- ifelse(ltr_df$has.courtyard == 'True', 1, 0)
+  ltr_df$has.aircon <- ifelse(ltr_df$has.aircon == 'True', 1, 0)
+  ltr_df$has.balcony <- ifelse(ltr_df$has.balcony == 'True', 1, 0)
+  ltr_df$has.garage <- ifelse(ltr_df$has.garage == 'True', 1, 0)
 
 ```
 
@@ -483,8 +484,8 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
  # Remove missing and data errors
 
   # Long term data
-  ltr.data <- ltr.data[!is.na(ltr.data$bedrooms), ]
-  ltr.data <- ltr.data[ltr.data$bedrooms <= 10, ]
+  ltr_df <- ltr_df[!is.na(ltr_df$bedrooms), ]
+  ltr_df <- ltr_df[ltr_df$bedrooms <= 10, ]
 
   # Short term data
   str_df <- str_df[!is.na(str_df$bedrooms), ]
@@ -496,8 +497,8 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
 
  # Build long term bar plot
 
-   ltrbed <- ggplot(ltr.data, aes(x=bedrooms)) + 
-    geom_bar(fill=ltr.col, color=ltr.col) +
+   ltrbed <- ggplot(ltr_df, aes(x=bedrooms)) + 
+    geom_bar(fill=ltr_col, color=ltr_col) +
     facet_wrap(~type,scales='free_y') +
     scale_x_continuous(labels=1:10, breaks=1:10)+
     xlab('\nBedrooms\n') +
@@ -510,7 +511,7 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
  # Build short term bar plot
 
   strbed <- ggplot(str_df, aes(x=bedrooms)) + 
-    geom_bar(fill=str.col, color=str.col) +
+    geom_bar(fill=str_col, color=str_col) +
     facet_wrap(~type,scales='free_y') +
     scale_x_continuous(labels=0:10, breaks=0:10) +
     xlab('\nBedrooms\n') +
@@ -536,15 +537,15 @@ For both short and long term rentals we see that most apartments have less than 
  # Remove all with more than 4 beds
 
   str_df <- str_df[str_df$bedrooms < 5, ]
-  ltr.data <- ltr.data[ltr.data$bedrooms < 5, ]
+  ltr_df <- ltr_df[ltr_df$bedrooms < 5, ]
 
  # Remove apartments with more than 3
   
   str.id <- which(str_df$bedrooms > 3 & str_df$type =='Apartment')
-  ltr.id <- which(ltr.data$bedrooms > 3 & ltr.data$type =='Apartment')
+  ltr.id <- which(ltr_df$bedrooms > 3 & ltr_df$type =='Apartment')
 
   if(length(str.id) > 0) str_df <- str_df[-str.id, ]
-  if(length(ltr.id) > 0) ltr.data <- ltr.data[-ltr.id, ]
+  if(length(ltr.id) > 0) ltr_df <- ltr_df[-ltr.id, ]
 
   # Convert 0 Bed to 1 Bed  
   str_df$bedrooms[str_df$bedrooms == 0] <- 1
@@ -562,7 +563,7 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
 
  # Remove missing data
   
-  ltr.data <- ltr.data[!is.na(ltr.data$baths), ]
+  ltr_df <- ltr_df[!is.na(ltr_df$baths), ]
   str_df <- str_df[!is.na(str_df$baths), ]
 
 ```
@@ -571,8 +572,8 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
 
  # Build long term plot
 
-  ltbath <- ggplot(ltr.data, aes(x=baths)) + 
-    geom_bar(fill=ltr.col, color=ltr.col) +
+  ltbath <- ggplot(ltr_df, aes(x=baths)) + 
+    geom_bar(fill=ltr_col, color=ltr_col) +
     facet_wrap(~type) +
     scale_x_continuous(labels=1:8, breaks=1:8)+
     xlab('\nBathrooms\n') +
@@ -583,7 +584,7 @@ We then turn to bathrooms, starting by looking at the distribution of baths betw
  # Build short term plot 
 
   stbath <- ggplot(str_df, aes(x=baths)) + 
-    geom_bar(fill=str.col, color=str.col) +
+    geom_bar(fill=str_col, color=str_col) +
     facet_wrap(~type, scales='free_y') +
     scale_x_continuous(labels=0:8, breaks=0:8)+
     xlab('\nBathrooms\n') +
@@ -615,7 +616,7 @@ Here we see that nearly all properties have 3 or fewer bathrooms and we filter t
   str_df <- str_df[str_df$baths > 0, ]
 
   # Long term data
-  ltr.data <- ltr.data[ltr.data$baths < 4, ]
+  ltr_df <- ltr_df[ltr_df$baths < 4, ]
   
  # Round baths up  
 
@@ -634,7 +635,7 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
 
  # Create combination variable
 
-  ltr.data$bedbath <- paste0(ltr.data$bedrooms, '..', ltr.data$baths)
+  ltr_df$bedbath <- paste0(ltr_df$bedrooms, '..', ltr_df$baths)
   str_df$bedbath <- paste0(str_df$bedrooms, '..', str_df$baths)
 
 ```
@@ -643,8 +644,8 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
 
  # Make long term plot
 
-  ltbb <- ggplot(ltr.data, aes(x=bedbath)) + 
-    geom_bar(fill=ltr.col, color=ltr.col) +
+  ltbb <- ggplot(ltr_df, aes(x=bedbath)) + 
+    geom_bar(fill=ltr_col, color=ltr_col) +
     xlab('\nBed/Bath Combo\n') +
     ylab('Number of Properties\n') +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -655,7 +656,7 @@ In addition to looking at bedrooms and bathrooms as separate dimensions of prope
  # Make short term plots
 
   stbb <- ggplot(str_df, aes(x=bedbath)) +
-    geom_bar(fill=str.col, color=str.col) + 
+    geom_bar(fill=str_col, color=str_col) + 
     xlab('\nBed/Bath Combo\n') +
     ylab('Number of Properties\n') +
     ggtitle('Short Term Rentals') + 
@@ -687,7 +688,7 @@ From this analysis we see that there are 6 combinations that make up most all pr
 
  # Filter data
 
-  ltr.data <- ltr.data[ltr.data$bedbath %in% acc.bb, ]
+  ltr_df <- ltr_df[ltr_df$bedbath %in% acc.bb, ]
   str_df <- str_df[str_df$bedbath %in% acc.bb, ]
 
  # Count Cleaning
@@ -704,13 +705,13 @@ Finally, we re-order the factor levels on the bed/bath combinations to make a 2-
 
   str_df$bedbath <- factor(str_df$bedbath, 
                               levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
-  ltr.data$bedbath <- factor(ltr.data$bedbath, 
+  ltr_df$bedbath <- factor(ltr_df$bedbath, 
                                levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
 
   # Add product as a variable
   
   str_df$product <- paste0(substr(str_df$type, 1, 1), str_df$bedbath)
-  ltr.data$product <- paste0(substr(ltr.data$type, 1, 1), ltr.data$bedbath)
+  ltr_df$product <- paste0(substr(ltr_df$type, 1, 1), ltr_df$bedbath)
 
 ```
 
@@ -721,7 +722,7 @@ We now turn to filtering by the prices -- the nightly rates and weekly rental va
 
 ```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  ltr.data <- ltr.data[!is.na(ltr.data$event.price), ]
+  ltr_df <- ltr_df[!is.na(ltr_df$event.price), ]
   str_df <- str_df[!is.na(str_df$nightly.rate), ]
   
 ```
@@ -767,8 +768,8 @@ From these density plots we see that most long-term Rentals are greater than $20
 
   # ltr Plot
   
-  ltr.plot <- ggplot(ltr.data, aes(x=event.price)) + 
-    geom_density(fill=ltr.col, alpha=.8) +
+  ltr.plot <- ggplot(ltr_df, aes(x=event.price)) + 
+    geom_density(fill=ltr_col, alpha=.8) +
     ylab('') +
     xlab('Weekly Rental') + 
     ggtitle('Long Term Rentals') + 
@@ -781,7 +782,7 @@ From these density plots we see that most long-term Rentals are greater than $20
 
   # Nightly Rate plot
   rate.plot <- ggplot(str_df, aes(x=nightly.rate)) + 
-    geom_density(fill=str.col, alpha=.8) + 
+    geom_density(fill=str_col, alpha=.8) + 
     ylab('') +
     xlab('Nightly Rate') +
     ggtitle('Short Term Rentals') + 
@@ -813,8 +814,8 @@ From these density plots we see that most long-term Rentals are greater than $20
 
   ## Filter the long term data
 
-  ltr.data <- ltr.data[ltr.data$event.price >= 200 & 
-                         ltr.data$event.price <= 1000, ]
+  ltr_df <- ltr_df[ltr_df$event.price >= 200 & 
+                         ltr_df$event.price <= 1000, ]
 
   str_df <- str_df[str_df$med.rate >= 50 &
                          str_df$med.rate <= 500, ]
@@ -844,18 +845,18 @@ Looking at the distribution of the revenues from each tenure type, we see that t
   str_df <- str_df[str_df$bookings > 0, ]
 
   str_df$gross.revenue <- (str_df$bookings * str_df$med.rate) 
-  ltr.data$gross.revenue <- ltr.data$event.price * (52 - ltr.data$dom / 7)
+  ltr_df$gross.revenue <- ltr_df$event.price * (52 - ltr_df$dom / 7)
  
   str.small <- str_df[,c('baths', 'gross.revenue')]
   str.small$tenure <- 'short-term'
-  ltr.small <- ltr.data[,c('baths', 'gross.revenue')]
+  ltr.small <- ltr_df[,c('baths', 'gross.revenue')]
   ltr.small$tenure <- 'long-term'
   all.small <- rbind(str.small, ltr.small)
 
   revdens <- ggplot(all.small, aes(x=gross.revenue, fill=tenure, color=tenure)) +
     geom_density(alpha=.5) +
-    scale_fill_manual(values=c(ltr.col, abb.col)) +
-    scale_color_manual(values=c(ltr.col, abb.col)) +
+    scale_fill_manual(values=c(ltr_col, abb_col)) +
+    scale_color_manual(values=c(ltr_col, abb_col)) +
     ggtitle('Annual Revenues by Tenure Type') +
     xlab('Annual Revenue') +
     scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
@@ -881,7 +882,7 @@ Looking at the distribution of the revenues from each tenure type, we see that t
   
   save(revdens, file=paste0(fig.path, 'revdens.RData'))
   
-  ltr.data <- ltr.data[ltr.data$dom <= 180, ]
+  ltr_df <- ltr_df[ltr_df$dom <= 180, ]
   
     countCleaning('revenue')
   
@@ -898,7 +899,7 @@ Location is clearly an important determinant in both the short and long term ren
   # Fix lat/long
  
   # Limit to extent of data
-  sub.table <- table(ltr.data$suburb)
+  sub.table <- table(ltr_df$suburb)
   sub.table <- sub.table[sub.table != 0]
   
   # Clip to only those with a ltral observation
@@ -947,12 +948,12 @@ Location is clearly an important determinant in both the short and long term ren
  ## Build the map object
 
   # Set colors
-  g.cols <- c('grey10', 'grey40', 'grey70')
+  g_cols <- c('grey10', 'grey40', 'grey70')
 
   # Make map
   loc.map <- ggplot() +
     geom_polygon(data=subs, aes(x=long, y=lat, group=group, fill=des), alpha=.8) + 
-    scale_fill_manual(values=g.cols, labels=c('Inner      ',
+    scale_fill_manual(values=g_cols, labels=c('Inner      ',
                                               'Middle      ',
                                               'Outer')) +
     geom_path(data=subs[subs$des=='Outer', ], 
@@ -1103,21 +1104,21 @@ Before we do the same for the long term data, we must remedy the fact that about
 
  # Label those missing lat/long  
 
-  miss.LL <- which(is.na(ltr.data$latitude))  
+  miss.LL <- which(is.na(ltr_df$latitude))  
 
  # Create a field to indicate the approximate matches  
 
-  ltr.data$miss.LL <- 0
-  ltr.data$miss.LL[miss.LL] <- 1
+  ltr_df$miss.LL <- 0
+  ltr_df$miss.LL[miss.LL] <- 1
 
  # Apply approximate match    
 
-  ltr.data$latitude[miss.LL] <- ltr.data$street.latitude[miss.LL]
-  ltr.data$longitude[miss.LL] <- ltr.data$street.longitude[miss.LL]
+  ltr_df$latitude[miss.LL] <- ltr_df$street.latitude[miss.LL]
+  ltr_df$longitude[miss.LL] <- ltr_df$street.longitude[miss.LL]
 
  # Remove those still missing latitude data   
 
-  ltr.data <- ltr.data[!is.na(ltr.data$latitude), ]
+  ltr_df <- ltr_df[!is.na(ltr_df$latitude), ]
 
 ```
 
@@ -1129,36 +1130,36 @@ Having fixed the missing lat/long issue, we then assign the suburb, SA1, city-co
 
   # Convert to point shapefile
 
-  ltr.prop.shp <- SpatialPointsDataFrame(cbind(ltr.data$longitude,
-                                               ltr.data$latitude),
-                                         ltr.data,
+  ltr.prop.shp <- SpatialPointsDataFrame(cbind(ltr_df$longitude,
+                                               ltr_df$latitude),
+                                         ltr_df,
                                          proj4string=CRS("+init=epsg:4283")) 
 
   # Add suburb name 
   
   spJoin <- over(ltr.prop.shp, suburbs.shp)
-  ltr.data$suburb <- as.character(spJoin$name_2006)
-  ltr.data$suburb[is.na(ltr.data$suburb)] <- 'missing'
+  ltr_df$suburb <- as.character(spJoin$name_2006)
+  ltr_df$suburb[is.na(ltr_df$suburb)] <- 'missing'
 
   # Add suburb designation
   
-  ltr.data$sub.class <- as.character(spJoin$suburbdesi)
-  ltr.data$sub.class[is.na(ltr.data$sub.class)] <- 'missing'
+  ltr_df$sub.class <- as.character(spJoin$suburbdesi)
+  ltr_df$sub.class[is.na(ltr_df$sub.class)] <- 'missing'
   
   # Add SA1 designation
   
   spJoin <- over(ltr.prop.shp, sa1s.shp)
-  ltr.data$sa1 <- spJoin$sa1_main11
+  ltr_df$sa1 <- spJoin$sa1_main11
  
   ## Add Beach Designation
   
   spJoin <- over(ltr.prop.shp, beach.buffer)
-  ltr.data$beach <- ifelse(is.na(spJoin), 0 ,1)
+  ltr_df$beach <- ifelse(is.na(spJoin), 0 ,1)
   
   # Remove those missing a suburb classification (out of area)
   
-  ltr.data <- ltr.data[ltr.data$sub.class != 'missing', ]
-  ltr.data <- ltr.data[ltr.data$sa1 != 'missing', ]
+  ltr_df <- ltr_df[ltr_df$sub.class != 'missing', ]
+  ltr_df <- ltr_df[ltr_df$sa1 != 'missing', ]
 
 ```
 
@@ -1167,14 +1168,14 @@ Having fixed the missing lat/long issue, we then assign the suburb, SA1, city-co
  ## Add the submarket designations
 
   # Add individual classes
-  ltr.data$geo.mrkt <- 'rural'
-  ltr.data$geo.mrkt[ltr.data$sub.class == 'Middle'] <- 'suburban'
-  ltr.data$geo.mrkt[ltr.data$sub.class == 'Inner'] <- 'city'
-  ltr.data$geo.mrkt[ltr.data$suburb %in% core.suburbs] <- 'city-core'
-  ltr.data$geo.mrkt[ltr.data$beach == 1] <- 'beach'
+  ltr_df$geo.mrkt <- 'rural'
+  ltr_df$geo.mrkt[ltr_df$sub.class == 'Middle'] <- 'suburban'
+  ltr_df$geo.mrkt[ltr_df$sub.class == 'Inner'] <- 'city'
+  ltr_df$geo.mrkt[ltr_df$suburb %in% core.suburbs] <- 'city-core'
+  ltr_df$geo.mrkt[ltr_df$beach == 1] <- 'beach'
   
   # Order the factors properly
-  ltr.data$geo.mrkt <- factor(ltr.data$geo.mrkt, 
+  ltr_df$geo.mrkt <- factor(ltr_df$geo.mrkt, 
                               levels=c('city-core', 'city', 'suburban', 
                                         'rural', 'beach'))
   
@@ -1189,7 +1190,7 @@ The location of the short and long term rentals, colored by submarket, are shown
 
   # Set submarket colors
   
-  sm.col <- abb.col[c(1, 3, 6, 5, 2)]
+  sm_col <- abb_col[c(1, 3, 6, 5, 2)]
 
   # Make map
 
@@ -1197,7 +1198,7 @@ The location of the short and long term rentals, colored by submarket, are shown
     geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
     geom_point(data=str_df, aes(x=longitude, y=latitude, color=geo.mrkt), size=.2,
                alpha=.2) +
-    scale_color_manual(values=sm.col) +
+    scale_color_manual(values=sm_col) +
     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
     xlab('') + ylab('')+
@@ -1226,9 +1227,9 @@ The location of the short and long term rentals, colored by submarket, are shown
 
   ltr.map <- ggplot() +
     geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
-    geom_point(data=ltr.data, aes(x=longitude, y=latitude, color=geo.mrkt), size=.1,
+    geom_point(data=ltr_df, aes(x=longitude, y=latitude, color=geo.mrkt), size=.1,
                alpha=.1) +
-    scale_color_manual(values=sm.col) +
+    scale_color_manual(values=sm_col) +
     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
     xlab('') + ylab('')+
@@ -1279,7 +1280,7 @@ The chart below break down the relative frequency of short and long term rental 
   
   strtype.map <- ggplot() +
     geom_bar(data=str_df, aes(x=geo.mrkt, fill=geo.mrkt)) +
-    scale_fill_manual(values=sm.col) +
+    scale_fill_manual(values=sm_col) +
     facet_wrap(~type) +
     ylab('# of Properties\n') + xlab('')+
     theme(legend.position = 'bottom',
@@ -1292,8 +1293,8 @@ The chart below break down the relative frequency of short and long term rental 
   # Make Long term rental map
 
   ltrtype.map <- ggplot() +
-    geom_bar(data=ltr.data, aes(x=geo.mrkt, fill=geo.mrkt)) +
-    scale_fill_manual(values=sm.col) +
+    geom_bar(data=ltr_df, aes(x=geo.mrkt, fill=geo.mrkt)) +
+    scale_fill_manual(values=sm_col) +
     facet_wrap(~type) +
     ylab('# of Properties\n') + xlab('')+
     theme(legend.position = 'bottom',
@@ -1326,7 +1327,7 @@ Finally, we convert the suburb names from factors to character, which will help 
 
   # Convert suburbs from factor to character
   str_df$suburb <- as.character(str_df$suburb)
-  ltr.data$suburb <- as.character(ltr.data$suburb)
+  ltr_df$suburb <- as.character(ltr_df$suburb)
   
 ```
 
@@ -1344,7 +1345,7 @@ The previous exercises filtered the property-level data.  We now filter the tran
 
  ## Long term list data
   
-  listing.data <- listing.data[listing.data$activity.id %in% ltr.data$activity.id,]
+  listing.data <- listing.data[listing.data$activity.id %in% ltr_df$activity.id,]
 
 ```
 
@@ -1405,10 +1406,10 @@ Here we combine the two Strict (regular and super) cancellation policies into on
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  save(str_df, ltr.data, daily_df, listing.data, subs, abb.col, 
-       beach.shp, core.suburbs, exch.rate, ltr.col, str.col, sa1s.shp, 
+  save(str_df, ltr_df, daily_df, listing.data, subs, abb_col, 
+       beach.shp, core.suburbs, exch.rate, ltr_col, str_col, sa1s.shp, 
        suburbs.shp, study.suburbs, clean.count, daily.run.total, list.run.total,
        ltr.run.total, str.run.total,
-       file=paste0(data.path, 'prepared/prep_workspace_', data_name, '.RData'))
+       file=paste0(data_path, 'prepared/prep_workspace_', data_name, '.RData'))
 
-```
+```N
