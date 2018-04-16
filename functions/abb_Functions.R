@@ -187,8 +187,8 @@ abbCalcBookStr <- function(id.book.data){
   if(length(id.data) > 1){
     
     # Find min and max date
-    id.min <- min(id.book.data$date)
-    id.max <- max(id.book.data$date)
+    id_min <- min(id.book.data$date)
+    id_max <- max(id.book.data$date)
     
     # Divide by status and collapse
     status.string <- id.data[1]
@@ -227,11 +227,11 @@ abbCalcBookStr <- function(id.book.data){
     if(length(id.A) > 0){
       a.list <- ss.list[id.A]
       avails <- unlist(lapply(a.list, nchar))
-      avail.rate <- sum(avails) / length(id.data)
+      avail_rate <- sum(avails) / length(id.data)
       
     } else {
       
-      avail.rate <- 0
+      avail_rate <- 0
       
     }
     
@@ -241,46 +241,46 @@ abbCalcBookStr <- function(id.book.data){
       # Count longest and blocked times
       blocks <- unlist(lapply(b.list, nchar))
       
-      block.rate <- sum(blocks) / length(id.data)
-      longest.block <- max(blocks)
-      med.block <- median(blocks)
-      nbr.block <- length(id.B)
+      block_rate <- sum(blocks) / length(id.data)
+      longest_block <- max(blocks)
+      med_block <- median(blocks)
+      nbr_block <- length(id.B)
       
     } else {
       
-      block.rate <- 0
-      longest.block <- 0
-      med.block <- 0
-      nbr.block <- 0
+      block_rate <- 0
+      longest_block <- 0
+      med_block <- 0
+      nbr_block <- 0
       
     }
     
-    total.days <- length(id.data)  
+    total_days <- length(id.data)  
     
   } else {
     
-    block.rate <- NA
-    longest.block <- NA
-    med.block <- NA
-    nbr.block <- NA
-    total.days <- NA
-    id.min <- NA
-    id.max <- NA
-    avail.rate <- NA
+    block_rate <- NA
+    longest_block <- NA
+    med_block <- NA
+    nbr_block <- NA
+    days <- NA
+    id_min <- NA
+    id_max <- NA
+    avail_rate <- NA
     bookings <- NA
 
   }  
   
   ## Return Values
   
-  return(data.frame(min.date=id.min,
-                    max.date=id.max,
-                    total.days=total.days,
-                    block.rate=block.rate,
-                    avail.rate=avail.rate,
-                    longest.block=longest.block,
-                    nbr.block=nbr.block,
-                    med.block=med.block,
+  return(data.frame(min_date=id_min,
+                    max_date=id_max,
+                    total_days=total_days,
+                    block_rate=block_rate,
+                    avail_rate=avail_rate,
+                    longest_block=longest_block,
+                    nbr_block=nbr_block,
+                    med_block=med_block,
                     bookings=bookings))
 }
 
@@ -289,24 +289,24 @@ abbCalcBookStr <- function(id.book.data){
 setCleanCount <- function(){
   
   # Make counts of initial sizes
-  str.orig <- nrow(str_df)
-  daily.orig <- nrow(daily_df)
-  ltr.orig <- nrow(ltr.data)
-  list.orig <- nrow(listing.data)
+  str_orig <- nrow(str_df)
+  daily_orig <- nrow(daily_df)
+  ltr_orig <- nrow(ltr_df)
+  list_orig <- nrow(list_df)
   
   # Create initial data.frame
-  clean.df <- data.frame(operation='initial',
-                         str=str.orig,
-                         daily=daily.orig,
-                         ltr=ltr.orig,
-                         list=list.orig)
+  clean_df <- data.frame(operation='initial',
+                         str=str_orig,
+                         daily=daily_orig,
+                         ltr=ltr_orig,
+                         list=list_orig)
   
   # Assign initial values to globalEnv
-  assign('clean.count', clean.df, envir=.GlobalEnv)
-  assign('str.run.total', nrow(str_df), envir=.GlobalEnv)
-  assign('ltr.run.total', nrow(ltr.data), envir=.GlobalEnv)
-  assign('list.run.total', nrow(listing.data), envir=.GlobalEnv)
-  assign('daily.run.total', nrow(daily_df), envir=.GlobalEnv)
+  assign('clean_count', clean_df, envir=.GlobalEnv)
+  assign('str_run_total', nrow(str_df), envir=.GlobalEnv)
+  assign('ltr_run_total', nrow(ltr_df), envir=.GlobalEnv)
+  assign('list_run_total', nrow(list_df), envir=.GlobalEnv)
+  assign('daily_run_total', nrow(daily_df), envir=.GlobalEnv)
   
 }
 
@@ -315,27 +315,27 @@ setCleanCount <- function(){
 countCleaning <- function(operation){
 
   # Count recent cuts  
-  str.cut <- str.run.total - nrow(str_df)
-  daily.cut <- daily.run.total - nrow(daily_df)
-  ltr.cut <- ltr.run.total - nrow(ltr.data)
-  listing.cut <- list.run.total - nrow(listing.data)
+  str_cut <- str_run_total - nrow(str_df)
+  daily_cut <- daily_run_total - nrow(daily_df)
+  ltr_cut <- ltr_run_total - nrow(ltr_df)
+  list_cut <- list_run_total - nrow(list_df)
   
   # Build new dataframe
-  new.df <- data.frame(operation=operation,
-                       str=str.cut,
-                       daily=daily.cut,
-                       ltr=ltr.cut,
-                       list=listing.cut)
+  new_df <- data.frame(operation=operation,
+                       str=str_cut,
+                       daily=daily_cut,
+                       ltr=ltr_cut,
+                       list=list_cut)
   
   # Add to existing DF
-  comb.df <- rbind(clean.count, new.df)
+  comb_df <- rbind(clean_count, new_df)
   
-  # Assign temp data to globalEnv
-  assign('clean.count', comb.df, envir=.GlobalEnv)
-  assign('str.run.total', nrow(str_df), envir=.GlobalEnv)
-  assign('ltr.run.total', nrow(ltr.data), envir=.GlobalEnv)
-  assign('list.run.total', nrow(listing.data), envir=.GlobalEnv)
-  assign('daily.run.total', nrow(daily_df), envir=.GlobalEnv)
+  # Assign initial values to globalEnv
+  assign('clean_count', comb_df, envir=.GlobalEnv)
+  assign('str_run_total', nrow(str_df), envir=.GlobalEnv)
+  assign('ltr_run_total', nrow(ltr_df), envir=.GlobalEnv)
+  assign('list_run_total', nrow(list_df), envir=.GlobalEnv)
+  assign('daily_run_total', nrow(daily_df), envir=.GlobalEnv)
   
 }
 
