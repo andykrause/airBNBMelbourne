@@ -38,6 +38,7 @@ We begin with a number of preliminary commands.  First we load all of the necess
   library(dplyr)
   library(multidplyr)
   library(lubridate)
+  library(tidyverse)
 
 ```
 
@@ -46,7 +47,7 @@ We then set the paths to the data and the code, conditional on which of the auth
 ```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
   data_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'data')
-  code_path <- getwd()
+  code_path <- file.path('c:', 'code', 'research', 'airbnbmelbourne')
   fig_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'figures')
 
 ```
@@ -55,7 +56,7 @@ Next, we source the necessary custom code files for the analysis.
 
 ```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
-source(file.path(code_path, 'functions', 'abb_Functions.R'))
+  source(file.path(code_path, 'functions', 'abb_Functions.R'))
 
 #
 #  # Other custom files
@@ -131,30 +132,12 @@ Next we load in the raw data.  The short-term rental (Airbnb) data is found in t
 
 ```{r load_str_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  # Property Information
+  str_tdf <- readRDS(file.path(data_path, 'prepared', 'str_data.RDS'))
 
-  str_df <- readRDS(file.path(data_path, 'prepared', 'st_prop.RDS'))
-
-  # Daily rental information
-
-  daily_df <- readRDS(file.path(data_path, 'prepared', 'st_daily.RDS'))
+  ltr_tdf <- readRDS(file.path(data_path, 'prepared', 'ltr_data.RDS'))
 
 ```
  
-We then load the long term rental data.  This includes property level data (including the final lease rate) and listing-level data containing information on all changes to listing prices and dates, etc. 
- 
-```{r load_ltr_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
- # Property level long term ltral information
-
-  ltr_df <- readRDS(file.path(data_path, 'prepared', 'lt_prop.RDS'))
-
- # Long term ltral listing information
-
-  list_df <- readRDS(file.path(data_path, 'prepared', 'lt_list.RDS'))
-
-```
-
 And, finally, we load three GIS shapefiles.  The first two denote suburb and Statistical Area 1 (sa1) boundaries in the Melbourne area. We also load a shapefile that contains the location of the beach areas along Port Phillip Bay.^[Only those east of the mouth of Yarra River as those to the west are primarily industrial land.]  After we load each we convert the names of the data fields to lower case for easier use in future coding.
 
 ```{r load_sp_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
@@ -256,47 +239,49 @@ Before we begin the filter process, we initial the data cleaning counter -- a sm
 
 ```
 
-# We then clip by time.  For the short-term data we will consider any Airbnb property that had at least 6 months worth of listing time on the portal during the 12-month study period
-# 
-# ```{r clip_time, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
-#  
-#  # Limit short term data
-#   
-#   str_df <- str_df[(str_df$max.date - str_df$min.date) >= 178, ]
-#   
-#   str_df <- str_df[str_df$max.date >= (strike_date + 182) &
-#                          str_df$min.date <= (strike_date + 182), ]
-#  
-#   daily_df <- daily_df[daily_df$date >= strike_date, ]
-# 
-#  # Limit long term data  
-#   
-#   ltr_df <- ltr_df[ltr_df$event.date >= (strike_date - 365) & 
-#                             ltr_df$event.date <= (strike_date - 1), ]
-#   listing.data <- listing.data[listing.data$id.key %in% ltr_df$id.key, ]
-#    
-#  # Count cleaning
-#   
-#   countCleaning('time')
-#   
-# ```
-# 
-# Next we add a monthly variable to the data for use in future modeling exercises. 
-# 
-# ```{r add_month, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#   # Short term data
-# 
-#   str_df$str.month <- 1
-#   daily_df$str.month <- as.numeric(as.factor(substr(daily_df$date, 1, 7)))
-# 
-#   # Long term data
-# 
-#   ltr_df$ltr.month <- as.numeric(as.factor(substr(ltr_df$event.date, 1, 7)))
+We then clip by time.  For the short-term data we will consider any Airbnb property that had at least 6 months worth of listing time on the portal during the 12-month study period
+ 
+```{r clip_time, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+  
+  # Limit short term data
+   
+  str_df <- str_df[(str_df$max_date - str_df$min_date) >= 178, ]
+  str_df <- str_df[str_df$max_date >= (decision_date + 182) &
+                    str_df$min_date <= (decision_date + 182), ]
+  
+  daily_df <- daily_df[daily_df$date >= decision_date, ]
+
+  # Limit long term data
+
+  ltr_df <- ltr_df[ltr_df$event_date >= (decision_date - 365) &
+                    ltr_df$event_date <= (decision_date - 1), ]
+  list_df <- list_df[list_df$id_key %in% ltr_df$id_key, ]
+
+ # Count cleaning
+
+  countCleaning('time')
+
+```
+ 
+Next we add a monthly variable to the data for use in future modeling exercises. 
+ 
+```{r add_month, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Short term data
+
+  str_df$month <- 1
+  daily_df$month <- paste0(lubridate::year(daily_df$date), "_", 
+                           lubridate::month(daily_df$date))
+
+  # Long term data
+ 
+  ltr_df$month <- paste0(lubridate::year(ltr_df$event_date), "_",
+                          lubridate::month(ltr_df$event_date))
+  
 #   listing.data$ltr.month <- as.numeric(as.factor(substr(
 #     listing.data$event.date, 1, 7))) - 8
 #   
-# ```
+```
 # 
 # ### Standardize Property Types
 # 
