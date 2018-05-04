@@ -289,25 +289,19 @@ abbCalcBookStr <- function(id.book.data){
 setCleanCount <- function(){
   
   # Make counts of initial sizes
-  str_orig <- nrow(str_df)
-  daily_orig <- nrow(daily_df)
-  ltr_orig <- nrow(ltr_df)
-  list_orig <- nrow(list_df)
+  str_orig <- nrow(str_tdf)
+  ltr_orig <- nrow(ltr_tdf)
   
   # Create initial data.frame
   clean_df <- data.frame(operation='initial',
                          str=str_orig,
-                         daily=daily_orig,
-                         ltr=ltr_orig,
-                         list=list_orig)
+                         ltr=ltr_orig)
   
   # Assign initial values to globalEnv
   assign('clean_count', clean_df, envir=.GlobalEnv)
-  assign('str_run_total', nrow(str_df), envir=.GlobalEnv)
-  assign('ltr_run_total', nrow(ltr_df), envir=.GlobalEnv)
-  assign('list_run_total', nrow(list_df), envir=.GlobalEnv)
-  assign('daily_run_total', nrow(daily_df), envir=.GlobalEnv)
-  
+  assign('str_run_total', nrow(str_tdf), envir=.GlobalEnv)
+  assign('ltr_run_total', nrow(ltr_tdf), envir=.GlobalEnv)
+
 }
 
 ### Cleaning counting updater ------------------------------------------------------------

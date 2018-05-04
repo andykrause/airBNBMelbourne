@@ -4,6 +4,8 @@ output:
   pdf_document: default
   html_notebook: default
   html_document: default
+editor_options: 
+  chunk_output_type: console
 ---
 
 ### Introduction
@@ -170,62 +172,6 @@ And, finally, we load three GIS shapefiles.  The first two denote suburb and Sta
 &nbsp;
  
 In this section we remove, convert and/or transform a number of data fields. We also remove observations if they are missing critical data or fall outside of the scope of our research question. 
- 
-&nbsp;
- 
-### Trim and Standardize Fields
- 
-The data contain many fields that are either not fully observed and/or are not relevant to our research question.  Additionally, the field naming conventions differ between the two datasets. We first remove unnecessary or unobserved fields and then employ a systematic field naming functions across all datasets.
- 
-We start by trimming the property-level short term data.  No fields need to be removed from the daily data. 
-
-While trimming the fields we also we standardize the field names.  Here we follow the convention of placing an underscore between words in the name.  We also shorten a number of the fields to make future coding easier.  
-
-```{r trim_st, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
- 
-   str_df <- str_df %>% 
-     dplyr::select(property_id=property.id, host_id=host.id, listing_title=listing.title, 
-                   property_type=property.type, listing_type=listing.type,
-                   created_date=created.date, latitude, longitude, rating=overall.rating,
-                   max_guests=max.guests, canc_policy=cancellation.policy, 
-                   cleaning_fee=cleaning.fee, nightly_rate=published.nightly.rate, 
-                   weekly_rate=published.weekly.rate, monthly_rate=published.monthly.rate, 
-                   avg_nightly_rate=average.daily.rate, min_stay=minimum.stay, bedrooms, 
-                   bathrooms, min_date=min.date, max_date=max.date, days=total.days, 
-                   block_rate=block.rate, avail_rate=avail.rate, 
-                   longest_block=longest.block, nbr_blocks=nbr.block, med_block=med.block,
-                   created_year=created.year)
-
-  daily_df <- daily_df %>%
-    dplyr::select(property_id=property.id, date, status, price, booked_date=booked.date,
-                  resv_id=reservation.id)
-
-```
- 
-We then limit the fields of the long-term property-specific data
- 
-```{r trim_lt, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  ltr_df <- ltr_df %>%
-    dplyr::select(id_key=id.key, geo_id=geographicalid, event_id=eventid, 
-                  addr_id=addressid, activity_id=activityid, flat_nbr=flatnumber,
-                  str_nbr=streetnumber, str_name=streetname, str_type=streettype, 
-                  suburb, postcode, latitude=property_latitude,
-                  longitude=property_longitude, str_latitude=street_centroid_latitude,
-                  str_longitude=street_centroid_longitude, event_date=event.date,
-                  event_price=eventprice, property_type=propertytype, area_size=areasize,
-                  bedrooms, baths, parking, has_study=hasstudy, 
-                  has_courtyard=hascourtyard, has_balcony=hasbalcony, 
-                  has_ac=hasairconditioning, has_garage=hasgarage, dom)
-
-  list_df <- list_df %>%
-    dplyr::select(id_key=id.key, event_id=eventid, activity_id=activityid, 
-                  addr_id=addressid, of_record=of.record, event_date=event.date,
-                  event_price=eventprice, first_date=first.adv.date, 
-                  first_price=firstadvertisedeventprice, last_date=last.adv.date,
-                  last_price=lastadvertisedeventprice, event_code=eventtypecode)
-
-```
 
 ### Trim by Time
  
@@ -245,16 +191,21 @@ We then clip by time.  For the short-term data we will consider any Airbnb prope
   
   # Limit short term data
    
-  str_df <- str_df[(str_df$max_date - str_df$min_date) >= 178, ]
-  str_df <- str_df[str_df$max_date >= (decision_date + 182) &
-                    str_df$min_date <= (decision_date + 182), ]
-  
-  daily_df <- daily_df[daily_df$date >= decision_date, ]
+  str_tdf <- str_tdf %>%
+    dplyr::filter((max_date - min_date) >= 178) %>%
+    dplyr::filter((max_date >= (decision_date + 182) &
+                    min_date <= (decision_date + 182)))
+
+  str_tdf <- str_tdf %>%
+    tidyr::unnest() %>% 
+    dplyr::filter(date >= decision_date) %>%
+    tidyr::nest(date:uniq_id, .key=daily_data)
 
   # Limit long term data
-
-  ltr_df <- ltr_df[ltr_df$event_date >= (decision_date - 365) &
-                    ltr_df$event_date <= (decision_date - 1), ]
+  ltr_tdf <- ltr_tdf %>%
+    dplyr::filter((event_date >= (decision_date - 365) &
+                    event_date <= (decision_date - 1))) 
+  
   list_df <- list_df[list_df$id_key %in% ltr_df$id_key, ]
 
  # Count cleaning
