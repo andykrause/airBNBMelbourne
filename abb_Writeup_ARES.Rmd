@@ -302,23 +302,27 @@ After removing property level observations that are missing price data, we plot 
 
 Location is an important determinant in both the short- and long-term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs. Inner suburbs are < 10km from the CBD, Middle suburbs 10 to 20km from CBD and Outer suburbs > 20km from CBD. In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high-end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts. The specific suburb of a property is the second, or finer scale, at which the market operates. 
 
-<!-- \autoref{locmap} shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries. -->
+\autoref{locmap} shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries.
 
-<!-- ```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.height=3.5, fig.width=3.5, fig.cap='\\label{locmap}Melbourne Submarkets'} -->
+```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.height=3.5, fig.width=3.5, fig.cap='\\label{locmap}Melbourne Submarkets'}
 
-<!--  load(paste0(fig.path, 'suburbMap.RData')) -->
+ load(paste0(fig.path, 'suburbMap.RData'))
 
-<!--  loc.map <- loc.map + -->
-<!--    theme(axis.title.y=element_blank(), -->
-<!--          axis.text.y=element_blank(), -->
-<!--          axis.ticks.y=element_blank(), -->
-<!--          axis.title.x=element_blank(), -->
-<!--          axis.text.x=element_blank(), -->
-<!--          axis.ticks.x=element_blank()) -->
+ loc.map <- loc.map +
+   theme(axis.title.y=element_blank(),
+         axis.text.y=element_blank(),
+         axis.ticks.y=element_blank(),
+         axis.title.x=element_blank(),
+         axis.text.x=element_blank(),
+         axis.ticks.x=element_blank())
+  ggsave(loc.map, filename=file.path(fig.path, 'loc_map.png'),
+         bg='transparent',
+         width=6, height=6)
+ # loc.map
 
-<!--  loc.map -->
+```
 
-<!-- ``` -->
+![Suburb Categories](c://dropbox/research/airBnb/figures/loc_map.png)
 
 It is likely that the short-term rental market follows a similar market hierarchy, however, we can imagine that a few different spatial features can influence the short-term market.  While there are many possible additional features, we consider two to be the most likely to influence rates or occupancy: 1) Proximity to beaches; and 2) Proximity to key tourist activities and events. Using the three broad submarkets from the long-term market (inner, middle and outer) we have created a five sub-market system as a starting point for spatially analyzing short and long-term rentals in Melbourne: 
 
@@ -374,9 +378,21 @@ Before assigning submarkets to the long-term property we must remedy the fact th
          axis.text.x=element_blank(),
          axis.ticks.x=element_blank())
 
+    ggsave(str.map, filename=file.path(fig.path, 'str_map.png'),
+         bg='transparent',
+         width=6, height=6)
+    ggsave(ltr.map, filename=file.path(fig.path, 'ltr_map.png'),
+         bg='transparent',
+         width=6, height=6)
+    
   # ggMultiPlots(str.map, ltr.map, cols=1)
 
 ```
+
+![Short Term Rental Locations](c://dropbox/research/airBnb/figures/str_map.png)
+
+![Long Term Rental Locations](c://dropbox/research/airBnb/figures/ltr_map.png)
+
 
  To better visualize the relative frequency of the submarkets in the two tenure types we have broken down the data by submarket by property type by tenure type. A number of interesting observations are illustrated here (\autoref{smcounts}). First, the vast majority of Airbnb units are apartments in city-core or city locations. As expected and as shown by the map, the long-term properties are more evenly spread across the metro region than the short-term properties.  Long-term houses are more peripheral than apartments, a result of urban development patterns and land economics. Beach properties are, relatively speaking, over-represented in the short-term market, especially in apartments, while suburban and rural apartments, somewhat common in long-term markets, are nearly absent in the short-term market. Overall, the suburban and rural Airbnb markets are quite thin, later results focusing on these markets will need to be examined in light of this small sample size.
 

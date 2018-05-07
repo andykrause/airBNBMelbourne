@@ -3,6 +3,8 @@ title: "Pre Processing of the Short Term Data"
 author: "Andy Krause"
 date: "April 14, 2018"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 This script executes a number of very long running data preparation process necessary to analyze the short term rental (Airbnb) data.  If you re-knit (with RMarkdown) this file the code will not evaluate.  To actually evaluate the code you must manually re-run the code chunks
