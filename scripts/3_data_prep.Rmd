@@ -41,6 +41,7 @@ We begin with a number of preliminary commands.  First we load all of the necess
   library(multidplyr)
   library(lubridate)
   library(tidyverse)
+  library(sf)
 
 ```
 
@@ -144,26 +145,12 @@ And, finally, we load three GIS shapefiles.  The first two denote suburb and Sta
 
 ```{r load_sp_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  # Suburb shapefile
-
-  suburbs_shp <- readShapePoly(file.path(data_path, 'geographic', 'melbSuburbs.shp'),
-                               proj4string=CRS("+init=epsg:4283"),
-                               delete_null_obj=TRUE)
-  names(suburbs_shp@data) <- tolower(names(suburbs_shp@data))
-
-  # SA1 shapefile
-
-  sa1s_shp <- readShapePoly(file.path(data_path, 'geographic', 'sa1s.shp'),
-                            proj4string=CRS("+init=epsg:4283"),
-                            delete_null_obj=TRUE)
-  names(sa1s_shp@data) <- tolower(names(sa1s_shp@data))
-
-  # Beach file
-
-  beach_shp <- readShapePoly(file.path(data_path, 'geographic','portPhillipBeach.shp'),
-                             proj4string=CRS("+init=epsg:4283"),
-                             delete_null_obj=TRUE)
-  names(beach_shp@data) <- tolower(names(beach_shp@data))
+  sub_sf <- sf::st_read(file.path(data_path, 'geographic', 'melbSuburbs.shp')) %>%
+    st_transform(crs=4283)
+  sa1_sf <- sf::st_read(file.path(data_path, 'geographic', 'sa1s.shp')) %>%
+    st_transform(crs=4283)
+  beach_sf <- sf::st_read(file.path(data_path, 'geographic','portPhillipBeach.shp')) %>%
+    st_transform(crs=4283)
 
 ```
  
