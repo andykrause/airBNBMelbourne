@@ -309,28 +309,22 @@ setCleanCount <- function(){
 countCleaning <- function(operation){
 
   # Count recent cuts  
-  str_cut <- str_run_total - nrow(str_df)
-  daily_cut <- daily_run_total - nrow(daily_df)
-  ltr_cut <- ltr_run_total - nrow(ltr_df)
-  list_cut <- list_run_total - nrow(list_df)
+  str_cut <- str_run_total - nrow(str_tdf)
+  ltr_cut <- ltr_run_total - nrow(ltr_tdf)
   
   # Build new dataframe
   new_df <- data.frame(operation=operation,
                        str=str_cut,
-                       daily=daily_cut,
-                       ltr=ltr_cut,
-                       list=list_cut)
+                       ltr=ltr_cut)
   
   # Add to existing DF
   comb_df <- rbind(clean_count, new_df)
   
   # Assign initial values to globalEnv
   assign('clean_count', comb_df, envir=.GlobalEnv)
-  assign('str_run_total', nrow(str_df), envir=.GlobalEnv)
-  assign('ltr_run_total', nrow(ltr_df), envir=.GlobalEnv)
-  assign('list_run_total', nrow(list_df), envir=.GlobalEnv)
-  assign('daily_run_total', nrow(daily_df), envir=.GlobalEnv)
-  
+  assign('str_run_total', nrow(str_tdf), envir=.GlobalEnv)
+  assign('ltr_run_total', nrow(ltr_tdf), envir=.GlobalEnv)
+
 }
 
 ### Cross impute rates and rents ---------------------------------------------------------

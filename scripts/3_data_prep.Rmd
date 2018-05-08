@@ -178,23 +178,20 @@ We then clip by time.  For the short-term data we will consider any Airbnb prope
   
   # Limit short term data
    
+  # Trim properties by min and max date
   str_tdf <- str_tdf %>%
     dplyr::filter((max_date - min_date) >= 178) %>%
     dplyr::filter((max_date >= (decision_date + 182) &
                     min_date <= (decision_date + 182)))
 
-  str_tdf <- str_tdf %>%
-    tidyr::unnest() %>% 
-    dplyr::filter(date >= decision_date) %>%
-    tidyr::nest(date:uniq_id, .key=daily_data)
+   # Trim actual nightly observation by the decision date
+   str_tdf <- str_tdf %>% 
+     mutate(daily_data = map(daily_data, ~filter(., date >= decision_date)))
 
   # Limit long term data
-  ltr_tdf <- ltr_tdf %>%
-    dplyr::filter((event_date >= (decision_date - 365) &
-                    event_date <= (decision_date - 1))) 
-  
-  list_df <- list_df[list_df$id_key %in% ltr_df$id_key, ]
-
+  ltr_tdf <- ltr_tdf %>% 
+     mutate(trans_data = map(trans_data, ~filter(., (date <= decision_date - 1) & 
+                                                     date >= decision_date - 365)))
  # Count cleaning
 
   countCleaning('time')
@@ -206,212 +203,201 @@ Next we add a monthly variable to the data for use in future modeling exercises.
 ```{r add_month, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   # Short term data
-
-  str_df$month <- 1
-  daily_df$month <- paste0(lubridate::year(daily_df$date), "_", 
-                           lubridate::month(daily_df$date))
-
+   str_tdf <- str_tdf %>% 
+     mutate(daily_data = map(daily_data, 
+                             ~mutate(., month = paste0(lubridate::year(date), "_",
+                                                       lubridate::month(date)))))
   # Long term data
- 
-  ltr_df$month <- paste0(lubridate::year(ltr_df$event_date), "_",
-                          lubridate::month(ltr_df$event_date))
+  ltr_tdf <- ltr_tdf %>% 
+     mutate(trans_data = map(trans_data, 
+                             ~mutate(., month = paste0(lubridate::year(date), "_",
+                                                       lubridate::month(date)))))
   
-#   listing.data$ltr.month <- as.numeric(as.factor(substr(
-#     listing.data$event.date, 1, 7))) - 8
-#   
 ```
+
+### Standardize Property Types
+
+&nbsp;
+
+AirBNB units are classified into 19 different property type.  The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that the Igloo, at the very least, is not a completely true representation of the property type]. For the sake of this analysis, we will collapse these twenty types into three types:
+
+1. **House**:  Includes properties labeled 'House' or 'Townhouse'
+2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium'
+3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt.
+
+Within the long-term rental data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories:
+
+1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse'
+2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio'
+3. **Other**: Includes properties labeled as 'Semi' and 'Villa'
+
+Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the AirBNB data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure).  Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context. 
+ 
+We then create a new variable in each dataset and give each one of the three categories discussed above.
+ 
+```{r fix_type, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+ 
+  # Short Term data  
+
+  str_tdf <- str_tdf %>%
+    dplyr::mutate(type = 'Other')
+  str_tdf$type[str_tdf$property_type %in% 
+               c('Apartment', 'Condominium', 'Loft')] <- 'Apartment'
+  str_tdf$type[str_tdf$property_type %in% c('House', 'Townhouse', 'Villa')] <- 'House'
+ 
+  # Long Term data  
+ 
+  ltr_tdf <- ltr_tdf %>%
+    dplyr::mutate(type = 'Other')
+  ltr_tdf$type[ltr_tdf$property_type %in% c('Duplex', 'House',
+                                             'Terrace', 'Townhouse', 'Villa')] <- 'House'
+  ltr_tdf$type[ltr_tdf$property_type %in% c('Studio', 'Unit')] <- 'Apartment'
+ 
+```
+ 
+As the chart below show, the **Other** category only makes up a very small percentage of the properties in both the short and long term market, especially in the long-term market.  Additionally, a good portion of the **Others** in the Airbnb data are Bed & Breakfast units, a use which doesn't fit with our research question.  As a result, we remove the 'Others' from both the Airbnb and the long term rental data. 
+ 
+```{r plot_type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
+ 
+   # Create Airbnb plot
+ 
+   str_types <- ggplot(str_tdf, aes(x=type)) + 
+     geom_bar(color=str_col, fill=str_col) +
+     xlab('\nProperty Type\n') + 
+     ggtitle('\nShort Term Rentals\n')  +
+     ylab('# of Properties\n') +
+     theme(plot.title = element_text(hjust = 0.5)) 
+
+  # Create long term rental plot
+
+  ltr_types <- ggplot(ltr_tdf, aes(x=type)) +
+    geom_bar(color=ltr_col, fill=ltr_col) +
+    xlab('\nProperty Type\n') +
+    ggtitle('\nLong Term Rentals\n')  +
+    ylab('# of Properties\n') +
+    theme(plot.title = element_text(hjust = 0.5))
+
+  str_types
+  ltr_types
+  
+  # Output plots
+  # png(file=paste0(fig.path, 'dataclean_proptype.png'), width = 480, height = 280,
+  #     bg='transparent')
+  #  ggMultiPlots(str_types, ltr_types, cols=2)
+  # dev.off()
 # 
-# ### Standardize Property Types
-# 
-# &nbsp;
-# 
-# AirBNB units are classified into 19 different property type.  The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that the Igloo, at the very least, is not a completely true representation of the property type]. For the sake of this analysis, we will collapse these twenty types into three types:
-#   
-# 1. **House**:  Includes properties labeled 'House' or 'Townhouse'
-# 2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium'
-# 3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt. 
-# 
-# Within the long-term rental data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories:
-#   
-# 1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse'
-# 2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio'
-# 3. **Other**: Includes properties labeled as 'Semi' and 'Villa'
-# 
-# Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the AirBNB data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure).  Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context. 
-# 
-# We then create a new variable in each dataset and give each one of the three categories discussed above.
-# 
-# ```{r fix_type, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#  # Short Term data  
-# 
-#   str_df$type <- 'Other'
-#   str_df$type[str_df$property.type %in% c('Apartment', 'Condominium')] <- 'Apartment'
-#   str_df$type[str_df$property.type %in% c('House', 'Townhouse')] <- 'House'
-# 
-#  # Long Term data  
-# 
-#   ltr_df$type <- 'Other'
-#   ltr_df$type[ltr_df$property.type %in% c('Duplex', 'House',
-#                                            'Terrace', 'Townhouse')] <- 'House'
-#   ltr_df$type[ltr_df$property.type %in% c('Studio', 'Unit')] <- 'Apartment'
-# 
-# ```
-# 
-# As the chart below show, the **Other** category only makes up a very small percentage of the properties in both the short and long term market, especially in the long-term market.  Additionally, a good portion of the **Others** in the Airbnb data are Bed & Breakfast units, a use which doesn't fit with our research question.  As a result, we remove the 'Others' from both the Airbnb and the long term rental data. 
-# 
-# ```{r plot_type_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
-# 
-#   # Create Airbnb plot
-# 
-#   str.types <- ggplot(str_df, aes(x=type)) + 
-#     geom_bar(color=str_col, fill=str_col) +
-#     xlab('\nProperty Type\n') + 
-#     ggtitle('\nShort Term Rentals\n')  +
-#     ylab('# of Properties\n') +
-#     theme(plot.title = element_text(hjust = 0.5)) 
-# 
-#   # Create long term rental plot
-# 
-#   ltr.types <- ggplot(ltr_df, aes(x=type)) + 
-#     geom_bar(color=ltr_col, fill=ltr_col) +
-#     xlab('\nProperty Type\n') + 
-#     ggtitle('\nLong Term Rentals\n')  +
-#     ylab('# of Properties\n') +
-#     theme(plot.title = element_text(hjust = 0.5)) 
-# 
-#   
-#   
-#   # Output plots
-#   png(file=paste0(fig.path, 'dataclean_proptype.png'), width = 480, height = 280, 
-#       bg='transparent')
-#     ggMultiPlots(str.types, ltr.types, cols=2)
-#   dev.off()
-#   
 #   save(str.types, file=paste0(fig.path, 'strtypes.RData'))
 #   save(ltr.types, file=paste0(fig.path, 'ltrtypes.RData'))
-#   
-# ```
-# 
-# ```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
-# 
-#   str_df <- subset(str_df, type != 'Other')
-#   ltr_df <- subset(ltr_df, type != 'Other')
-#   
-#   # Count Cleaning
-#   countCleaning('property.type')
-# 
-# ```
-# 
-# Next, for the short term rentals properties can be listed as one of three types relating to the extent of the property which is able to be booked:
-# 
-# 1. **Entire Home/Apt**: The entire home or apartment is available
-# 2. **Private Room**: One room within a house or apartment is available
-# 3. **Shared Room**: A bed within a room shared by another occupant(s) is available
-# 
-# As long-term rentals do not offer **Private Room** or **Shared Room** options^[Our dataset does not include rooming houses, purpose built student accomodations and other types of rental which may offer private or shared room options] and our purpose here is a comparison of long and short term returnw, we remove all short term properties that do not lease the entire home/apt. Unfortunately, this filter does remove about 40% of the short term data, however, given the research question it is unavoidable. 
-# 
-# ```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
-# 
-#   # Fix data types and names
-#   str_df$listing.type <- as.character(str_df$listing.type)
-#   str_df$listing.type[str_df$listing.type == 'Entire home/apt'] <- 'Entire home'
-# 
-#   list.types <- ggplot(str_df, aes(x=listing.type)) + 
-#       geom_bar(color=str_col, fill=str_col) +
-#       xlab('\nListing Type\n') + 
-#       ggtitle('\nShort Term Rentals by Listing Type\n')  +
-#       ylab('# of Properties\n') +
-#     theme(plot.title = element_text(hjust = 0.5)) 
-#   
-#   # Make Plot
-#   png(file=paste0(fig.path, 'dataclean_listtype.png'), width = 480, height = 280, 
-#       bg='transparent')
-# 
-#     list.types
-#   
-#   dev.off()
-#   
-#   save(list.types, file=paste0(fig.path, 'listtypes.RData'))
-#   
-#   
-# ```
-# 
-# ```{r keep_entire_home, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#   str_df <- str_df[str_df$listing.type == 'Entire home', ]
-#   
-#   # Count cleaning 
-#   countCleaning('listing.type')
-#   
-# ```
-# 
-# ## Structural Characteristics
-# 
-# &nbsp;
-# 
-# In this section we transform and filter based on the structural characteristics of the properties. 
-# 
-# ### Fix Boolean Variables
-# 
-# Before beginning, we fix a few of the boolean variables in the long term data that are stored in a non-compatible format.
-# 
-# ```{r fix_lt_bools, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#   ltr_df$has.study <- ifelse(ltr_df$has.study == 'True', 1, 0)
-#   ltr_df$has.courtyard <- ifelse(ltr_df$has.courtyard == 'True', 1, 0)
-#   ltr_df$has.aircon <- ifelse(ltr_df$has.aircon == 'True', 1, 0)
-#   ltr_df$has.balcony <- ifelse(ltr_df$has.balcony == 'True', 1, 0)
-#   ltr_df$has.garage <- ifelse(ltr_df$has.garage == 'True', 1, 0)
-# 
-# ```
-# 
-# &nbsp;
-# 
-# ### Bedrooms
-# 
-# We start by looking at bedrooms. We begin by removing all properties that are missing bedrooms information or have a likely data error in this fields (more than 14 bedrooms). We then plot the distribution of diffeltr bedrooms counts.  From this point onwards we bifurcate our analysis between houses and apartments as the markets (prices, rates, and properties) differ between the two property types. 
-# 
-# ```{r bed_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#  # Remove missing and data errors
-# 
-#   # Long term data
-#   ltr_df <- ltr_df[!is.na(ltr_df$bedrooms), ]
-#   ltr_df <- ltr_df[ltr_df$bedrooms <= 10, ]
-# 
-#   # Short term data
-#   str_df <- str_df[!is.na(str_df$bedrooms), ]
-#   str_df <- str_df[str_df$bedrooms <= 10, ]
-# 
-# ```
-# 
-# ```{r bed_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
-# 
-#  # Build long term bar plot
-# 
-#    ltrbed <- ggplot(ltr_df, aes(x=bedrooms)) + 
-#     geom_bar(fill=ltr_col, color=ltr_col) +
-#     facet_wrap(~type,scales='free_y') +
-#     scale_x_continuous(labels=1:10, breaks=1:10)+
-#     xlab('\nBedrooms\n') +
-#     scale_y_continuous(labels=c(0,10000,20000), 
-#                        breaks=c(0,10000,20000))+
-#     ylab('') +
-#     ggtitle('Bedrooms in Long Term Rentals') +
-#     theme(plot.title = element_text(hjust = 0.5)) 
-#  
-#  # Build short term bar plot
-# 
-#   strbed <- ggplot(str_df, aes(x=bedrooms)) + 
-#     geom_bar(fill=str_col, color=str_col) +
-#     facet_wrap(~type,scales='free_y') +
-#     scale_x_continuous(labels=0:10, breaks=0:10) +
-#     xlab('\nBedrooms\n') +
-#     ylab('') +
-#     ggtitle('Bedrooms in Short Term Rentals') +
-#     theme(plot.title = element_text(hjust = 0.5)) 
-#  
+
+```
+
+```{r remove_others, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
+
+   str_tdf <- str_tdf %>% dplyr::filter(type != 'Other')
+   ltr_tdf <- ltr_tdf %>% dplyr::filter(type != 'Other')
+
+   # Count Cleaning
+   countCleaning('property.type')
+
+```
+
+Next, for the short term rentals properties can be listed as one of three types relating to the extent of the property which is able to be booked:
+ 
+1. **Entire Home/Apt**: The entire home or apartment is available
+2. **Private Room**: One room within a house or apartment is available
+3. **Shared Room**: A bed within a room shared by another occupant(s) is available
+ 
+As long-term rentals do not offer **Private Room** or **Shared Room** options^[Our dataset does not include rooming houses, purpose built student accomodations and other types of rental which may offer private or shared room options] and our purpose here is a comparison of long and short term returnw, we remove all short term properties that do not lease the entire home/apt. Unfortunately, this filter does remove about 40% of the short term data, however, given the research question it is unavoidable. 
+ 
+```{r ltype_comp, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE, fig.height=4}
+ 
+   # Fix data types and names
+   str_tdf <- str_tdf %>%
+     dplyr::mutate(listing_type = as.character(listing_type),
+                   listing_type = if_else(listing_type == 'Entire home/apt', 
+                                          'Entire home', listing_type)) 
+
+   list_types <- ggplot(str_tdf, aes(x=listing_type)) + 
+      geom_bar(color=str_col, fill=str_col) +
+      xlab('\nListing Type\n') +
+      ggtitle('\nShort Term Rentals by Listing Type\n')  +
+      ylab('# of Properties\n') +
+    theme(plot.title = element_text(hjust = 0.5))
+
+  # # Make Plot
+  # png(file=paste0(fig.path, 'dataclean_listtype.png'), width = 480, height = 280,
+  #     bg='transparent')
+  # 
+  #   list.types
+  # 
+  # dev.off()
+  # 
+  # save(list.types, file=paste0(fig.path, 'listtypes.RData'))
+
+```
+
+```{r keep_entire_home, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str_tdf <- str_tdf %>% 
+    dplyr::filter(listing_type == 'Entire home')
+
+  # Count cleaning
+  countCleaning('listing_type')
+
+```
+ 
+## Structural Characteristics
+ 
+&nbsp;
+ 
+In this section we transform and filter based on the structural characteristics of the properties. 
+ 
+### Bedrooms
+ 
+We start by looking at bedrooms. We begin by removing all properties that are missing bedrooms information or have a likely data error in this fields (more than 14 bedrooms). We then plot the distribution of diffeltr bedrooms counts.  From this point onwards we bifurcate our analysis between houses and apartments as the markets (prices, rates, and properties) differ between the two property types. 
+ 
+```{r bed_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+ 
+  # Remove missing and data errors
+ 
+   # Long term data
+   ltr_tdf <- ltr_tdf %>%
+     dplyr::filter(!is.na(bedrooms)) %>%
+     dplyr::filter(bedrooms <= 10)
+ 
+   # Short term data
+   str_tdf <- str_tdf %>%
+     dplyr::filter(!is.na(bedrooms)) %>%
+     dplyr::filter(bedrooms <= 10)
+ 
+```
+ 
+```{r bed_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
+ 
+  # Build long term bar plot
+ 
+    ltrbed <- ggplot(ltr_tdf, aes(x=bedrooms)) + 
+     geom_bar(fill=ltr_col, color=ltr_col) +
+     facet_wrap(~type,scales='free_y') +
+     scale_x_continuous(labels=1:10, breaks=1:10)+
+     xlab('\nBedrooms\n') +
+     scale_y_continuous(labels=c(0,10000,20000), 
+                        breaks=c(0,10000,20000))+
+     ylab('') +
+     ggtitle('Bedrooms in Long Term Rentals') +
+     theme(plot.title = element_text(hjust = 0.5)) 
+  
+  # Build short term bar plot
+ 
+   strbed <- ggplot(str_tdf, aes(x=bedrooms)) + 
+     geom_bar(fill=str_col, color=str_col) +
+     facet_wrap(~type,scales='free_y') +
+     scale_x_continuous(labels=0:10, breaks=0:10) +
+     xlab('\nBedrooms\n') +
+     ylab('') +
+     ggtitle('Bedrooms in Short Term Rentals') +
+     theme(plot.title = element_text(hjust = 0.5)) 
+  
 #   # Make Plot
 #   png(file=paste0(fig.path, 'dataclean_bedcount.png'), width = 480, height = 280, 
 #       bg='transparent')
@@ -420,71 +406,66 @@ Next we add a monthly variable to the data for use in future modeling exercises.
 #   
 #   save(ltrbed, file=paste0(fig.path, 'ltrbed.RData'))
 #   save(strbed, file=paste0(fig.path, 'strbed.RData'))
-# 
-# ```
-# 
-# For both short and long term rentals we see that most apartments have less than 4 bedrooms and houses less than 5.  We filter the data accordingly. Additionally, note that short term rentals consider studio apartments to be 0 bed units while the long term data considers these as 1 bedroom. We convert the 0 bed short term units to 1 bed units.   
-# 
-# ```{r bed_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#  # Remove all with more than 4 beds
-# 
-#   str_df <- str_df[str_df$bedrooms < 5, ]
-#   ltr_df <- ltr_df[ltr_df$bedrooms < 5, ]
-# 
-#  # Remove apartments with more than 3
-#   
-#   str.id <- which(str_df$bedrooms > 3 & str_df$type =='Apartment')
-#   ltr.id <- which(ltr_df$bedrooms > 3 & ltr_df$type =='Apartment')
-# 
-#   if(length(str.id) > 0) str_df <- str_df[-str.id, ]
-#   if(length(ltr.id) > 0) ltr_df <- ltr_df[-ltr.id, ]
-# 
-#   # Convert 0 Bed to 1 Bed  
-#   str_df$bedrooms[str_df$bedrooms == 0] <- 1
-#   
-#   # Count Data Cleaning
-#   countCleaning('bedrooms')
-# 
-# ```
-# 
-# ### Bathrooms
-# 
-# We then turn to bathrooms, starting by looking at the distribution of baths between short/long and apt/house.  
-# 
-# ```{r bath_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#  # Remove missing data
-#   
-#   ltr_df <- ltr_df[!is.na(ltr_df$baths), ]
-#   str_df <- str_df[!is.na(str_df$baths), ]
-# 
-# ```
-# 
-# ```{r bath_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
-# 
-#  # Build long term plot
-# 
-#   ltbath <- ggplot(ltr_df, aes(x=baths)) + 
-#     geom_bar(fill=ltr_col, color=ltr_col) +
-#     facet_wrap(~type) +
-#     scale_x_continuous(labels=1:8, breaks=1:8)+
-#     xlab('\nBathrooms\n') +
-#     ylab('') + 
-#     ggtitle('Bathrooms in Long Term Rentals') +
-#     theme(plot.title = element_text(hjust = 0.5)) 
-# 
-#  # Build short term plot 
-# 
-#   stbath <- ggplot(str_df, aes(x=baths)) + 
-#     geom_bar(fill=str_col, color=str_col) +
-#     facet_wrap(~type, scales='free_y') +
-#     scale_x_continuous(labels=0:8, breaks=0:8)+
-#     xlab('\nBathrooms\n') +
-#     ylab('') + 
-#     ggtitle('Bathrooms in Short Term ltrals') +
-#     theme(plot.title = element_text(hjust = 0.5)) 
-#  
+ 
+```
+ 
+For both short and long term rentals we see that most apartments have less than 4 bedrooms and houses less than 5.  We filter the data accordingly. Additionally, note that short term rentals consider studio apartments to be 0 bed units while the long term data considers these as 1 bedroom. We convert the 0 bed short term units to 1 bed units.   
+ 
+```{r bed_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+ 
+  # Remove all with more than 4 beds for house, 3 beds for apt and convert studio to 1 bed
+ 
+   str_df <- str_tdf %>% 
+     dplyr::filter(bedrooms < 5) %>%
+     dplyr::filter(type == 'House' | (type == 'Apartment' & bedrooms < 4)) %>%
+     dplyr::mutate(bedrooms == if_else(bedrooms == 0, 1L, bedrooms))
+   
+   ltr_df <- ltr_tdf %>% 
+     dplyr::filter(bedrooms < 5) %>%
+     dplyr::filter(type == 'House' | (type == 'Apartment' & bedrooms < 4)) %>%
+     dplyr::mutate(bedrooms == if_else(bedrooms == 0, 1, bedrooms))
+  
+ # Count Data Cleaning
+ countCleaning('bedrooms')
+ 
+```
+ 
+### Bathrooms
+ 
+We then turn to bathrooms, starting by looking at the distribution of baths between short/long and apt/house.  
+ 
+```{r bath_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+ 
+  # Remove missing data
+  ltr_tdf <- ltr_tdf %>% dplyr::filter(!is.na(baths))
+  str_tdf <- str_tdf %>% dplyr::filter(!is.na(baths))
+
+```
+ 
+```{r bath_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
+ 
+  # Build long term plot
+ 
+   ltbath <- ggplot(ltr_tdf, aes(x=baths)) + 
+     geom_bar(fill=ltr_col, color=ltr_col) +
+     facet_wrap(~type) +
+     scale_x_continuous(labels=1:8, breaks=1:8)+
+     xlab('\nBathrooms\n') +
+     ylab('') +
+     ggtitle('Bathrooms in Long Term Rentals') +
+     theme(plot.title = element_text(hjust = 0.5))
+
+ # Build short term plot
+
+  stbath <- ggplot(str_tdf, aes(x=baths)) +
+    geom_bar(fill=str_col, color=str_col) +
+    facet_wrap(~type, scales='free_y') +
+    scale_x_continuous(labels=0:8, breaks=0:8)+
+    xlab('\nBathrooms\n') +
+    ylab('') +
+    ggtitle('Bathrooms in Short Term ltrals') +
+    theme(plot.title = element_text(hjust = 0.5))
+
 #  # Make Plots  
 #   png(file=paste0(fig.path, 'dataclean_bathount.png'), width = 480, height = 280, 
 #       bg='transparent')
@@ -495,132 +476,122 @@ Next we add a monthly variable to the data for use in future modeling exercises.
 #    
 #   save(ltbath, file=paste0(fig.path, 'ltrbath.RData'))
 #   save(stbath, file=paste0(fig.path, 'strbath.RData'))
-#  
-# ```
-# 
-# Here we see that nearly all properties have 3 or fewer bathrooms and we filter the data accordingly. A few short term properties state no baths, which is likely an error so we remove these as well. Also, here we notice that the short term data gives bathrooms in halves, while the long term data presents baths in whole numbers.  We round the baths up to whole integers. 
-# 
-# ```{r bath_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#  # Filter by bath count
-# 
-#   # Short term data
-#   str_df <- str_df[str_df$baths < 4, ]
-#   str_df <- str_df[str_df$baths > 0, ]
-# 
-#   # Long term data
-#   ltr_df <- ltr_df[ltr_df$baths < 4, ]
-#   
-#  # Round baths up  
-# 
-#   str_df$baths <- round(str_df$baths + .01, 0)
-# 
-#   # Count cleaning
-#   countCleaning('baths')
-#   
-# ```
-# 
-# ### Bed/Bath Combination
-# 
-# In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short term ltral) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two. 
-# 
-# ```{r filtBB, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#  # Create combination variable
-# 
-#   ltr_df$bedbath <- paste0(ltr_df$bedrooms, '..', ltr_df$baths)
-#   str_df$bedbath <- paste0(str_df$bedrooms, '..', str_df$baths)
-# 
-# ```
-# 
-# ```{r filtBB2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
-# 
-#  # Make long term plot
-# 
-#   ltbb <- ggplot(ltr_df, aes(x=bedbath)) + 
-#     geom_bar(fill=ltr_col, color=ltr_col) +
-#     xlab('\nBed/Bath Combo\n') +
-#     ylab('Number of Properties\n') +
-#     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#     ggtitle('Long Term Rentals') + 
-#     facet_wrap(~type, scales='free_y')+
-#     theme(plot.title = element_text(hjust = 0.5))
-# 
-#  # Make short term plots
-# 
-#   stbb <- ggplot(str_df, aes(x=bedbath)) +
-#     geom_bar(fill=str_col, color=str_col) + 
-#     xlab('\nBed/Bath Combo\n') +
-#     ylab('Number of Properties\n') +
-#     ggtitle('Short Term Rentals') + 
-#     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#     facet_wrap(~type, scales='free_y')+
-#     theme(plot.title = element_text(hjust = 0.5))
-# 
+  
+```
+ 
+Here we see that nearly all properties have 3 or fewer bathrooms and we filter the data accordingly. A few short term properties state no baths, which is likely an error so we remove these as well. Also, here we notice that the short term data gives bathrooms in halves, while the long term data presents baths in whole numbers.  We round the baths up to whole integers. 
+ 
+```{r bath_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str_tdf <- str_tdf %>%
+    dplyr::mutate(bathrooms = round(bathrooms + .01, 0)) %>%
+    dplyr::filter(bathrooms < 4 & bathrooms > 0) 
+
+  ltr_tdf <- ltr_tdf %>%
+    dplyr::rename(bathrooms = baths) %>%
+    dplyr::filter(bathrooms < 4 & bathrooms > 0)
+
+   # Count cleaning
+   countCleaning('baths')
+   
+```
+ 
+### Bed/Bath Combination
+ 
+In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short term ltral) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two. 
+ 
+```{r filtBB, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+ 
+ # Create combination variable
+  str_tdf <- str_tdf %>% 
+    dplyr::mutate(bedbath = paste0(bedrooms, "_", bathrooms))
+
+  ltr_tdf <- ltr_tdf %>% 
+    dplyr::mutate(bedbath = paste0(bedrooms, "_", bathrooms))
+
+```
+
+```{r filtBB2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
+
+ # Make long term plot
+
+  ltbb <- ggplot(ltr_tdf, aes(x=bedbath)) +
+    geom_bar(fill=ltr_col, color=ltr_col) +
+    xlab('\nBed/Bath Combo\n') +
+    ylab('Number of Properties\n') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    ggtitle('Long Term Rentals') +
+    facet_wrap(~type, scales='free_y')+
+    theme(plot.title = element_text(hjust = 0.5))
+
+ # Make short term plots
+
+  stbb <- ggplot(str_tdf, aes(x=bedbath)) +
+    geom_bar(fill=str_col, color=str_col) +
+    xlab('\nBed/Bath Combo\n') +
+    ylab('Number of Properties\n') +
+    ggtitle('Short Term Rentals') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    facet_wrap(~type, scales='free_y')+
+    theme(plot.title = element_text(hjust = 0.5))
+
 #  # Make Plots  
 #   png(file=paste0(fig.path, 'dataclean_bedbath.png'), width = 480, height = 280, 
 #       bg='transparent')
-#   
+   
 #     ggMultiPlots(ltbb, stbb, cols=1)
-# 
+ 
 #   dev.off()  
-#   
+   
 #   save(ltbb, file=paste0(fig.path, 'ltrbb.RData'))
 #   save(stbb, file=paste0(fig.path, 'strbb.RData'))
-# 
-#     
-# ```
-# 
-# From this analysis we see that there are 6 combinations that make up most all properties:  1bed/1bath, 2/1, 2/2, 3/1, 3/2 and 4/2. We filter the data to these combinations.  
-# 
-# ```{r filtBB3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#  # Set level of acceptable combinations
-# 
-#   acc.bb <- c('1..1', '2..1', '2..2', '3..1', '3..2', '4..2')
-# 
-#  # Filter data
-# 
-#   ltr_df <- ltr_df[ltr_df$bedbath %in% acc.bb, ]
-#   str_df <- str_df[str_df$bedbath %in% acc.bb, ]
-# 
-#  # Count Cleaning
-#   
-#   countCleaning('bedbath')
-# 
-# ```
-# 
-# Finally, we re-order the factor levels on the bed/bath combinations to make a 2-bed, 2-bath house or apartment the control case in future statistical models.  We additionally create a product variable that splits the bed/bath by apartment and house.
-# 
-# ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#   # Re-order factors
-# 
-#   str_df$bedbath <- factor(str_df$bedbath, 
-#                               levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
-#   ltr_df$bedbath <- factor(ltr_df$bedbath, 
-#                                levels=c('2..2', '1..1', '2..1', '3..1', '3..2', '4..2'))
-# 
-#   # Add product as a variable
-#   
-#   str_df$product <- paste0(substr(str_df$type, 1, 1), str_df$bedbath)
-#   ltr_df$product <- paste0(substr(ltr_df$type, 1, 1), ltr_df$bedbath)
-# 
-# ```
-# 
-# 
-# ## Rates and Rental values
-# 
-# We now turn to filtering by the prices -- the nightly rates and weekly rental values.  We start by removing observations missing price data. 
-# 
-# ```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#   ltr_df <- ltr_df[!is.na(ltr_df$event.price), ]
-#   str_df <- str_df[!is.na(str_df$nightly.rate), ]
-#   
-# ```
-# 
-# Next, we convert the Airbnb values to Australian dollars from US dollars using the exchange rate specified above (1.32).
+ 
+     
+```
+ 
+From this analysis we see that there are 6 combinations that make up most all properties:  1bed/1bath, 2/1, 2/2, 3/1, 3/2 and 4/2. We filter the data to these combinations.  We also combine type and bed bath combination to create a 'product'. 
+ 
+```{r filtBB3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+ # Set level of acceptable combinations
+
+  acc_bb <- c('1_1', '2_1', '2_2', '3_1', '3_2', '4_2')
+
+ # Filter data
+  str_tdf <- str_tdf %>%
+    dplyr::filter(bedbath %in% acc_bb) %>%
+    dplyr::mutate(product = paste0(substr(type, 1, 1), "_", bedbath))
+  
+  ltr_tdf <- ltr_tdf %>%
+    dplyr::filter(bedbath %in% acc_bb) %>%
+    dplyr::mutate(product = paste0(substr(type, 1, 1), "_", bedbath))
+
+ # Count Cleaning
+
+  countCleaning('bedbath')
+
+```
+ 
+## Rates and Rental values
+ 
+We now turn to filtering by the prices -- the nightly rates and weekly rental values.  We start by removing observations missing price data. 
+ 
+```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ltr_tdf <- ltr_tdf %>% 
+     mutate(trans_data = map(trans_data, ~filter(., (date <= decision_date - 1) & 
+                                                     date >= decision_date - 365)))
+
+   ltr_tdf <- ltr_tdf %>% dplyr::filter(!is.na(price))
+   str_tdf <- str_tdf %>% dplyr::filter(!is.na(price))
+
+   str_df <- str_df[!is.na(str_df$nightly.rate), ]
+
+```
+ 
+TODO:  At the end, filter all that have no observations in teh list-cols    
+ 
+Next, we convert the Airbnb values to Australian dollars from US dollars using the exchange rate specified above (1.32).
 # 
 # ```{r exch_rate_adj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 # 
