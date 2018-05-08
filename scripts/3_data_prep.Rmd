@@ -8,6 +8,10 @@ editor_options:
   chunk_output_type: console
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval=TRUE)
+```
+
 ### Introduction
 
 This file details the initial data preparation and cleaning that we have applied to the AirBNB nightly data from www.AirDNA.co as well as to the long-term rental data from Australia Property Monitors (APM).  Both datasets have had some initial pre-processing done, the details of which are found in **1_str_preprocess.R** and **2_ltr_preprocess.R**. 
@@ -579,87 +583,81 @@ We now turn to filtering by the prices -- the nightly rates and weekly rental va
 ```{r ltprice_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   ltr_tdf <- ltr_tdf %>% 
-     mutate(trans_data = map(trans_data, ~filter(., (date <= decision_date - 1) & 
-                                                     date >= decision_date - 365)))
+     mutate(trans_data = map(trans_data, ~filter(., !is.na(price)))) %>%
+     filter(map(trans_data, ~nrow(.)) > 0)
 
-   ltr_tdf <- ltr_tdf %>% dplyr::filter(!is.na(price))
-   str_tdf <- str_tdf %>% dplyr::filter(!is.na(price))
-
-   str_df <- str_df[!is.na(str_df$nightly.rate), ]
+  str_tdf <- str_tdf %>% 
+     mutate(daily_data = map(daily_data, ~filter(., !is.na(price)))) %>%
+     filter(map(daily_data, ~nrow(.)) > 0) %>%
+     filter(!is.na(nightly_rate))
 
 ```
  
-TODO:  At the end, filter all that have no observations in teh list-cols    
- 
 Next, we convert the Airbnb values to Australian dollars from US dollars using the exchange rate specified above (1.32).
-# 
-# ```{r exch_rate_adj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#   # Property level data
-# 
-#   str_df$average.daily.rate <- str_df$average.daily.rate * exch.rate
-#   str_df$nightly.rate <- str_df$nightly.rate * exch.rate
-#   str_df$weekly.rate <- str_df$weekly.rate * exch.rate
-#   str_df$monthly.rate <- str_df$monthly * exch.rate
-#   
-#   # Daily data
-#   
-#   daily_df$price <- daily_df$price * exch.rate
-# 
-# ```
-# 
-# Next we extract all of the daily reservation data for the reserved nightly. From this information we calculate the median nightly reservation price for each property and append it to the property level data. 
-# 
-# ```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#    # Get all of the reservations
-#   resv.daily <- daily_df[daily_df$status == 'R', ]
-# 
-#   # Calculate the property specific median nightly rate
-#   med.daily <- tapply2DF(resv.daily$price, resv.daily$property.id, median)
-#   
-#   # Add median rate to the property  
-#   str_df$med.rate <- med.daily$Var[match(str_df$property.id, med.daily$ID)] 
-#   
-#   # Remove those with no valid median rate
-#   str_df <- str_df[!is.na(str_df$med.rate), ]
-#    
-# ```
-# 
-# From these density plots we see that most long-term Rentals are greater than $200 and less than $1000 per week while most nightly rates are greater than $50 and less than $500 per night. We filter the data accordingly. 
-# 
-# ```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
-# 
-#   # ltr Plot
-#   
-#   ltr.plot <- ggplot(ltr_df, aes(x=event.price)) + 
-#     geom_density(fill=ltr_col, alpha=.8) +
-#     ylab('') +
-#     xlab('Weekly Rental') + 
-#     ggtitle('Long Term Rentals') + 
-#     scale_x_continuous(limits=c(0, 1500)) +
-#     theme(axis.title.y=element_blank(),
-#           axis.text.y=element_blank(),
-#           axis.ticks.y=element_blank()) +
-#     theme(plot.title = element_text(hjust = 0.5))
-# 
-# 
-#   # Nightly Rate plot
-#   rate.plot <- ggplot(str_df, aes(x=nightly.rate)) + 
-#     geom_density(fill=str_col, alpha=.8) + 
-#     ylab('') +
-#     xlab('Nightly Rate') +
-#     ggtitle('Short Term Rentals') + 
-#     scale_x_continuous(limits=c(0, 600)) +
-#     theme(axis.title.y=element_blank(),
-#           axis.text.y=element_blank(),
-#           axis.ticks.y=element_blank()) +
-#     theme(plot.title = element_text(hjust = 0.5))
-# 
-# 
-# ```
-# 
-# ```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+ 
+```{r exch_rate_adj, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Property level data
+  str_tdf <- str_tdf %>%
+    dplyr::mutate_at(vars(monthly_rate, weekly_rate, nightly_rate, 
+                          avg_nightly_rate, cleaning_fee), 
+                     .funs=function(x) x*exch_rate)
+
+  # Nightly Data
+  str_tdf <- str_tdf %>%
+    mutate(daily_data = map(daily_data, ~mutate(., price = price * exch_rate)))
+
+```
+ 
+Next we extract all of the daily reservation data for the reserved nightly. From this information we calculate the median nightly reservation price for each property and append it to the property level data. 
+ 
+```{r ltprice_fltr3, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+   # Custom function
+   medReserved <- function(x){
+     median(x$price[x$status == 'R'])
+   }
+ 
+   str_tdf <- str_tdf %>%
+     dplyr::mutate(med_rate = unlist(map(daily_data, ~medReserved(.)))) %>%
+     dplyr::filter(!is.na(med_rate))
+   
+```
+ 
+From these density plots we see that most long-term Rentals are greater than $200 and less than $1000 per week while most nightly rates are greater than $50 and less than $500 per night. We filter the data accordingly. 
+ 
+```{r ltprice_fltr2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+  # ltr Plot
+
+  ltr_price <- ggplot(ltr_tdf %>% tidyr::unnest(), aes(x=price)) +
+    geom_density(fill=ltr_col, alpha=.8) +
+    ylab('') +
+    xlab('Weekly Rental') +
+    ggtitle('Long Term Rentals') +
+    scale_x_continuous(limits=c(0, 1500)) +
+    theme(axis.title.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5))
+
+
+  # Nightly Rate plot
+  str_plot <- ggplot(str_tdf, aes(x=med_rate)) +
+    geom_density(fill=str_col, alpha=.8) +
+    ylab('') +
+    xlab('Nightly Rate') +
+    ggtitle('Short Term Rentals') +
+    scale_x_continuous(limits=c(0, 600)) +
+    theme(axis.title.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+ 
+```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 # 
 #   png(file=paste0(fig.path, 'dataclean_rates.png'), width = 480, height = 280, 
 #       bg='transparent')
@@ -672,70 +670,111 @@ Next, we convert the Airbnb values to Australian dollars from US dollars using t
 #   save(rate.plot, file=paste0(fig.path, 'rateplot.RData'))
 # 
 #   
-# ```
-# 
-# ```{r ltprice_fltr33s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
-# 
-#   ## Filter the long term data
-# 
-#   ltr_df <- ltr_df[ltr_df$event.price >= 200 & 
-#                          ltr_df$event.price <= 1000, ]
-# 
-#   str_df <- str_df[str_df$med.rate >= 50 &
-#                          str_df$med.rate <= 500, ]
-# 
-#   # Count Cleaning
-#   countCleaning('rates.rents')
-#   
-# ```  
-# 
-# #### Observed Revenue
-# 
-# Our final data filtering considers the observed revenue of the properties. For the long-term rentals the observed revenue is the weekly rate multiplied by 52 minus the number of weeks the property was on the market.  In a number of extreme cases, time on market was extremely long and the total observed revenues very low. To remove these outlying observations, we filter out any properties with less than $5,000 in revenue.
-# 
-# For the short-term data, we first calculate the total number of bookings, the occupancy rate, blocked rate and proportion of the year over which the property was listed.  Using this data we sum up the total revenue from bookings. For properties that were not listed on the site for the entire year, we impute their annual revenue by dividing the actual revenue by the proportion of the year in which they were listed.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] Properties with no reserved bookings, and, therefore, no revenue, are removed.
-# 
-# Looking at the distribution of the revenues from each tenure type, we see that those for the long-term rentals are for more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year (Figure 10).  Short term revenues range from neglible to highs of greater than \$80,000.  While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not. Also, the high number of very low yield Airbnb properties also suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing.
-# 
-# ```{r revdensity.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='Comparison of Revenue Distributions'}
-# 
-#  # Compute bookings count
-# 
-#   str_df$bookings <- round(str_df$total.days * 
-#                                (1 - (str_df$block.rate + str_df$avail.rate)), 0)
-#  
-#  # Remove those with 0 
-# 
-#   str_df <- str_df[str_df$bookings > 0, ]
-# 
-#   str_df$gross.revenue <- (str_df$bookings * str_df$med.rate) 
-#   ltr_df$gross.revenue <- ltr_df$event.price * (52 - ltr_df$dom / 7)
-#  
-#   str.small <- str_df[,c('baths', 'gross.revenue')]
-#   str.small$tenure <- 'short-term'
-#   ltr.small <- ltr_df[,c('baths', 'gross.revenue')]
-#   ltr.small$tenure <- 'long-term'
-#   all.small <- rbind(str.small, ltr.small)
-# 
-#   revdens <- ggplot(all.small, aes(x=gross.revenue, fill=tenure, color=tenure)) +
-#     geom_density(alpha=.5) +
-#     scale_fill_manual(values=c(ltr_col, abb_col)) +
-#     scale_color_manual(values=c(ltr_col, abb_col)) +
-#     ggtitle('Annual Revenues by Tenure Type') +
-#     xlab('Annual Revenue') +
-#     scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
-#                        labels=c('$0', '$20,000', '$40,000', '$60,000'))+
-#     theme(legend.position='bottom',
-#           legend.title = element_blank(),
-#           plot.title = element_text(hjust = 0.5),
-#           axis.text.y = element_blank(),
-#           axis.ticks.y = element_blank(),
-#           axis.title.y=element_blank()) +
-#     coord_cartesian(xlim=c(0, 70000))
-#   
-# ```
-# 
-# ```{r revdensplot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+```
+ 
+```{r ltprice_fltr33s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+ 
+   ## Filter the long term data
+  ltr_tdf <- ltr_tdf %>% 
+     mutate(trans_data = map(trans_data, ~filter(., price >= 200 &
+                                                   price <= 1000))) %>%
+     filter(map(trans_data, ~nrow(.)) > 0)
+  
+  str_tdf <- str_tdf %>% 
+    filter(., med_rate >= 50 & med_rate <= 500)
+  
+   # Count Cleaning
+   countCleaning('rates_rents')
+   
+```  
+ 
+#### Observed Revenue
+ 
+Our final data filtering considers the observed revenue of the properties. For the long-term rentals the observed revenue is the weekly rate multiplied by 52 minus the number of weeks the property was on the market.  In a number of extreme cases, time on market was extremely long and the total observed revenues very low. To remove these outlying observations, we filter out any properties with less than $5,000 in revenue.
+ 
+For the short-term data, we first calculate the total number of bookings, the occupancy rate, blocked rate and proportion of the year over which the property was listed.  Using this data we sum up the total revenue from bookings. For properties that were not listed on the site for the entire year, we impute their annual revenue by dividing the actual revenue by the proportion of the year in which they were listed.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] Properties with no reserved bookings, and, therefore, no revenue, are removed.
+ 
+Looking at the distribution of the revenues from each tenure type, we see that those for the long-term rentals are for more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year (Figure 10).  Short term revenues range from neglible to highs of greater than \$80,000.  While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not. Also, the high number of very low yield Airbnb properties also suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing.
+ 
+```{r revdensity.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='Comparison of Revenue Distributions'}
+ 
+   # Compute bookings count and str revenue
+   countBookings <- function(x){
+     length(which(x$status == 'R'))
+   } 
+   makePotBookings <- function(x){
+     round(nrow(x) * (length(which(x$status == 'R')) / 
+                        length(which(x$status != 'B'))), 0)
+   } 
+
+   str_tdf <- str_tdf %>%
+     mutate(bookings = unlist(map(daily_data, ~countBookings(.))),
+            pot_bookings = unlist(map(daily_data, ~makePotBookings(.))),
+            gross_revenue = bookings * med_rate,
+            pot_revenue = pot_bookings * med_rate)
+           
+   # compute long term revenue
+   ltr_tdf <- ltr_tdf %>%
+     dplyr::mutate(trans_data = map(trans_data, 
+                                    ~mutate(., 
+                                            gross_revenue = price * (52 - dom / 7))))
+   
+   # Add together for plotting
+   rev_df <- bind_rows(str_tdf %>% 
+                         dplyr::select(type, gross_revenue) %>%
+                         dplyr::mutate(tenure = 'str'),
+                       ltr_tdf %>%
+                         tidyr::unnest() %>%
+                         dplyr::select(type, gross_revenue) %>%
+                         dplyr::mutate(tenure = 'ltr'))
+
+   revdens <- ggplot(rev_df, 
+                     aes(x=gross_revenue, fill=tenure, color=tenure)) +
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=c(ltr_col, abb_col)) +
+    scale_color_manual(values=c(ltr_col, abb_col)) +
+    ggtitle('Annual Revenues by Tenure Type') +
+    xlab('Annual Revenue') +
+    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
+                       labels=c('$0', '$20,000', '$40,000', '$60,000'))+
+    theme(legend.position='bottom',
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y=element_blank()) +
+    coord_cartesian(xlim=c(0, 70000))
+   
+   # Add together for plotting potential revenues
+   prev_df <- bind_rows(str_tdf %>% 
+                         dplyr::select(type, gross_revenue=pot_revenue) %>%
+                         dplyr::mutate(tenure = 'str'),
+                       ltr_tdf %>%
+                         tidyr::unnest() %>%
+                         dplyr::select(type, gross_revenue) %>%
+                         dplyr::mutate(tenure = 'ltr'))
+
+   prevdens <- ggplot(prev_df, 
+                     aes(x=gross_revenue, fill=tenure, color=tenure)) +
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=c(ltr_col, abb_col)) +
+    scale_color_manual(values=c(ltr_col, abb_col)) +
+    ggtitle('Annual Revenues by Tenure Type') +
+    xlab('Annual Revenue') +
+    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
+                       labels=c('$0', '$20,000', '$40,000', '$60,000'))+
+    theme(legend.position='bottom',
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y=element_blank()) +
+    coord_cartesian(xlim=c(0, 70000))
+   
+
+```
+ 
+```{r revdensplot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 # 
 #   png(file=paste0(fig.path, 'revdens.png'), width = 480, height = 380, 
 #       bg='transparent')
@@ -749,12 +788,11 @@ Next, we convert the Airbnb values to Australian dollars from US dollars using t
 #   ltr_df <- ltr_df[ltr_df$dom <= 180, ]
 #   
 #     countCleaning('revenue')
-#   
-# ```
-# 
-# ### Locations and Submarkets
-# 
-# Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer).
+```
+ 
+### Locations and Submarkets
+ 
+Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer).
 # 
 # ```{r mappoints, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 # 
@@ -1268,9 +1306,11 @@ Next, we convert the Airbnb values to Australian dollars from US dollars using t
 # 
 # ## Write out data  
 # 
-# ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-# 
-#   save(str_df, ltr_df, daily_df, listing.data, subs, abb_col, 
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+   
+ 
+   save(str_df, ltr_df, daily_df, listing.data, subs, abb_col, 
 #        beach.shp, core.suburbs, exch.rate, ltr_col, str_col, sa1s.shp, 
 #        suburbs.shp, study.suburbs, clean.count, daily.run.total, list.run.total,
 #        ltr.run.total, str.run.total,
