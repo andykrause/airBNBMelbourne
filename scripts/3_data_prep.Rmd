@@ -32,10 +32,7 @@ We begin with a number of preliminary commands.  First we load all of the necess
   library(geosphere)
   library(ggmap)
   library(multidplyr)
-  # library(lubridate)
-  # library(spdep)
-  # library(maptools)
-  # library(ggplot2)
+  library(tmap)
 
   options(stringsAsFactors=FALSE)
 
@@ -613,23 +610,27 @@ Next we assign the suburb, SA1, city-core and beach designations to observations
 
 ```
 
-Determine which suburbs are represented in both datasets and trim to those observations
+Determine which suburbs are represented in both datasets and trim to those observations to suburbs with at least three transactions
 
- 
 ```{r match_suburbs, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
  
     sub_str <- str_sf %>% 
       dplyr::select(suburb, -geometry) %>% 
       as.tibble() %>%
       dplyr::group_by(suburb) %>% 
-      dplyr::summarize(count=n())
+      dplyr::summarize(count=n()) %>%
+      dplyr::filter(count >= 3 & 
+                      suburb != 'Maddingley')
+  
     
     sub_ltr <- ltr_sf %>% 
       dplyr::select(suburb, -geometry) %>% 
       as.tibble() %>%
       dplyr::group_by(suburb) %>% 
-      dplyr::summarize(count=n())
-    
+      dplyr::summarize(count=n()) %>%
+      dplyr::filter(count >= 3 & 
+                      suburb != 'Maddingley')
+
     sub_all <- sub_ltr %>%
       dplyr::inner_join(sub_str, by='suburb')
     
@@ -639,6 +640,24 @@ Determine which suburbs are represented in both datasets and trim to those obser
     ltr_sf <- ltr_sf %>%
       dplyr::filter(suburb %in% sub_all$suburb)
     
+```
+
+Create a polygon of the new study area
+
+```{r new_study_area, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+  all_sf <- rbind(str_sf %>% 
+                    rename(uniq_id = property_id),
+                  ltr_sf %>%
+                    rename(uniq_id = addr_id))
+  ssub_sf <- sub_sf %>% filter(NAME_2006 %in% sub_all$suburb)
+
+  all_ch <- st_buffer(st_convex_hull(st_union(ssub_sf)), .001)
+  within_ch <- st_contains(all_ch, sub_sf$geometry)
+  subs_within <- sub_sf[unlist(within_ch), ]
+  study_area <- st_union(subs_within)
+  plot(study_area)
+  
 ```
 
 Next we add the sa1 and beach designations
@@ -704,32 +723,34 @@ Add market designations.
    ltr_sf$geo_mrkt <- factor(ltr_sf$geo_mrkt,
                                levels=c('city-core', 'city', 'suburban',
                                         'rural', 'beach'))
+   
+  ltr_tdf %>% 
+    dplyr::mutate(geometry = NULL) %>%
+    as.tibble()
+
+  str_tdf %>% 
+    dplyr::mutate(geometry = NULL) %>%
+    as.tibble()
+
    # Count Cleaning
    countCleaning('location')
    
 ```
  
+Finally we add the spatial data back onto the tabular data (filtering out those outside of the study area using an inner join).
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r merge_spatial, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
  
+  str_tdf <- str_tdf %>%
+    dplyr::inner_join(str_sf, 
+                      by='property_id')
+
+  ltr_tdf <- ltr_tdf %>%
+    dplyr::inner_join(ltr_sf,
+                      by='addr_id')
+
+```
+
 ## Rates and Rental values
  
 We now turn to filtering by the prices -- the nightly rates and weekly rental values.  We start by removing observations missing price data. 
@@ -797,7 +818,7 @@ From these density plots we see that most long-term Rentals are greater than $20
 
 
   # Nightly Rate plot
-  str_plot <- ggplot(str_tdf, aes(x=med_rate)) +
+  str_price <- ggplot(str_tdf, aes(x=med_rate)) +
     geom_density(fill=str_col, alpha=.8) +
     ylab('') +
     xlab('Nightly Rate') +
@@ -878,15 +899,14 @@ Looking at the distribution of the revenues from each tenure type, we see that t
                          dplyr::select(type, gross_revenue) %>%
                          dplyr::mutate(tenure = 'str'),
                        ltr_tdf %>%
-                         tidyr::unnest() %>%
                          dplyr::select(type, gross_revenue) %>%
                          dplyr::mutate(tenure = 'ltr'))
 
    revdens <- ggplot(rev_df, 
                      aes(x=gross_revenue, fill=tenure, color=tenure)) +
     geom_density(alpha=.5) +
-    scale_fill_manual(values=c(ltr_col, abb_col)) +
-    scale_color_manual(values=c(ltr_col, abb_col)) +
+    scale_fill_manual(values=c(ltr_col, str_col)) +
+    scale_color_manual(values=c(ltr_col, str_col)) +
     ggtitle('Annual Revenues by Tenure Type') +
     xlab('Annual Revenue') +
     scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
@@ -911,8 +931,8 @@ Looking at the distribution of the revenues from each tenure type, we see that t
    prevdens <- ggplot(prev_df, 
                      aes(x=gross_revenue, fill=tenure, color=tenure)) +
     geom_density(alpha=.5) +
-    scale_fill_manual(values=c(ltr_col, abb_col)) +
-    scale_color_manual(values=c(ltr_col, abb_col)) +
+    scale_fill_manual(values=c(ltr_col, str_col)) +
+    scale_color_manual(values=c(ltr_col, str_col)) +
     ggtitle('Annual Revenues by Tenure Type') +
     xlab('Annual Revenue') +
     scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
@@ -927,37 +947,30 @@ Looking at the distribution of the revenues from each tenure type, we see that t
    
 
 ```
- 
-```{r revdensplot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
-# 
-#   png(file=paste0(fig.path, 'revdens.png'), width = 480, height = 380, 
-#       bg='transparent')
-#     
-#     revdens
-#   
-#   dev.off()
-#   
-#   save(revdens, file=paste0(fig.path, 'revdens.RData'))
-#   
-#   ltr_df <- ltr_df[ltr_df$dom <= 180, ]
-#   
-#     countCleaning('revenue')
-```
- 
- 
 
 The location of the short and long term rentals, colored by submarket, are shown below
  
-#```{r locationmaps.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
-# 
-#   # Set submarket colors
-#   
-#   sm_col <- abb_col[c(1, 3, 6, 5, 2)]
-# 
-#   # Make map
-# 
-#   str.map <- ggplot() +
-#     geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
+```{r locationmaps.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+ 
+ # Set submarket colors
+   # Make map
+  tm_shape(sub_sf) +
+    tm_polygons() + 
+  tm_shape(study_area) + 
+    tm_polygons(col='dodgerblue3') +
+  tm_shape(ltr_sf) +
+    tm_symbols(size=.05, col='black', border.alpha=0, alpha=.02, shape=15)
+
+  tm_shape(sub_sf) +
+    tm_polygons() + 
+  tm_shape(study_area) + 
+    tm_polygons(col='dodgerblue3') +
+  tm_shape(str_sf) +
+    tm_symbols(size=.05, col='black', border.alpha=0, alpha=.2, shape=15)
+
+
+  str_map <- ggplot() +
+     geom_polygon(data=ssub_sf, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
 #     geom_point(data=str_df, aes(x=longitude, y=latitude, color=geo.mrkt), size=.2,
 #                alpha=.2) +
 #     scale_color_manual(values=sm_col) +
