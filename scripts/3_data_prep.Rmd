@@ -2,8 +2,6 @@
 title: "Data Preparation, Integration and Cleaning"
 output:
   pdf_document: default
-  html_notebook: default
-  html_document: default
 editor_options: 
   chunk_output_type: console
 ---
@@ -12,14 +10,14 @@ editor_options:
 #knitr::opts_chunk$set(eval=TRUE)
 ```
 
-### Introduction
+## Introduction
 
 This file details the initial data preparation and cleaning that we have applied to the AirBNB nightly data from www.AirDNA.co as well as to the long-term rental data from Australia Property Monitors (APM).  Both datasets have had some initial pre-processing done, the details of which are found in **1_str_preprocess.R** and **2_ltr_preprocess.R**. 
 
 &nbsp;
 &nbsp;
 
-### Preliminary Commands
+## Preliminary Commands
 
 &nbsp;
 
@@ -38,6 +36,8 @@ We begin with a number of preliminary commands.  First we load all of the necess
 
 ```
 
+Then we set the paths to the data
+
 ```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
   data_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'data')
@@ -51,11 +51,10 @@ Next, we source the necessary custom code files for the analysis.
 ```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
   source(file.path(code_path, 'functions', 'abb_Functions.R'))
-  source(file.path(code_path, 'functions', 'geom_sf.R'))
 
 ```
 
-### Constants and Parameters
+## Constants and Parameters
 
 We then set the constants used in this study:
  
@@ -77,27 +76,26 @@ We then set the constants used in this study:
 
 3. Colors for visualizations.  We use the official Airbnb palette of colors for our ongoing data vizualizations. 
 
- 
 ```{r set_colors, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
  
  # Set all colors
   col_df <- data.frame(names=c('rausch', 'hackberry', 'kazan', 'babu', 'lima', 
                                'beach', 'ebisu', 'tirol', 'foggy', 'hof'),
-                       rgb = c(rgb(250,88,99, maxColorValue=255), 
-                               rgb(139,14,82, maxColorValue=255),
-                               rgb(0,117,140, maxColorValue=255), 
-                               rgb(4,211,191, maxColorValue=255),
-                               rgb(77,226,110, maxColorValue=255), 
-                               rgb(252,179,14, maxColorValue=255),
-                               rgb(249,177,139, maxColorValue=255), 
-                               rgb(191,166,100, maxColorValue=255),
-                               rgb(156,161,155, maxColorValue=255), 
-                               rgb(86,94,97, maxColorValue=255)))
+                       rgb = c(rgb(250, 88, 99, maxColorValue=255), 
+                               rgb(139, 14, 82, maxColorValue=255),
+                               rgb(0, 117, 140, maxColorValue=255), 
+                               rgb(4, 211, 191, maxColorValue=255),
+                               rgb(77, 226, 110, maxColorValue=255), 
+                               rgb(252, 179, 14, maxColorValue=255),
+                               rgb(249, 177, 139, maxColorValue=255), 
+                               rgb(191, 166, 100, maxColorValue=255),
+                               rgb(156, 161, 155, maxColorValue=255), 
+                               rgb(86, 94, 97, maxColorValue=255)))
 
  # Set specific colors
   str_col <- col_df$rgb[1]
   ltr_col <- col_df$rgb[3]
-  sm_col <- col_df$rgb[c(2,4,5,8,6)]
+  sm_col <- col_df$rgb[c(2, 4, 5, 8, 6)]
 
 ```
 
@@ -119,7 +117,7 @@ And, finally, we load three GIS shapefiles.  The first two denote suburb and Sta
 
 ```{r load_sp_data, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
-  sub_sf <- sf::st_read(file.path(data_path, 'geographic', 'melbSuburbs.shp')) %>%
+  suburb_sf <- sf::st_read(file.path(data_path, 'geographic', 'melbSuburbs.shp')) %>%
     st_transform(crs=4283)
   sa1_sf <- sf::st_read(file.path(data_path, 'geographic', 'sa1s.shp')) %>%
     st_transform(crs=4283)
@@ -146,7 +144,7 @@ Before we begin the filter process, we initial the data cleaning counter -- a sm
 
 ```
 
-We then clip by time.  For the short-term data we will consider any Airbnb property that had at least 6 months worth of listing time on the portal during the 12-month study period
+We then clip by time.  For the short-term data we will consider any Airbnb property that had at least 6 months worth of listing time on the portal during the 12-month study period.  We also filter the long term data to include only observations with one year prior to the decision date. 
  
 ```{r clip_time, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
   
@@ -158,8 +156,8 @@ We then clip by time.  For the short-term data we will consider any Airbnb prope
     dplyr::filter((max_date >= (decision_date + 182) &
                     min_date <= (decision_date + 182)))
 
-   # Trim actual nightly observation by the decision date
-   str_tdf <- str_tdf %>% 
+  # Trim actual nightly observation by the decision date
+  str_tdf <- str_tdf %>% 
      mutate(daily_data = map(daily_data, ~filter(., date >= decision_date)))
 
   # Limit long term data
@@ -177,7 +175,7 @@ Next we add a monthly variable to the data for use in future modeling exercises.
 ```{r add_month, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
   # Short term data
-   str_tdf <- str_tdf %>% 
+  str_tdf <- str_tdf %>% 
      mutate(daily_data = map(daily_data, 
                              ~mutate(., month = paste0(lubridate::year(date), "_",
                                                        lubridate::month(date)))))
@@ -212,7 +210,6 @@ We then create a new variable in each dataset and give each one of the three cat
 ```{r fix_type, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
  
   # Short Term data  
-
   str_tdf <- str_tdf %>%
     dplyr::mutate(type = 'Other')
   str_tdf$type[str_tdf$property_type %in% 
@@ -220,7 +217,6 @@ We then create a new variable in each dataset and give each one of the three cat
   str_tdf$type[str_tdf$property_type %in% c('House', 'Townhouse', 'Villa')] <- 'House'
  
   # Long Term data  
- 
   ltr_tdf <- ltr_tdf %>%
     dplyr::mutate(type = 'Other')
   ltr_tdf$type[ltr_tdf$property_type %in% c('Duplex', 'House',
@@ -243,8 +239,6 @@ As the chart below show, the **Other** category only makes up a very small perce
 ```
 
 ```{r plot_ltr_type, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=4}
-
-  # Create long term rental plot
 
   ggplot(ltr_tdf, aes(x=type)) +
     geom_bar(color=ltr_col, fill=ltr_col) +
@@ -281,6 +275,7 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
                    listing_type = if_else(listing_type == 'Entire home/apt', 
                                           'Entire home', listing_type)) 
 
+   # Plot by listing type
    ggplot(str_tdf, aes(x=listing_type)) + 
       geom_bar(color=str_col, fill=str_col) +
       xlab('\nListing Type\n') +
@@ -308,12 +303,10 @@ In this section we transform and filter based on the structural characteristics 
  
 ### Bedrooms
  
-We start by looking at bedrooms. We begin by removing all properties that are missing bedrooms information or have a likely data error in this fields (more than 14 bedrooms). We then plot the distribution of diffeltr bedrooms counts.  From this point onwards we bifurcate our analysis between houses and apartments as the markets (prices, rates, and properties) differ between the two property types. 
+We start by looking at bedrooms. We begin by removing all properties that are missing bedrooms information or have a likely data error in this fields (more than 10 bedrooms). We then plot the distribution of different bedrooms counts.  From this point onwards we bifurcate our analysis between houses and apartments as the markets (prices, rates, and properties) differ between the two property types. 
  
 ```{r bed_fltr, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
- 
-  # Remove missing and data errors
- 
+
    # Long term data
    ltr_tdf <- ltr_tdf %>%
      dplyr::filter(!is.na(bedrooms)) %>%
@@ -340,7 +333,6 @@ We start by looking at bedrooms. We begin by removing all properties that are mi
      theme(plot.title = element_text(hjust = 0.5)) 
 
 ```
-
 
 ```{r plot_str_bed, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.height=5}
 
@@ -513,9 +505,6 @@ Here we combine the two Strict (regular and super) cancellation policies into on
 
 ```
 
-### Location
-
-
 ### Locations and Submarkets
  
 Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer).
@@ -525,7 +514,7 @@ Location is clearly an important determinant in both the short and long term ren
  ## Build the map object
  
   # Set colors
-  tm_shape(sub_sf) +
+  tm_shape(suburb_sf) +
     tm_polygons('suburbDesi',
                 title='Suburb Designation',
                 border.col='white',
@@ -593,16 +582,15 @@ Next we assign the suburb, SA1, city-core and beach designations to observations
                       crs = 4283)
 
   # Add suburb designation and remove those that are outside   
-   
    str_sf <- st_join(str_sf, 
-                     sub_sf %>% 
+                     suburb_sf %>% 
                       dplyr::select(suburb = NAME_2006,
                                     sub_des = suburbDesi,
                                     geometry)) %>%
    dplyr::filter(!is.na(sub_des))
     
    ltr_sf <- st_join(ltr_sf, 
-                     sub_sf %>% 
+                     suburb_sf %>% 
                        dplyr::select(suburb = NAME_2006,
                                      sub_des = suburbDesi,
                                      geometry)) %>%
@@ -614,6 +602,7 @@ Determine which suburbs are represented in both datasets and trim to those obser
 
 ```{r match_suburbs, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
  
+    # Count those with at least 3 transactions
     sub_str <- str_sf %>% 
       dplyr::select(suburb, -geometry) %>% 
       as.tibble() %>%
@@ -621,7 +610,6 @@ Determine which suburbs are represented in both datasets and trim to those obser
       dplyr::summarize(count=n()) %>%
       dplyr::filter(count >= 3 & 
                       suburb != 'Maddingley')
-  
     
     sub_ltr <- ltr_sf %>% 
       dplyr::select(suburb, -geometry) %>% 
@@ -631,9 +619,11 @@ Determine which suburbs are represented in both datasets and trim to those obser
       dplyr::filter(count >= 3 & 
                       suburb != 'Maddingley')
 
+    # Join to create unified list
     sub_all <- sub_ltr %>%
       dplyr::inner_join(sub_str, by='suburb')
     
+    # Remove those with insufficient observations
     str_sf <- str_sf %>%
       dplyr::filter(suburb %in% sub_all$suburb)
     
@@ -646,17 +636,27 @@ Create a polygon of the new study area
 
 ```{r new_study_area, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
-  all_sf <- rbind(str_sf %>% 
-                    rename(uniq_id = property_id),
-                  ltr_sf %>%
-                    rename(uniq_id = addr_id))
-  ssub_sf <- sub_sf %>% filter(NAME_2006 %in% sub_all$suburb)
-
-  all_ch <- st_buffer(st_convex_hull(st_union(ssub_sf)), .001)
-  within_ch <- st_contains(all_ch, sub_sf$geometry)
-  subs_within <- sub_sf[unlist(within_ch), ]
-  study_area <- st_union(subs_within)
-  plot(study_area)
+  # Get ids of study suburbs
+  sa_ids <- suburb_sf %>%
+    dplyr::filter(NAME_2006 %in% sub_all$suburb) %>%
+    sf::st_union() %>%
+    sf::st_convex_hull() %>%
+    sf::st_buffer(., .001) %>%
+    st_contains(., suburb_sf$geometry) %>%
+    unlist()
+  
+  # Study Area
+  studyarea_sf <- suburb_sf %>% 
+    slice(sa_ids) %>%
+    st_union()
+  plot(studyarea_sf)
+  
+  # Create Indicators in main sf fle
+  suburb_sf <- suburb_sf %>%
+    dplyr::select(name = NAME_2006, class = suburbDesi, geometry) %>%
+    dplyr::mutate(in_study = if_else(name %in% sub_all$suburb, 1, 0),
+                  in_studyarea = 0)
+  suburb_sf$in_studyarea[sa_ids] <- 1
   
 ```
 
@@ -724,30 +724,26 @@ Add market designations.
                                levels=c('city-core', 'city', 'suburban',
                                         'rural', 'beach'))
    
-  ltr_tdf %>% 
-    dplyr::mutate(geometry = NULL) %>%
-    as.tibble()
-
-  str_tdf %>% 
-    dplyr::mutate(geometry = NULL) %>%
-    as.tibble()
-
-   # Count Cleaning
-   countCleaning('location')
-   
 ```
  
-Finally we add the spatial data back onto the tabular data (filtering out those outside of the study area using an inner join).
+Finally we add the spatial data back onto the tabular data and filtering out those outside of the study area using an inner join. We then have to remove the geometry field as it causes issues with future analyses (for now)
 
 ```{r merge_spatial, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
  
   str_tdf <- str_tdf %>%
     dplyr::inner_join(str_sf, 
-                      by='property_id')
+                      by='property_id') %>% 
+     dplyr::mutate(geometry = NULL) %>%
+     as.tibble()
 
   ltr_tdf <- ltr_tdf %>%
     dplyr::inner_join(ltr_sf,
-                      by='addr_id')
+                      by='addr_id') %>% 
+     dplyr::mutate(geometry = NULL) %>%
+     as.tibble()
+  
+   # Count Cleaning
+   countCleaning('location')
 
 ```
 
@@ -805,7 +801,7 @@ From these density plots we see that most long-term Rentals are greater than $20
 
   # ltr Plot
 
-  ltr_price <- ggplot(ltr_tdf %>% tidyr::unnest(), aes(x=price)) +
+  ggplot(ltr_tdf %>% tidyr::unnest(), aes(x=price)) +
     geom_density(fill=ltr_col, alpha=.8) +
     ylab('') +
     xlab('Weekly Rental') +
@@ -818,7 +814,7 @@ From these density plots we see that most long-term Rentals are greater than $20
 
 
   # Nightly Rate plot
-  str_price <- ggplot(str_tdf, aes(x=med_rate)) +
+  ggplot(str_tdf, aes(x=med_rate)) +
     geom_density(fill=str_col, alpha=.8) +
     ylab('') +
     xlab('Nightly Rate') +
@@ -832,20 +828,6 @@ From these density plots we see that most long-term Rentals are greater than $20
 
 ```
  
-```{r ltprice_fltr2s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
-# 
-#   png(file=paste0(fig.path, 'dataclean_rates.png'), width = 480, height = 280, 
-#       bg='transparent')
-#     
-#     ggMultiPlots(ltr.plot, rate.plot, cols=2)
-#   
-#   dev.off()
-#   
-#   save(ltr.plot, file=paste0(fig.path, 'rentplot.RData'))
-#   save(rate.plot, file=paste0(fig.path, 'rateplot.RData'))
-# 
-#   
-```
  
 ```{r ltprice_fltr33s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
  
@@ -894,219 +876,13 @@ Looking at the distribution of the revenues from each tenure type, we see that t
                                     ~mutate(., 
                                             gross_revenue = price * (52 - dom / 7))))
    
-   # Add together for plotting
-   rev_df <- bind_rows(str_tdf %>% 
-                         dplyr::select(type, gross_revenue) %>%
-                         dplyr::mutate(tenure = 'str'),
-                       ltr_tdf %>%
-                         dplyr::select(type, gross_revenue) %>%
-                         dplyr::mutate(tenure = 'ltr'))
-
-   revdens <- ggplot(rev_df, 
-                     aes(x=gross_revenue, fill=tenure, color=tenure)) +
-    geom_density(alpha=.5) +
-    scale_fill_manual(values=c(ltr_col, str_col)) +
-    scale_color_manual(values=c(ltr_col, str_col)) +
-    ggtitle('Annual Revenues by Tenure Type') +
-    xlab('Annual Revenue') +
-    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
-                       labels=c('$0', '$20,000', '$40,000', '$60,000'))+
-    theme(legend.position='bottom',
-          legend.title = element_blank(),
-          plot.title = element_text(hjust = 0.5),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.title.y=element_blank()) +
-    coord_cartesian(xlim=c(0, 70000))
-   
-   # Add together for plotting potential revenues
-   prev_df <- bind_rows(str_tdf %>% 
-                         dplyr::select(type, gross_revenue=pot_revenue) %>%
-                         dplyr::mutate(tenure = 'str'),
-                       ltr_tdf %>%
-                         tidyr::unnest() %>%
-                         dplyr::select(type, gross_revenue) %>%
-                         dplyr::mutate(tenure = 'ltr'))
-
-   prevdens <- ggplot(prev_df, 
-                     aes(x=gross_revenue, fill=tenure, color=tenure)) +
-    geom_density(alpha=.5) +
-    scale_fill_manual(values=c(ltr_col, str_col)) +
-    scale_color_manual(values=c(ltr_col, str_col)) +
-    ggtitle('Annual Revenues by Tenure Type') +
-    xlab('Annual Revenue') +
-    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
-                       labels=c('$0', '$20,000', '$40,000', '$60,000'))+
-    theme(legend.position='bottom',
-          legend.title = element_blank(),
-          plot.title = element_text(hjust = 0.5),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.title.y=element_blank()) +
-    coord_cartesian(xlim=c(0, 70000))
-   
-
 ```
 
-The location of the short and long term rentals, colored by submarket, are shown below
- 
-```{r locationmaps.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
- 
- # Set submarket colors
-   # Make map
-  tm_shape(sub_sf) +
-    tm_polygons() + 
-  tm_shape(study_area) + 
-    tm_polygons(col='dodgerblue3') +
-  tm_shape(ltr_sf) +
-    tm_symbols(size=.05, col='black', border.alpha=0, alpha=.02, shape=15)
-
-  tm_shape(sub_sf) +
-    tm_polygons() + 
-  tm_shape(study_area) + 
-    tm_polygons(col='dodgerblue3') +
-  tm_shape(str_sf) +
-    tm_symbols(size=.05, col='black', border.alpha=0, alpha=.2, shape=15)
-
-
-  str_map <- ggplot() +
-     geom_polygon(data=ssub_sf, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
-#     geom_point(data=str_df, aes(x=longitude, y=latitude, color=geo.mrkt), size=.2,
-#                alpha=.2) +
-#     scale_color_manual(values=sm_col) +
-#     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
-#     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
-#     xlab('') + ylab('')+
-#     theme(legend.position = 'bottom',
-#           legend.title = element_blank(),
-#           plot.title = element_text(hjust = 0.5),
-#           panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           panel.background = element_rect(fill = "white"),
-#           axis.text.x = element_blank(),
-#           axis.text.y = element_blank(),
-#           axis.ticks = element_blank(),
-#           axis.title.x=element_blank(),
-#           axis.title.y=element_blank(),
-#           panel.border = element_rect(colour = "black", fill=NA, size=1)) +
-#     guides(colour = guide_legend(override.aes = list(size=3,
-#                                                      alpha=1))) + 
-#     ggtitle('Short-Term Rental Locations')+
-#     theme(plot.title = element_text(hjust = 0.5))
-#   
-# ```
-# 
-# ```{r ltr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
-# 
-#   # Make map
-# 
-#   ltr.map <- ggplot() +
-#     geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
-#     geom_point(data=ltr_df, aes(x=longitude, y=latitude, color=geo.mrkt), size=.1,
-#                alpha=.1) +
-#     scale_color_manual(values=sm_col) +
-#     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
-#     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
-#     xlab('') + ylab('')+
-#     theme(legend.position = 'bottom',
-#           legend.title = element_blank(),
-#           plot.title = element_text(hjust = 0.5),
-#           panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           panel.background = element_rect(fill = "white"),
-#           axis.text.x = element_blank(),
-#           axis.text.y = element_blank(),
-#           axis.ticks = element_blank(),
-#           axis.title.x=element_blank(),
-#           axis.title.y=element_blank(),
-#           panel.border = element_rect(colour = "black", fill=NA, size=1)) +
-#     guides(colour = guide_legend(override.aes = list(size=3,
-#                                                      alpha=1))) + 
-#     ggtitle('Long-Term Rental Locations')+
-#     theme(plot.title = element_text(hjust = 0.5))
-#   
-# ```
-# 
-# ```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.width=9}
-#   
-#   png(file=paste0(fig.path, 'str_locmap.png'), width = 680, height = 590, 
-#       bg='transparent')
-#      str.map
-#   dev.off()
-#   
-#   png(file=paste0(fig.path, 'ltr_locmap.png'), width = 680, height = 590, 
-#       bg='transparent')
-#      ltr.map
-#   dev.off()
-# 
-#   ggMultiPlots(str.map, ltr.map, cols=2)
-#   
-#   save(str.map, file=paste0(fig.path, 'strMap.RData'))
-#   save(ltr.map, file=paste0(fig.path, 'ltrMap.RData'))
-# 
-# 
-# ```
-# 
-# The chart below break down the relative frequency of short and long term rental properties across the five submarkets. 
-# 
-```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.width=9}
- 
-   # Make Airbnb submarket map
-   
-   strtype.map <- ggplot() +
-     geom_bar(data=str_tdf, aes(x=geo_mrkt, fill=geo_mrkt)) +
-     scale_fill_manual(values=abb_col[c(1,3,5,7,9)]) +
-     facet_wrap(~type) +
-     ylab('# of Properties\n') + xlab('')+
-     theme(legend.position = 'bottom',
-           legend.title = element_blank(),
-           axis.text.x=element_blank(),
-           axis.ticks.x=element_blank()) +
-     #ggtitle('Short Term Property Type\nBy Submarket')+
-     theme(plot.title = element_text(hjust = 0.5))
-   
-   # Make Long term rental map
- 
-   ltrtype.map <- ggplot() +
-     geom_bar(data=ltr_tdf, aes(x=geo_mrkt, fill=geo_mrkt)) +
-     scale_fill_manual(values=abb_col[c(1,3,5,7,9)]) +
-     facet_wrap(~type) +
-     ylab('# of Properties\n') + xlab('')+
-     theme(legend.position = 'bottom',
-           legend.title = element_blank(),
-           axis.text.x=element_blank(),
-           axis.ticks.x=element_blank()) +
-     #ggtitle('Long Term Property Type\nBy Submarket')+
-     theme(plot.title = element_text(hjust = 0.5))
-   
-```
-# 
-# ```{r loctype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.width=9}
-# 
-#   png(file=paste0(fig.path, 'submplot.png'), width = 680, height = 590, 
-#       bg='transparent')
-#     ggMultiPlots(strtype.map, ltrtype.map, cols=2)
-#   dev.off()
-#     
-#   ggMultiPlots(strtype.map, ltrtype.map, cols=2)
-#   
-#   save(strtype.map, file=paste0(fig.path, 'strsubplot.RData'))
-#   save(ltrtype.map, file=paste0(fig.path, 'ltrsubplot.RData'))
-# 
-#   
-
-
- 
 ## Write out data  
  
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
-   
+   save(str_tdf, ltr_tdf, str_sf, ltr_sf, studyarea_sf, suburb_sf, beach_sf, sa1_sf,
+        file=paste0(data_path, '/prepared/prepared_data.RData'))
  
-   save(str_df, ltr_df, daily_df, listing.data, subs, abb_col, 
-#        beach.shp, core.suburbs, exch.rate, ltr_col, str_col, sa1s.shp, 
-#        suburbs.shp, study.suburbs, clean.count, daily.run.total, list.run.total,
-#        ltr.run.total, str.run.total,
-#        file=paste0(data_path, 'prepared/prep_workspace_', data_name, '.RData'))
-# 
-# ```N
+```

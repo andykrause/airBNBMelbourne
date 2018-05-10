@@ -1,0 +1,198 @@
+---
+title: "5_data_viz"
+author: "Andy Krause"
+date: "May 10, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+   # Add together for plotting
+   rev_df <- bind_rows(str_tdf %>% 
+                         dplyr::select(type, gross_revenue) %>%
+                         dplyr::mutate(tenure = 'str'),
+                       ltr_tdf %>%
+                         dplyr::select(type, gross_revenue) %>%
+                         dplyr::mutate(tenure = 'ltr'))
+
+   revdens <- ggplot(rev_df, 
+                     aes(x=gross_revenue, fill=tenure, color=tenure)) +
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=c(ltr_col, str_col)) +
+    scale_color_manual(values=c(ltr_col, str_col)) +
+    ggtitle('Annual Revenues by Tenure Type') +
+    xlab('Annual Revenue') +
+    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
+                       labels=c('$0', '$20,000', '$40,000', '$60,000'))+
+    theme(legend.position='bottom',
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y=element_blank()) +
+    coord_cartesian(xlim=c(0, 70000))
+   
+   # Add together for plotting potential revenues
+   prev_df <- bind_rows(str_tdf %>% 
+                         dplyr::select(type, gross_revenue=pot_revenue) %>%
+                         dplyr::mutate(tenure = 'str'),
+                       ltr_tdf %>%
+                         tidyr::unnest() %>%
+                         dplyr::select(type, gross_revenue) %>%
+                         dplyr::mutate(tenure = 'ltr'))
+
+   prevdens <- ggplot(prev_df, 
+                     aes(x=gross_revenue, fill=tenure, color=tenure)) +
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=c(ltr_col, str_col)) +
+    scale_color_manual(values=c(ltr_col, str_col)) +
+    ggtitle('Annual Revenues by Tenure Type') +
+    xlab('Annual Revenue') +
+    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
+                       labels=c('$0', '$20,000', '$40,000', '$60,000'))+
+    theme(legend.position='bottom',
+          legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y=element_blank()) +
+    coord_cartesian(xlim=c(0, 70000))
+   
+
+```
+
+The location of the short and long term rentals, colored by submarket, are shown below
+ 
+```{r locationmaps.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+ 
+ # Set submarket colors
+   # Make map
+  tm_shape(sub_sf) +
+    tm_polygons() + 
+  tm_shape(study_area) + 
+    tm_polygons(col='dodgerblue3') +
+  tm_shape(ltr_sf) +
+    tm_symbols(size=.05, col='black', border.alpha=0, alpha=.02, shape=15)
+
+  tm_shape(sub_sf) +
+    tm_polygons() + 
+  tm_shape(study_area) + 
+    tm_polygons(col='dodgerblue3') +
+  tm_shape(str_sf) +
+    tm_symbols(size=.05, col='black', border.alpha=0, alpha=.2, shape=15)
+
+
+  str_map <- ggplot() +
+     geom_polygon(data=ssub_sf, aes(x=long, y=lat, group=group), fill='white', color='grey70') 
+#     geom_point(data=str_df, aes(x=longitude, y=latitude, color=geo.mrkt), size=.2,
+#                alpha=.2) +
+#     scale_color_manual(values=sm_col) +
+#     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
+#     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
+#     xlab('') + ylab('')+
+#     theme(legend.position = 'bottom',
+#           legend.title = element_blank(),
+#           plot.title = element_text(hjust = 0.5),
+#           panel.grid.major = element_blank(),
+#           panel.grid.minor = element_blank(),
+#           panel.background = element_rect(fill = "white"),
+#           axis.text.x = element_blank(),
+#           axis.text.y = element_blank(),
+#           axis.ticks = element_blank(),
+#           axis.title.x=element_blank(),
+#           axis.title.y=element_blank(),
+#           panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+#     guides(colour = guide_legend(override.aes = list(size=3,
+#                                                      alpha=1))) + 
+#     ggtitle('Short-Term Rental Locations')+
+#     theme(plot.title = element_text(hjust = 0.5))
+#   
+# ```
+# 
+# ```{r ltr.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+# 
+#   # Make map
+# 
+#   ltr.map <- ggplot() +
+#     geom_polygon(data=subs, aes(x=long, y=lat, group=group), fill='white', color='grey70') +
+#     geom_point(data=ltr_df, aes(x=longitude, y=latitude, color=geo.mrkt), size=.1,
+#                alpha=.1) +
+#     scale_color_manual(values=sm_col) +
+#     scale_x_continuous(limits=c(min(subs$long), max(subs$long))) +
+#     scale_y_continuous(limits=c(min(subs$lat), max(subs$lat))) +
+#     xlab('') + ylab('')+
+#     theme(legend.position = 'bottom',
+#           legend.title = element_blank(),
+#           plot.title = element_text(hjust = 0.5),
+#           panel.grid.major = element_blank(),
+#           panel.grid.minor = element_blank(),
+#           panel.background = element_rect(fill = "white"),
+#           axis.text.x = element_blank(),
+#           axis.text.y = element_blank(),
+#           axis.ticks = element_blank(),
+#           axis.title.x=element_blank(),
+#           axis.title.y=element_blank(),
+#           panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+#     guides(colour = guide_legend(override.aes = list(size=3,
+#                                                      alpha=1))) + 
+#     ggtitle('Long-Term Rental Locations')+
+#     theme(plot.title = element_text(hjust = 0.5))
+#   
+# ```
+# 
+# ```{r loc.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.width=9}
+#   
+#   png(file=paste0(fig.path, 'str_locmap.png'), width = 680, height = 590, 
+#       bg='transparent')
+#      str.map
+#   dev.off()
+#   
+#   png(file=paste0(fig.path, 'ltr_locmap.png'), width = 680, height = 590, 
+#       bg='transparent')
+#      ltr.map
+#   dev.off()
+# 
+#   ggMultiPlots(str.map, ltr.map, cols=2)
+#   
+#   save(str.map, file=paste0(fig.path, 'strMap.RData'))
+#   save(ltr.map, file=paste0(fig.path, 'ltrMap.RData'))
+# 
+```
+# 
+
+
+```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.width=9}
+ 
+   # Make Airbnb submarket map
+   
+   strtype.map <- ggplot() +
+     geom_bar(data=str_tdf, aes(x=geo_mrkt, fill=geo_mrkt)) +
+     scale_fill_manual(values=abb_col[c(1,3,5,7,9)]) +
+     facet_wrap(~type) +
+     ylab('# of Properties\n') + xlab('')+
+     theme(legend.position = 'bottom',
+           legend.title = element_blank(),
+           axis.text.x=element_blank(),
+           axis.ticks.x=element_blank()) +
+     #ggtitle('Short Term Property Type\nBy Submarket')+
+     theme(plot.title = element_text(hjust = 0.5))
+   
+   # Make Long term rental map
+ 
+   ltrtype.map <- ggplot() +
+     geom_bar(data=ltr_tdf, aes(x=geo_mrkt, fill=geo_mrkt)) +
+     scale_fill_manual(values=abb_col[c(1,3,5,7,9)]) +
+     facet_wrap(~type) +
+     ylab('# of Properties\n') + xlab('')+
+     theme(legend.position = 'bottom',
+           legend.title = element_blank(),
+           axis.text.x=element_blank(),
+           axis.ticks.x=element_blank()) +
+     #ggtitle('Long Term Property Type\nBy Submarket')+
+     theme(plot.title = element_text(hjust = 0.5))
+   
+```
+
+# The chart below break down the relative frequency of short and long term rental properties across the five submarkets. 
+# 
