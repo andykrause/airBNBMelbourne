@@ -700,10 +700,10 @@ Add market designations.
  
    # Add individual classes
    str_sf$geo_mrkt <- 'rural'
-   str_sf$geo_mrkt[str_tdf$sub_des == 'Middle'] <- 'suburban'
-   str_sf$geo_mrkt[str_tdf$sub_des == 'Inner'] <- 'city'
-   str_sf$geo_mrkt[str_tdf$suburb %in% core_suburbs] <- 'city-core'
-   str_sf$geo_mrkt[str_tdf$beach == 1] <- 'beach'
+   str_sf$geo_mrkt[str_sf$sub_des == 'Middle'] <- 'suburban'
+   str_sf$geo_mrkt[str_sf$sub_des == 'Inner'] <- 'city'
+   str_sf$geo_mrkt[str_sf$suburb %in% core_suburbs] <- 'city-core'
+   str_sf$geo_mrkt[str_sf$beach == 1] <- 'beach'
    
    # Order the factors properly
    str_sf$geo_mrkt <- factor(str_sf$geo_mrkt,
