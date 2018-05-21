@@ -354,12 +354,15 @@ imputeLtrRents <- function(ltr.df,
       s.cf <- which(names(str.df) == match.factor[i.cf])
       
       # Get IDs for those to be removed
-      id.l <- ltr.df[ ,l.cf] %in% names(table(as.character(str.df[ ,s.cf])))
-      id.s <- str.df[ ,s.cf] %in% names(table(as.character(ltr.df[ ,l.cf])))
+      ltr.df <- ltr.df[ltr.df[[l.cf]] %in% str.df[[s.cf]], ]
+      str.df <- str.df[str.df[[s.cf]] %in% ltr.df[[l.cf]], ]
       
-      # Filter out obs missing matched factors  
-      ltr.df <- ltr.df[id.l, ]
-      str.df <- str.df[id.s, ]
+      # id.l <- ltr.df[ ,l.cf] %in% names(table(as.character(str.df[ ,s.cf])))
+      # id.s <- str.df[ ,s.cf] %in% names(table(as.character(ltr.df[ ,l.cf])))
+      # 
+      # # Filter out obs missing matched factors  
+      # ltr.df <- ltr.df[id.l, ]
+      # str.df <- str.df[id.s, ]
       
     }
     
@@ -367,7 +370,7 @@ imputeLtrRents <- function(ltr.df,
   
   ## Add the monthly factors
   
-  str.df$ltr.month <- 12
+  str.df$month <- '2015_8'
   
   ## Build regression models for rental values
   
@@ -379,8 +382,8 @@ imputeLtrRents <- function(ltr.df,
   
   ## Return Values  
   
-  return(list(imp.rent=data.frame(property.id=str.df$property.id,
-                                  imp.rent=imp.rent),
+  return(list(imp_rent=data.frame(property_id=str.df$property_id,
+                                  imp_rent=round(imp.rent, 0)),
               model=ltr.mod))
 }
 
@@ -407,7 +410,7 @@ imputeDOM <- function(str.df,
   
   ## Return Values
   
-  return(str.df$imp.dom)
+  return(round(str.df$imp.dom, 0))
   
 }
 
@@ -495,6 +498,8 @@ abbImputeCompare <- function(str.df,
                              split.field=NULL,
                              verbose=FALSE){
   
+  init_names <- names(str.df)
+  
   ## Split data by field  
   
   # If field is specified
@@ -533,11 +538,11 @@ abbImputeCompare <- function(str.df,
     
     # Add quartile information to the data
     
-    str.list[[il]]$rate.qtl <- makeWtdQtl(str.list[[il]]$med.rate, 
+    str.list[[il]]$rate_qtl <- makeWtdQtl(str.list[[il]]$med_rate, 
                                           return.type='rank') 
-    str.list[[il]]$occ.qtl <- makeWtdQtl(str.list[[il]]$occ.rate, 
+    str.list[[il]]$occ_qtl <- makeWtdQtl(str.list[[il]]$occ_rate, 
                                          return.type='rank') 
-    str.list[[il]]$pot.occ.qtl <- makeWtdQtl(str.list[[il]]$pot.occ.rate, 
+    str.list[[il]]$pot_occ_qtl <- makeWtdQtl(str.list[[il]]$pot_occ_rate, 
                                              return.type='rank') 
     
     # Impute long term rents
@@ -547,40 +552,40 @@ abbImputeCompare <- function(str.df,
                                match.factor=match.factor)
     
     # Add imputed LTRs to the STR data
-    str.list[[il]] <- merge(str.list[[il]], imp.temp$imp.rent, by='property.id')
+    str.list[[il]] <- merge(str.list[[il]], imp.temp$imp_rent, by='property_id')
     imp.list[[il]] <- imp.temp
     
     # Impute days on market
-    str.list[[il]]$imp.dom <- imputeDOM(str.list[[il]], 
+    str.list[[il]]$imp_dom <- imputeDOM(str.list[[il]], 
                                         ltr.list[[il]], 
                                         calc.type='median')
     
     # Create imputed LTR Revenue
-    str.list[[il]]$ltr.imp.revenue <- (str.list[[il]]$imp.rent * 
-                                         (52 - str.list[[il]]$imp.dom / 7))
+    str.list[[il]]$ltr_imp_revenue <- (str.list[[il]]$imp_rent * 
+                                       (52 - str.list[[il]]$imp_dom / 7))
     
     # Compare revenues 
-    comp.revs <- compareRevenues(str.list[[il]])
+    #comp.revs <- compareRevenues(str.list[[il]])
     
     # Add revenue comparison fields to str data
-    str.list[[il]] <- merge(str.list[[il]], 
-                            comp.revs, 
-                            by='property.id')
+    #str.list[[il]] <- merge(str.list[[il]], 
+    #                        comp.revs, 
+    #                        by='property_id')
     
     
   }
   
   ## Convert list into a df  
   
-  str.df <- rbind.fill(str.list)
+  str.df <- plyr::rbind.fill(str.list)
   
   ## Add indicator of which field was the split based on  
   
-  str.df$split.field <- split.field
+  str.df$split_field <- split.field
   
   ## Return Values  
   
-  return(str.df)
+  return(str.df[, c('property_id', names(str.df)[!names(str.df) %in% init_names])])
   
 }
 

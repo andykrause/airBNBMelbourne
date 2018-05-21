@@ -196,3 +196,822 @@ The location of the short and long term rentals, colored by submarket, are shown
 
 # The chart below break down the relative frequency of short and long term rental properties across the five submarkets. 
 # 
+
+<!-- Having calculated the revenues, both short-term and long-term imputed, we now compare the actual (extr), potential and imputed long-term revenue distributions for the short term properties  -->
+
+<!-- ```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5} -->
+
+<!--   # Actual -->
+<!--    stra.rev <- str_df.ic[,c('property.id', 'str.act.revenue')] -->
+<!--    stra.rev$tenure <- 'Short-Term (Actual)   ' -->
+<!--    names(stra.rev)[2] <- 'revenue' -->
+
+<!--   # Potential -->
+<!--    strp.rev <- str_df.ic[,c('property.id', 'str.pot.revenue')] -->
+<!--    strp.rev$tenure <- 'Short-Term (Potential)   ' -->
+<!--    names(strp.rev)[2] <- 'revenue' -->
+
+<!--   # Long-Term -->
+<!--    ltr.rev <- str_df.ic[,c('property.id', 'ltr.imp.revenue')] -->
+<!--    ltr.rev$tenure <- 'Long-Term   ' -->
+<!--    names(ltr.rev)[2] <- 'revenue' -->
+
+<!--   # Combine -->
+<!--    revdens.data <- rbind(stra.rev, strp.rev, ltr.rev) -->
+
+<!--   ## Build a plot -->
+
+<!--    rd.plot <- ggplot(revdens.data,  -->
+<!--                      aes(x=revenue, fill=tenure, color=tenure)) + -->
+<!--      geom_density(alpha=.5) + -->
+<!--      scale_fill_manual(values=c(ltr.col, abb.col[2], str.col)) + -->
+<!--      scale_color_manual(values=c(ltr.col, abb.col[2], str.col)) + -->
+<!--      xlab('\nAnnual Revenue') + -->
+<!--      scale_x_continuous(breaks=c(seq(0, 75000, by=25000)), -->
+<!--                         labels=c('$0', '$25k', '$50k', '$75k'))+ -->
+<!--      theme(legend.position='none', -->
+<!--            legend.title = element_blank(), -->
+<!--            plot.title = element_text(hjust = 0.5), -->
+<!--            axis.text.y = element_blank(), -->
+<!--            axis.ticks.y = element_blank(), -->
+<!--            axis.title.y=element_blank()) + -->
+<!--      coord_cartesian(xlim=c(0, 85000)) -->
+<!--      rd.plot <- rd.plot + facet_wrap(~tenure) -->
+
+<!--   ## Plot -->
+
+<!--      rd.plot -->
+
+<!-- ``` -->
+
+<!-- ## Results -->
+
+
+<!-- Next, we plot the \% of properties that have short-term preference versus the occupancy rate as occupancy rate is an important determinant of short-term preference.  -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
+
+<!--  ## Set Preference data field -->
+
+<!--   str_df.ic$pref <- str_df.ic$str.act.pref -->
+
+<!--  ## Calculate the percentile fields -->
+
+<!--   str_df.ic$occ.qtl <- makeWtdQtl(str_df.ic$occ.rate,  -->
+<!--                                       return.type='rank')  -->
+<!--   str_df.ic$rate.qtl <- makeWtdQtl(str_df.ic$med.rate,  -->
+<!--                                   return.type='rank')  -->
+
+<!--  ## Calculate raw and percentile occupancies -->
+
+<!--   rawocc.metro <- abbPrefPlot(str_df.ic, -->
+<!--                          x.field='occ.rate', -->
+<!--                          smooth=TRUE, -->
+<!--                          smooth.span=.5) -->
+
+<!--   qtlocc.metro <- abbPrefPlot(str_df.ic, -->
+<!--                         x.field='occ.qtl', -->
+<!--                         smooth=TRUE, -->
+<!--                         smooth.span=.5) -->
+
+<!--    ## Make plots   -->
+
+<!--   # Raw -->
+<!--   raw.occ.metro <- ggplot(rawocc.metro$data, -->
+<!--                    aes(x=x.var, y=Var))+ -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='none') +  -->
+<!--     ggtitle('Raw Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--   # Quantile -->
+<!--   qtl.occ.metro <- ggplot(qtlocc.metro$data, -->
+<!--                    aes(x=x.var, y=Var))+ -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate (Pcntl)') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25th', '50th', '75th', '100th')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='none') +  -->
+<!--     ggtitle('Percentile Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--   # Make Plot -->
+<!--   ggMultiPlots(raw.occ.metro, qtl.occ.metro, cols=2) -->
+
+
+<!-- ``` -->
+
+<!-- Next we build a heat map that shows which combinations of occupancy rate and nightly rate are most likely to result in short-term preference. -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--   rate.hm <- abbHeatMap(str_df.ic, -->
+<!--                 x.field='occ.rate', -->
+<!--                 y.field='med.rate', -->
+<!--                 pref.field='str.act.pref', -->
+<!--                 svm=F,  -->
+<!--                 alpha.count=T, -->
+<!--                 add.points=T, -->
+<!--                 fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   rate.hm + ylab('Nightly Rate') -->
+
+<!-- ``` -->
+
+<!-- To make the distinction more clear, we employ a Support Vector Machine to classify the areas into short and long term preference.  -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--   rate.hm.svm <- abbHeatMap(str_df.ic, -->
+<!--                             x.field='occ.rate', -->
+<!--                             y.field='med.rate', -->
+<!--                             pref.field='str.act.pref', -->
+<!--                             svm=T,  -->
+<!--                             alpha.count=F, -->
+<!--                             add.points=T, -->
+<!--                             fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   rate.hm.svm+ ylab('Nightly Rate') -->
+
+
+<!-- ``` -->
+
+<!-- As the distributions of occupancy rate and nightly rate are not uniform, we standardize these values to a percentile and then replot to give a better sense of the relative level of occupancy rate and nightly rate required for short-term preference. -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--   qtl.hm <- abbHeatMap(str_df.ic, -->
+<!--                 x.field='occ.qtl', -->
+<!--                 y.field='rate.qtl', -->
+<!--                 pref.field='str.act.pref', -->
+<!--                 svm=F,  -->
+<!--                 alpha.count=T, -->
+<!--                 add.points=T, -->
+<!--                 fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   qtl.hm+ ylab('Nightly  (Pcntl)') -->
+
+<!-- ``` -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--   qtl.hm.svm <- abbHeatMap(str_df.ic, -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T,  -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) -->
+<!--   qtl.hm.svm+ ylab('Nightly  (Pcntl)') -->
+
+<!-- ``` -->
+
+<!-- ### Submarkets -->
+
+<!-- Now we move on to looking more deeply at various submarkets.  We start by analyzing the differences between houses and apartments.  -->
+
+<!-- First we make a comparison table of the results.   -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--  # Make Basic comparison table -->
+<!--   pref.table.type <- abbCreateCompTable(ic.df=str_df.ic, -->
+<!--                                    split.field='type') -->
+
+<!--  # Limit to the extrapolated pref type -->
+<!--   pref.table.type <- pref.table.type[pref.table.type$rev.type == 'Actual', ] -->
+
+<!-- ``` -->
+
+<!-- We then turn this into a simple chart to see the differences. -->
+
+<!-- ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
+
+<!--   ggplot(pref.table.type, aes(x=ID, weights=Var, fill=ID)) +  -->
+<!--     geom_bar() + -->
+<!--     scale_fill_manual(values=c('red', 'blue')) + -->
+<!--     xlab('') + -->
+<!--     ylab('% of properties where Airbnb is more profitable') + -->
+<!--     scale_y_continuous(breaks=c(0,.25,.5,.75,1), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='none') -->
+
+<!-- ``` -->
+
+<!-- We then look at the relationship between occ rate and preference.  Before we start though we recalculate the percentiles within each submarket.  -->
+
+<!-- ```{r build_occ_type1, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
+
+<!--  ## Create dataset -->
+
+<!--   type.data.ic <- str_df.ic -->
+
+<!--   # Id the types -->
+<!--   apt.id <- which(str_df.ic$type == 'Apartment') -->
+<!--   house.id <- which(str_df.ic$type == 'House') -->
+
+<!--   # Recalculate the percentiles -->
+<!--   type.data.ic$occ.qtl[apt.id] <- makeWtdQtl(type.data.ic$occ.rate[apt.id], -->
+<!--                                       return.type='rank') -->
+<!--   type.data.ic$occ.qtl[house.id] <- makeWtdQtl( -->
+<!--     type.data.ic$occ.rate[house.id], return.type='rank') -->
+
+<!--   type.data.ic$rate.qtl[apt.id] <- makeWtdQtl(type.data.ic$med.rate[apt.id], -->
+<!--                                   return.type='rank') -->
+<!--   type.data.ic$rate.qtl[house.id] <- makeWtdQtl( -->
+<!--     type.data.ic$med.rate[house.id], return.type='rank') -->
+
+<!-- ```  -->
+
+<!-- Then we calculate the preference figures -->
+
+<!-- ```{r build_occ_type, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE} -->
+
+<!--  ## Calc the occ rate numbers -->
+
+<!--   rawocc.type <- abbPrefPlot(type.data.ic, -->
+<!--                          x.field='occ.rate', -->
+<!--                          split.field='type', -->
+<!--                          smooth=TRUE, -->
+<!--                          smooth.span=.5 , -->
+<!--                          spl.col=c('black', 'grey40')) -->
+
+<!--   pctocc.type <- abbPrefPlot(type.data.ic, -->
+<!--                          x.field='occ.qtl', -->
+<!--                          split.field='type', -->
+<!--                          smooth=TRUE, -->
+<!--                          smooth.span=.5 , -->
+<!--                          spl.col=c('black', 'grey40')) -->
+
+<!-- ``` -->
+
+<!-- And then plot.  -->
+
+<!-- ```{r plot_occ_type, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{smocc}Preference vs Occ. Rates: By Type'} -->
+
+<!--  ## Build raw plot -->
+
+<!--   ptr.occ <- ggplot(rawocc.type$data, -->
+<!--                     aes(x=x.var, y=Var, group=ID, color=ID)) +   -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate') + -->
+<!--     scale_color_manual(values=c('black', 'grey60'), -->
+<!--                        name='') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='bottom') +  -->
+<!--     ggtitle('Raw Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--  ## Build Percentile Plots -->
+
+<!--   ptq.occ <- ggplot(pctocc.type$data, -->
+<!--                     aes(x=x.var, y=Var, group=ID, color=ID)) +   -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate (Pcntl)') + -->
+<!--     scale_color_manual(values=c('black', 'grey60'), -->
+<!--                        name='') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25th', '50th', '75th', '100th')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='bottom') +  -->
+<!--     ggtitle('Percentile Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--  ## Plot   -->
+
+<!--   ggMultiPlots(ptr.occ, ptq.occ, cols=2) -->
+
+<!-- ``` -->
+
+<!-- Finally, we make percentile SVM heatmaps for both apartments and houses.  -->
+
+<!-- ```{r plot_svm_type, fig.width=8, fig.height=3.5, echo=FALSE, fig.cap='\\label{smhm}Analysis of Percentile Rates: By Type'} -->
+
+<!--  ## Make House SVM Heatmap -->
+
+<!--   house.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type == -->
+<!--                                           'House', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) + -->
+<!--   theme(legend.position='none') + -->
+<!--   annotate("text", x = 50, y = 50, label = "Houses", size=9) + -->
+<!--   ylab('Nightly Rate (Pcntl)') + -->
+<!--   xlab('Occupancy Rate (Pcntl)') -->
+
+<!--  ## Make Apartment SVM Heat Map -->
+
+<!--   apt.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type == -->
+<!--                                           'Apartment', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--   annotate("text", x = 50, y = 50, label = "Apartments", size=9)+ -->
+<!--   ylab('Nightly Rate (Pcntl)') + -->
+<!--   xlab('Occupancy Rate (Pcntl)') -->
+
+<!--  ## Plot -->
+
+<!--   ggMultiPlots(house.hm.svm, apt.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- #### Geographic Submarkets -->
+
+<!-- We now repeat the three analyses -- table, occupancy plot, heat map -- for the five geographic submarkets. -->
+
+<!-- ```{r table_geo, message=FALSE, warning=FALSE, results='asis', comment=FALSE, cache=TRUE, echo=FALSE, fig.cap='Geographic Submarket Preferability'} -->
+
+<!--  # Make Basic comparison table -->
+<!--   pref.table <- abbCreateCompTable(ic.df=str_df.ic, -->
+<!--                                    split.field='geo.mrkt') -->
+
+<!--  # Convert to wide format for output -->
+<!--   pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var') -->
+
+<!--  # Limit to the extrapolated pref type -->
+<!--   pref.table <- pref.table[pref.table$rev.type == 'Actual', ] -->
+<!--   pref.table[ ,1] <- c('City-Core', 'City', 'Suburban', 'Rural', 'Beach') -->
+<!--   pref.table[ ,2] <- paste0(sprintf('%.1f', pref.table[ ,2] * 100), '%') -->
+
+<!--  # Fix names   -->
+<!--   names(pref.table) <- c('Sub-Market', 'Short-Term Preferable') -->
+<!--   options(xtable.comment = FALSE) -->
+
+<!--  ## Make printable table -->
+
+<!--   print(xtable(pref.table[,1:2],  -->
+<!--                caption='Geographic Submarket Preferability\n', -->
+<!--                digits=1, -->
+<!--                align='llr'), -->
+<!--         include.rownames=FALSE, -->
+<!--         caption.placement='top') -->
+
+<!-- ``` -->
+
+
+<!-- ```{r build_occ_geo, fig.width=8, fig.height=4, echo=FALSE}  -->
+
+<!--  ## Build data -->
+
+<!--   subm.data.ic <- str_df.ic -->
+
+<!--   # Get IDs -->
+<!--   cc.id <- which(str_df.ic$geo.mrkt == 'city-core') -->
+<!--   city.id <- which(str_df.ic$geo.mrkt == 'city') -->
+<!--   sub.id <- which(str_df.ic$geo.mrkt == 'suburban') -->
+<!--   rural.id <- which(str_df.ic$geo.mrkt == 'rural') -->
+<!--   beach.id <- which(str_df.ic$geo.mrkt == 'beach') -->
+
+<!--   # Recalc the percentiles -->
+<!--   subm.data.ic$occ.qtl[cc.id] <- makeWtdQtl(subm.data.ic$occ.rate[cc.id], -->
+<!--                                       return.type='rank') -->
+<!--   subm.data.ic$rate.qtl[cc.id] <- makeWtdQtl(subm.data.ic$med.rate[cc.id], -->
+<!--                                   return.type='rank') -->
+
+<!--   subm.data.ic$occ.qtl[city.id] <- makeWtdQtl( -->
+<!--       subm.data.ic$occ.rate[city.id], return.type='rank') -->
+<!--   subm.data.ic$rate.qtl[city.id] <- makeWtdQtl( -->
+<!--     subm.data.ic$med.rate[city.id], return.type='rank') -->
+
+<!--   subm.data.ic$occ.qtl[sub.id] <- makeWtdQtl(subm.data.ic$occ.rate[sub.id], -->
+<!--                                       return.type='rank') -->
+<!--   subm.data.ic$rate.qtl[sub.id] <- makeWtdQtl(subm.data.ic$med.rate[sub.id], -->
+<!--                                   return.type='rank') -->
+
+<!--   subm.data.ic$occ.qtl[rural.id] <- makeWtdQtl(subm.data.ic$occ.rate[rural.id], -->
+<!--                                       return.type='rank') -->
+<!--   subm.data.ic$rate.qtl[rural.id] <- makeWtdQtl(subm.data.ic$med.rate[rural.id], -->
+<!--                                   return.type='rank') -->
+
+<!--   subm.data.ic$occ.qtl[beach.id] <- makeWtdQtl(subm.data.ic$occ.rate[beach.id], -->
+<!--                                       return.type='rank') -->
+<!--   subm.data.ic$rate.qtl[beach.id] <- makeWtdQtl(subm.data.ic$med.rate[beach.id], -->
+<!--                                   return.type='rank') -->
+
+<!-- ``` -->
+
+<!-- ```{r plot_occ_geo, fig.width=9, fig.height=4, message=FALSE, warning=FALSE, echo=FALSE, fig.cap='\\label{smocc}Analysis of Percentile Rates: Geographic Submarkets'}  -->
+
+<!--  ## Set colors -->
+
+<!--   sm.col <- abb.col[c(1, 3, 6, 5, 2)]  -->
+
+<!--  ## Create plot data -->
+
+<!--   rawocc.geo <- abbPrefPlot(subm.data.ic, -->
+<!--                         x.field='occ.rate', -->
+<!--                         split.field='geo.mrkt', -->
+<!--                         smooth=TRUE, -->
+<!--                         smooth.span=.5 , -->
+<!--                         spl.col=sm.col) -->
+
+<!--   pctocc.geo <- abbPrefPlot(subm.data.ic, -->
+<!--                          x.field='occ.qtl', -->
+<!--                          split.field='geo.mrkt', -->
+<!--                          smooth=TRUE, -->
+<!--                          smooth.span=.5 , -->
+<!--                          spl.col=sm.col) -->
+
+<!--  ## Make plot objects   -->
+
+<!--   smr.occ <- ggplot(rawocc.geo$data, -->
+<!--                     aes(x=x.var, y=Var, group=ID, color=ID)) +   -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate') + -->
+<!--     scale_color_manual(values=sm.col, -->
+<!--                        name='') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='bottom') +  -->
+<!--     ggtitle('Raw Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--   smq.occ <- ggplot(pctocc.geo$data, -->
+<!--                     aes(x=x.var, y=Var, group=ID, color=ID)) +   -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate (Pcntl)') + -->
+<!--     scale_color_manual(values=sm.col, -->
+<!--                        name='') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25th', '50th', '75th', '100th')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='bottom') +  -->
+<!--     ggtitle('Percentile Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--  ## Plot   -->
+
+<!--   ggMultiPlots(smr.occ, smq.occ, cols=2) -->
+
+<!-- ``` -->
+
+
+<!-- ```{r build_svm_geo, fig.width=8, fig.height=4, echo=FALSE, fig.cap='Analysis of Percentile Rates: Metro Level'} -->
+
+<!--   # Build the SVM Heatmaps -->
+
+<!--   core.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'city-core', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5])) + -->
+<!--   theme(legend.position='none') + -->
+<!--     ylab('') + -->
+<!--     xlab('') + -->
+<!--   annotate("text", x = 50, y = 50, label = "City-Core", size=9) -->
+
+
+<!--   city.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'city', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--     ylab('') + -->
+<!--     xlab('')+ -->
+<!--   annotate("text", x = 50, y = 50, label = "City", size=9) -->
+
+
+<!--   sub.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'suburban', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--     ylab('') + -->
+<!--     xlab('')+ -->
+<!--   annotate("text", x = 50, y = 50, label = "Suburban", size=9) -->
+
+
+<!--   rural.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'rural', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--     ylab('') + -->
+<!--     xlab('')+ -->
+<!--   annotate("text", x = 50, y = 50, label = "Rural", size=9) -->
+
+
+<!--   beach.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'beach', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(abb.col[1], abb.col[5]))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--     ylab('') + -->
+<!--     xlab('')+ -->
+<!--   annotate("text", x = 50, y = 50, label = "Beach", size=9) -->
+
+<!-- ``` -->
+
+<!-- ```{r plot_svm_geo, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='\\label{smhmps}Geographic Submarket Heatmaps'} -->
+
+<!--   ggMultiPlots(core.hm.svm, city.hm.svm, sub.hm.svm, -->
+<!--                rural.hm.svm, beach.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+
+## Sensitivity
+
+### Potential Revenue
+
+To test for the sensitivity of the result to the revenue type, we re-do some of the intial data vizs.  First we build a new preference table looking at the submarkets of type and geography. 
+
+```{r pot_table, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.cap='Potential Short-Term Preference'}
+
+ # Make Basic comparison table of type
+  tpref.table <- abbCreateCompTable(ic.df=str_df.ic,
+                                    split.field='type')
+ # Extract Potential Results
+  tpref.table <- tpref.table[tpref.table$rev.type == 'Potential', ]
+  
+ # Make baseic comparison table of submarkets  
+  spref.table <- abbCreateCompTable(ic.df=str_df.ic,
+                                    split.field='geo.mrkt')
+
+ # Extract potential results  
+  spref.table <- spref.table[spref.table$rev.type == 'Potential', ]
+  
+ # Combine and round  
+  st.table <- rbind(tpref.table, spref.table)
+  st.table[,2] <- paste0(sprintf('%.1f', st.table[,2]*100), '%') 
+  
+ ## Fix names and print  
+  
+  names(st.table) <- c('Sub-Market', 'Short-Term Preferable')
+  options(xtable.comment = FALSE)
+  print(xtable(st.table[,1:2], 
+               caption='Potential Revenue Preferability\n',
+               digits=1, align='llr'),
+               include.rownames=FALSE,
+               caption.placement='top',
+               hline.after=c(-1, 0, 2, 7, 7))
+
+```
+
+Next we recrate the SVM percentile heat maps. 
+  
+```{r pot_svm, results='asis', echo=FALSE, message=FALSE, comment=FALSE}
+
+ ## create data and re-estimate the percentiles
+
+  pot.data.ic <- str_df.ic
+
+  pot.data.ic$occ.qtl <- makeWtdQtl(pot.data.ic$pot.occ.rate, return.type='rank')
+  
+ ## Make the pecentile heatmap  
+  
+  pqtl.hm <- abbHeatMap(pot.data.ic,
+                x.field='occ.qtl',
+                y.field='rate.qtl',
+                pref.field='str.pot.pref',
+                svm=F, 
+                alpha.count=T,
+                add.points=T,
+                fill.colors=c(abb.col[1], abb.col[5]))
+  pqtl.hm <- pqtl.hm + ylab('Nightly Rate (Qtl)')
+  
+ ## Make percentile SVM heatmap  
+  
+  pqtl.hm.svm <- abbHeatMap(pot.data.ic,
+                   x.field='occ.qtl',
+                   y.field='rate.qtl',
+                   pref.field='str.pot.pref',
+                   svm=T, 
+                   alpha.count=F,
+                   add.points=T,
+                   quantile=T,
+                   fill.colors=c(abb.col[1], abb.col[5]))
+  pqtl.hm.svm <- pqtl.hm.svm + ylab('Nightly Rate (Pcntl)')+
+    xlab('Occupancy Rate (Pcntl)') +
+  annotate("text", x = 50, y = 50, label = "Potential", size=9)
+  
+ ## Add annotations to previous SVM  
+  
+  qtl.hm.svm.p <- qtl.hm.svm +
+  annotate("text", x = 50, y = 50, label = "Actual", size=9)
+  
+```
+
+```{r plot_pot_svm, results='asis', echo=FALSE, message=FALSE, comment=FALSE, fig.height=3.5, fig.cap='\\label{pothm}Heatmaps of Short-Term Preference'}
+
+  ggMultiPlots(qtl.hm.svm.p, pqtl.hm.svm, cols=2)
+
+``` 
+ 
+ 
+ ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ggplot(str_tdf, aes(x=block_rate)) + 
+    geom_density(fill=str_col, color=str_col) +
+    ylab('Frequency\n') + 
+    xlab('\n% of Time Property is Blocked') +
+    scale_x_continuous(breaks=seq(0,1,.2),
+                       labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+      ggtitle('Host Block Rate Frequency\n') +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(axis.text.y=element_blank(),
+          axis.ticks.y=element_blank())
+
+  # Make Plot
+  png(file=paste0(fig.path, 'dataanys_hostblock.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    host.block.freq
+  
+  dev.off()
+  
+  save(host.block.freq, file=paste0(fig.path, 'hostblockfreq.RData'))
+  
+
+```
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  block.rate.period <- ggplot(str_df, aes(x=block.rate, y=nbr.block*extr.par)) + 
+  geom_point(fill=str.col, color=str.col, size=.2) +
+  ylab('Nbr of Blocked Periods\n') + 
+  xlab('\n% of Time Property is Blocked') +
+  scale_x_continuous(breaks=seq(0, 1, .2),
+                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+
+  # Make Plot
+  png(file=paste0(fig.path, 'dataanys_blockrateperiod.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    block.rate.period
+  
+  dev.off()
+  
+  block.rate.period
+  
+  save(block.rate.period, file=paste0(fig.path, 'blockrateperiod.RData'))
+  
+
+```
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str_tdf$blockpertime <- round(str_tdf$nbr_block * str_tdf$extr_par, 1)
+
+  str_tdf$host_type <- 'Unknown'
+  str_tdf$host_type[str_tdf$blockpertime > 12] <- 'Multi-Platform User'
+  str_tdf$host_type[str_tdf$block_rate <= .25] <- 'Profit Seeker'
+  str_tdf$host_type[str_tdf$block_rate >= .75] <- 'Opportunistic Sharer'
+  str_tdf$host_type <- factor(str_tdf$host_type,
+                              levels=c('Profit Seeker', 'Opportunistic Sharer', 
+                                        'Multi-Platform User', 'Unknown'))
+
+ ggplot(str_tdf, 
+       aes(x=block_rate, y=blockpertime, color=host_type)) + 
+  geom_point(alpha=.5, size=.8, shape=16) +
+  ylab('Number of Blocked Periods\n') + 
+  xlab('\n% of Time Property is Blocked') +
+      ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+ 
+    scale_x_continuous(breaks=seq(0, 1, .2),
+                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    scale_color_manual(values=c(col.df$rgb[2], col.df$rgb[4], col.df$rgb[7], col.df$rgb[9])) + 
+    theme(legend.position='bottom',
+           legend.title = element_blank(),
+         plot.title = element_text(hjust = 0.5))+
+     guides(colour = guide_legend(override.aes = list(size=3,
+                                                     alpha=1)))
+  # Make Plot
+  png(file=paste0(fig.path, 'dataanys_hosttype.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    host.type
+  
+  dev.off()
+  
+  host.type
+  
+  save(host.type, file=paste0(fig.path, 'hosttype.RData'))
+  
+  
+```
+
+  
+See the counts of each group
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+host.type.bar <- ggplot(str_df.ic, aes(host.type, fill=host.type)) +
+  geom_bar() +
+  scale_fill_manual(values=c(abb.col[2], abb.col[4], abb.col[7], abb.col[9]))+
+  theme(legend.position='none') +
+  ylab('Frequency\n') + 
+  xlab('\nHost Type') +
+  ggtitle('Short Term Host Types') + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+  # Make Plot
+  png(file=paste0(fig.path, 'dataanys_hosttypebar.png'), width = 480, height = 280, 
+      bg='transparent')
+
+    host.type.bar
+  
+  dev.off()
+  
+  host.type.bar
+  
+  save(host.type.bar, file=paste0(fig.path, 'hosttypebar.RData'))
+  
+
+```
+
+We then re-estimate the preference table. 
+
+```{r host_table, results='asis', message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE}
+
+ # Make Basic comparison table
+  apref.table <- abbCreateCompTable(ic.df=str_df.ic,
+                                    split.field='host.type')
+
+ # Limit to the extrapolated pref type
+  hpref.table <- apref.table[apref.table$rev.type == 'Actual', ]
+  phpref.table <- apref.table[apref.table$rev.type == 'Potential', ]
+  hpref.table <- hpref.table[,1:2]
+  hpref.table[,3] <- phpref.table[,2]
+  hpref.table[,2] <- paste0(sprintf('%.1f', hpref.table[,2]*100), '%')
+  hpref.table[,3] <- paste0(sprintf('%.1f', hpref.table[,3]*100), '%')
+  
+  names(hpref.table) <- c('Host Type', 'STP (Actual)', 'STP (Potential)')
+  options(xtable.comment = FALSE)
+  print(xtable(hpref.table, 
+               caption='Host Type Preferability\n',
+               digits=1,
+               align='llrr'),
+               include.rownames=FALSE,
+               caption.placement='top')
+    
+```
