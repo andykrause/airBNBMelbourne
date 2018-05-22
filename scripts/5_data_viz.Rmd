@@ -3,10 +3,76 @@ title: "5_data_viz"
 author: "Andy Krause"
 date: "May 10, 2018"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+  
+  knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+
+  library(tmap)
+  data_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'data')
+  code_path <- file.path('c:', 'code', 'research', 'airbnbmelbourne')
+  fig_path <- file.path(getwd(), 'images')
+
+```
+
+```{r load_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, results='hide'}
+
+  load(file.path(data_path, 'analyzed', 'analyzed_data.RData'))
+
+```
+
+## Suburb Location Map
+
+```{r sub_loc.map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+ 
+  # Set submarket colors
+  suburb_sf$col <- 'gray80'
+  suburb_sf$col[suburb_sf$class == 'Middle'] <- 'gray50'
+  suburb_sf$col[suburb_sf$class == 'Inner'] <- 'gray20'
+  
+   # Make map
+  
+  png(filename = file.path(fig_path, "sub_loc_map.png"), 
+       width = 6.5, height = 6.5, units = 'in', res = 300)
+
+  tm_shape(suburb_sf) +
+    tm_polygons("class", palette=c('gray20', 'gray50', 'gray80'), title='Suburb Class') +
+  tm_shape(studyarea_sf) + 
+    tm_borders(col='black', lwd=5) +
+    tm_add_legend(type='fill', border.lwd=3, col='white', border.col='black',
+                  title='Study Area')
+  
+  dev.off()  
+  
+```
+
+## Point Location Maps
+
+```{r location map}
+
+  tm_shape(studyarea_sf) + 
+    tm_borders(col='gray50', lwd=2) +
+  tm_shape(ltr_sf) +
+    tm_symbols('geo_mrkt', size=.05, 
+               palette = sm_col,
+               border.alpha=0, alpha=.03, shape=15)
+
+
+
+
+```
+
+
+
+
+```{r maps}
 
    # Add together for plotting
    rev_df <- bind_rows(str_tdf %>% 
@@ -196,6 +262,127 @@ The location of the short and long term rentals, colored by submarket, are shown
 
 # The chart below break down the relative frequency of short and long term rental properties across the five submarkets. 
 # 
+
+
+## RATE and RENT Density
+
+<!-- ```{r plot_ratesrents, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.height=3, fig.width=5.75, fig.cap='\\label{rrdist}Distribution of Rates and Rents'} -->
+
+<!--  load(paste0(fig.path, 'rateplot.RData')) -->
+<!--  load(paste0(fig.path, 'rentplot.RData')) -->
+
+<!--  ggMultiPlots(rate.plot, ltr.plot, cols=2) -->
+
+<!-- ``` -->
+
+
+## SUBURB LOCATION MAP
+
+<!-- \autoref{locmap} shows the three large submarkets (Inner, Middle and Outer) and the individual suburbs boundaries. -->
+
+<!-- ```{r plot_suburbmap, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.height=3.5, fig.width=3.5, fig.cap='\\label{locmap}Melbourne Submarkets'} -->
+
+<!--  load(paste0(fig.path, 'suburbMap.RData')) -->
+
+<!--  loc.map <- loc.map + -->
+<!--    theme(axis.title.y=element_blank(), -->
+<!--          axis.text.y=element_blank(), -->
+<!--          axis.ticks.y=element_blank(), -->
+<!--          axis.title.x=element_blank(), -->
+<!--          axis.text.x=element_blank(), -->
+<!--          axis.ticks.x=element_blank()) -->
+<!--   ggsave(loc.map, filename=file.path(fig.path, 'loc_map.png'), -->
+<!--           bg='transparent', -->
+<!--          width=6, height=6) -->
+<!--  # loc.map -->
+
+<!-- ``` -->
+
+<!-- ![Suburb Categories](c://dropbox/research/airBnb/figures/loc_map.png) -->
+
+
+## OBSERVATION LOCATION MAPS
+
+
+<!-- ```{r load_locations, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE} -->
+
+<!--   load(paste0(fig.path, 'ltrMap.RData')) -->
+<!--   load(paste0(fig.path, 'strMap.RData')) -->
+
+<!-- ``` -->
+
+<!-- ```{r plot_locations, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.width=5, fig.height=10, fig.cap='\\label{pointmaps}Location Maps', fig.ext='png'} -->
+
+<!--   str.map <- str.map + -->
+<!--    theme(axis.title.y=element_blank(), -->
+<!--          axis.text.y=element_blank(), -->
+<!--          axis.ticks.y=element_blank(), -->
+<!--          axis.title.x=element_blank(), -->
+<!--          axis.text.x=element_blank(), -->
+<!--          axis.ticks.x=element_blank()) -->
+
+<!--   ltr.map <- ltr.map + -->
+<!--    theme(axis.title.y=element_blank(), -->
+<!--          axis.text.y=element_blank(), -->
+<!--          axis.ticks.y=element_blank(), -->
+<!--          axis.title.x=element_blank(), -->
+<!--          axis.text.x=element_blank(), -->
+<!--          axis.ticks.x=element_blank()) -->
+
+<!--     ggsave(str.map, filename=file.path(fig.path, 'str_map.png'), -->
+<!--          bg='transparent', -->
+<!--          width=6, height=6) -->
+<!--     ggsave(ltr.map, filename=file.path(fig.path, 'ltr_map.png'), -->
+<!--          bg='transparent', -->
+<!--          width=6, height=6) -->
+
+<!--   # ggMultiPlots(str.map, ltr.map, cols=1) -->
+
+<!-- ``` -->
+
+<!-- ![Short Term Rental Locations](c://dropbox/research/airBnb/figures/str_map.png) -->
+
+<!-- ![Long Term Rental Locations](c://dropbox/research/airBnb/figures/ltr_map.png) -->
+
+
+## Location Bar Charts
+
+
+<!-- ```{r plot_locbars, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.width=8.5, fig.height=4, fig.cap='\\label{smcounts}Submarket Observation Counts'} -->
+
+<!--   load(paste0(fig.path, 'ltrsubplot.RData')) -->
+<!--   load(paste0(fig.path, 'strsubplot.RData')) -->
+
+<!--   ltrtype.map <- ltrtype.map + ylab("") + ggtitle('Long-Term Properties') -->
+<!--   strtype.map <- strtype.map + ggtitle('Short-Term Properties') -->
+
+<!--   ggMultiPlots(strtype.map, ltrtype.map, cols=2) -->
+
+<!-- ``` -->
+
+## Revenue Density Comparison
+
+<!-- ```{r plot_revdens, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='\\label{revdens}Comparison of Revenue Distributions'} -->
+
+<!--   ggplot(revdens.data, aes(x=revenue, fill=tenure, color=tenure)) + -->
+<!--     geom_density(alpha=.5) + -->
+<!--     scale_fill_manual(values=c(ltr.col, abb.col[2], str.col)) + -->
+<!--     scale_color_manual(values=c(ltr.col, abb.col[2], str.col)) + -->
+<!--     xlab('\nAnnual Revenue') + -->
+<!--     scale_x_continuous(breaks=c(seq(0,60000, by=20000)), -->
+<!--                        labels=c('$0', '$20k', '$40k', '$60k'))+ -->
+<!--     theme(legend.position='none', -->
+<!--           legend.title = element_blank(), -->
+<!--           plot.title = element_text(hjust = 0.5), -->
+<!--           axis.text.y = element_blank(), -->
+<!--           axis.ticks.y = element_blank(), -->
+<!--           axis.title.y=element_blank()) + -->
+<!--     coord_cartesian(xlim=c(0, 70000)) + -->
+<!--     facet_wrap(~tenure) -->
+
+<!-- ``` -->
+
+
 
 <!-- Having calculated the revenues, both short-term and long-term imputed, we now compare the actual (extr), potential and imputed long-term revenue distributions for the short term properties  -->
 
@@ -1015,3 +1202,393 @@ We then re-estimate the preference table.
                caption.placement='top')
     
 ```
+
+
+<!-- We will begin our analysis by making a comparison of the short and long-term markets at the metropolitan level.  Of our sample of 5,783 short-term rental units, 1,600 or 27.7\% of those units recorded a net revenue greater than what would likely have been garnered in the long-term market.   -->
+
+<!-- Occupancy rates are one of the most important components in determining the profitability of short-term rentals. For reference, the mean occupancy rate in the sample is 27.6\%, with a median value of 19.4\%. In \autoref{occpref} (left panel) we show the percentage of properties for which short-term rental is more profitable versus the occupancy rate over the year analyzed. We see that likelihood of short-term rental being a better option increases sharply with occupancy rate up from about 25\% up to 75\% occupancy. For occupancy rates less than 40\%, long-term rental is more likely to be preferable.  -->
+
+<!-- As the distribution of occupancy rates is not uniform the initial plot may be misleading as to the frequency of short-term rentals being more profitable than long-term. In the right hand panel of \autoref{occpref} (right panel) we transform the x-axis to represent the percentile of the full distribution of occupancy rates. By doing so, we see that, in general, properties need to be in the upper 25th percentile of occupancy rates across the entire market in order to have a equal likelihood of being more profitable as a short-term rental than as a more traditional long-term one.   -->
+
+<!-- ```{r plot_occ_metro, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{occpref}Probability of Short-Term Preference vs Occupancy Rate'} -->
+
+<!--  ## Make plots   -->
+
+<!--   # Raw -->
+<!--   raw.occ.metro <- ggplot(rawocc.metro$data, -->
+<!--                    aes(x=x.var, y=Var))+ -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='none') +  -->
+<!--     ggtitle('Raw Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--   # Quantile -->
+<!--   qtl.occ.metro <- ggplot(qtlocc.metro$data, -->
+<!--                    aes(x=x.var, y=Var))+ -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate (Pcntl)') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25th', '50th', '75th', '100th')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='none') +  -->
+<!--     ggtitle('Percentile Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--   # Make Plot -->
+<!--   ggMultiPlots(raw.occ.metro, qtl.occ.metro, cols=2) -->
+
+<!-- ``` -->
+
+<!-- Along with occupancy rates, the other important consideration is the nightly rate.  High occupancy rates with low nightly rates may not be any better than lower occupancy rate with a higher nightly rate.  In \autoref{metrohm} (left panel) we plot nightly rates versus occupancy rates.  We then divide the area of the scatter plot into 400 equal areas (20 x 20) and color each based on which is more common in the area, short-term or long-term revenue.  The transparency is related to the total count of actual market properties falling into that area. -->
+
+<!-- The general trend is what is expected; that is that higher rates and occupancies, ceteris paribus, means greater profitability for short-term rentals.  This relationship is not a perfectly linear because the long-term rental revenue varies greatly based on the characteristics of the property.  While the left panel of \autoref{metrohm} helps show the general pattern it does leave many indeterminate areas.  In order to better delimit the situations where short-term rentals are more profitable we turn to a support vector machine (SVM) algorithm. -->
+
+<!-- An SVM can be used as a classifier to delineate the boundaries between two (or more) classes of observations.  In this case, we delineate the boundary, \autoref{metrohm} (right panel) between situations where long-term rentals are more profitable (red) and where short-term are (green).  In order to avoid an overly broad straight line delineation we use a polynomial fitting technique. Overall, from the SVM model we see that the short-term preference begins at about 325% occupancy rate, regardless of nightly rate.  As the occupancy rate increases, the required nighly rate decreases, down to near $100 once occupancies hit 65\% or greater. -->
+
+<!-- ```{r plot_svmr_metro, fig.width=8, fig.height=4, echo=FALSE, warning=FALSE, fig.cap='\\label{metrohm}Analysis of Raw Rates: Metro Level'} -->
+
+<!--  ## Create the rate heat map -->
+
+<!--   rate.hm <- abbHeatMap(str_df.ic, -->
+<!--                 x.field='occ.rate', -->
+<!--                 y.field='med.rate', -->
+<!--                 pref.field='str.act.pref', -->
+<!--                 svm=F,  -->
+<!--                 alpha.count=T, -->
+<!--                 add.points=T, -->
+<!--                 fill.colors=c(strp.col, ltrp.col)) -->
+<!--   rate.hm <- rate.hm + ylab('Nightly Rate') -->
+
+<!--  ## Create raw SVM heatmap   -->
+
+<!--   rate.hm.svm <- abbHeatMap(str_df.ic, -->
+<!--                             x.field='occ.rate', -->
+<!--                             y.field='med.rate', -->
+<!--                             pref.field='str.act.pref', -->
+<!--                             svm=T,  -->
+<!--                             alpha.count=F, -->
+<!--                             add.points=T, -->
+<!--                             fill.colors=c(strp.col, ltrp.col)) -->
+<!--   rate.hm.svm <- rate.hm.svm + ylab('Nightly Rate') -->
+
+<!--  ## Plot   -->
+
+<!--   ggMultiPlots(rate.hm, rate.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- Both the occupancy rates and the nightly rates are not uniformly distributed and therefore the plots in \autoref{metrohm} may be misleading.  We convert both axis to percentiles and replot both in \autoref{metrohmp}.  Here we see a more even distibution of points across the figures.  Additionally, a more reasonable SVM breakdown occurs as well.  The right panel shows that in order for the likelihood of a property to be more profitable in short-term rental to be above 50\% the lowest occupancy rate it can have at around the 60th percentile of the market it is in.  And that only holds if the nightly rate is in the top 95th percentile of the market.  For example, if we drop the nightly rate to the median, the occupancy rate needs to be at the 75th percentile or above. -->
+
+<!-- ```{r plot_svmq_metro, fig.width=8, fig.height=4, echo=FALSE, fig.cap='\\label{metrohmp}Analysis of Percentile Rates: Metro Level'} -->
+
+<!--  ## Build percentile heatmap -->
+
+<!--   qtl.hm <- abbHeatMap(str_df.ic, -->
+<!--                 x.field='occ.qtl', -->
+<!--                 y.field='rate.qtl', -->
+<!--                 pref.field='str.act.pref', -->
+<!--                 svm=F,  -->
+<!--                 alpha.count=T, -->
+<!--                 add.points=T, -->
+<!--                 fill.colors=c(strp.col, ltrp.col)) -->
+<!--   qtl.hm <- qtl.hm + ylab('Nightly Rate (Pcntl)') + xlab('Occupancy Rate (Pcntl)') -->
+
+<!--  ## Build percentile SVM   -->
+
+<!--   qtl.hm.svm <- abbHeatMap(str_df.ic, -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T,  -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(strp.col, ltrp.col)) -->
+<!--   qtl.hm.svm <- qtl.hm.svm + ylab('Nightly Rate (Pcntl)') + xlab('Occupancy Rate (Pcntl)') -->
+
+<!--   ## Make Plots -->
+
+<!--   ggMultiPlots(qtl.hm, qtl.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- \pagebreak -->
+
+<!-- ### Submarkets -->
+
+<!-- To gain a deeper understanding of the differences in short-term preference, we break the data down across a variety of characteristics and examine the preferability metrics in these submarkets. First, we bifurcate our data into houses and apartments.  Within the houses, 17.5\% of the properties are short-term preferable, while for the apartment that figure is nearly double at 30.5\%. Plotting the changes in short-term preferability against occupancy rates shows considerable similarity between houses and apartments (\autoref{smocc}).  The only measurable difference is in that for houses a property's occupancy rate needs to be 10 percentiles higher than apartments to show the same likelihood of short-term preference as an apartment. Or, in other words, a given house needs to outperform its peers by a greater extent than an apartment to achieve short-term preference.  -->
+
+<!-- ```{r plot_occ_type, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, fig.width=7, fig.height=3.5, fig.cap='\\label{smocc}Preference vs Occ. Rates: By Type'} -->
+
+<!--  ## Build raw plot -->
+
+<!--   ptr.occ <- ggplot(rawocc.type$data, -->
+<!--                     aes(x=x.var, y=Var, group=ID, color=ID)) +   -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate') + -->
+<!--     scale_color_manual(values=c('black', 'grey60'), -->
+<!--                        name='') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='bottom') +  -->
+<!--     ggtitle('Raw Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--  ## Build Percentile Plots -->
+
+<!--   ptq.occ <- ggplot(pctocc.type$data, -->
+<!--                     aes(x=x.var, y=Var, group=ID, color=ID)) +   -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=2, span=.5) + -->
+<!--     xlab('\nOccupancy Rate (Pcntl)') + -->
+<!--     scale_color_manual(values=c('black', 'grey60'), -->
+<!--                        name='') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25th', '50th', '75th', '100th')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='bottom') +  -->
+<!--     ggtitle('Percentile Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--  ## Plot   -->
+
+<!--   ggMultiPlots(ptr.occ, ptq.occ, cols=2) -->
+
+<!-- ``` -->
+
+<!-- Extending this analysis to include nightly rates shows a similar situation (\autoref{smhm}). For houses (left panel) there are very few combinations of occupancy rate and nightly rate that offer a greater than even likelihood of short-term preference.  As an example, a median nightly rate requires a 90th percentile occupancy rate. The market for apartment (right panel) is more forgiving and occupancy rates as low as the 60th percentile can equate to a greater than even chance of short-term prefence is coupled with nightly rates near the top of the market.  A median nightly rate requires a 70th percentile occupancy rate for short-term preference likelihood.  -->
+
+<!-- ```{r plot_svm_type, fig.width=8, fig.height=3.5, echo=FALSE, fig.cap='\\label{smhm}Analysis of Percentile Rates: By Type'} -->
+
+<!--  ## Make House SVM Heatmap -->
+
+<!--   house.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type == -->
+<!--                                           'House', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(strp.col, ltrp.col)) + -->
+<!--   theme(legend.position='none') + -->
+<!--   annotate("text", x = 50, y = 50, label = "Houses", size=9) + -->
+<!--   ylab('Nightly Rate (Pcntl)') + -->
+<!--   xlab('Occupancy Rate (Pcntl)') -->
+
+<!--  ## Make Apartment SVM Heat Map -->
+
+<!--   apt.hm.svm <- abbHeatMap(type.data.ic[type.data.ic$type == -->
+<!--                                           'Apartment', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(strp.col, ltrp.col))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--   annotate("text", x = 50, y = 50, label = "Apartments", size=9)+ -->
+<!--   ylab('Nightly Rate (Pcntl)') + -->
+<!--   xlab('Occupancy Rate (Pcntl)') -->
+
+<!--  ## Plot -->
+
+<!--   ggMultiPlots(house.hm.svm, apt.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- #### By Geography -->
+
+<!-- Next, we divide the data into the five geographic sub-market shown in \autoref{pointmaps}. Within the City-Core, greater than one out of three short-term properties brought in more net revenue than they likely would have under a long-term leasing scenario.  That figure drops to one in four for beach and rural, one in six for other city location and about one in nine for suburban locations.  -->
+
+<!-- ```{r table_geo, message=FALSE, warning=FALSE, results='asis', comment=FALSE, echo=FALSE} -->
+
+<!--  # Make Basic comparison table -->
+<!--   pref.table <- abbCreateCompTable(ic.df=str_df.ic, -->
+<!--                                    split.field='geo.mrkt') -->
+
+<!--  # Convert to wide format for output -->
+<!--   pref.table.wide <- dcast(pref.table, ID ~ rev.type, value.var='Var') -->
+
+<!--  # Limit to the extrapolated pref type -->
+<!--   pref.table <- pref.table[pref.table$rev.type == 'Actual', ] -->
+<!--   pref.table[ ,1] <- c('City-Core', 'City', 'Suburban', 'Rural', 'Beach') -->
+<!--   pref.table[ ,2] <- paste0(sprintf('%.1f', pref.table[ ,2] * 100), '%') -->
+
+<!--  # Fix names   -->
+<!--   names(pref.table) <- c('Sub-Market', 'Short-Term Preferable') -->
+<!--   options(xtable.comment = FALSE) -->
+
+<!--  ## Make printable table -->
+
+<!--   print(xtable(pref.table[,1:2],  -->
+<!--                caption='Geographic Submarket Preferability\n', -->
+<!--                digits=1, -->
+<!--                align='llr'), -->
+<!--         include.rownames=FALSE, -->
+<!--         caption.placement='top') -->
+
+<!-- ``` -->
+
+<!-- There is a noticable variability in the relationship between occupancy rates and short-term preference across the submarkets. For raw rates (\autoref{smocc}, left panel), rural properties can acheive short-term preference with lower occupancies than the other areas. This may be due to the relatively low long-term rental rates in the more rural areas coupled with high short-term rates for homes in wine country or near the mountainous terrain east of the city. Transforming to percentiles, we see that the city-core properties can reach short-term preference at a much lower occupancy rate than the others, with suburban and city as the most difficult markets.   -->
+
+<!-- ```{r plot_occ_geo, fig.width=9, fig.height=4, message=FALSE, warning=FALSE, echo=FALSE, fig.cap='\\label{smocc}Analysis of Percentile Rates: Geographic Submarkets'}  -->
+
+<!--  ## Set colors -->
+
+<!--   sm.col <- abb.col[c(1, 3, 6, 5, 2)]  -->
+
+<!--  ## Make plot objects   -->
+
+<!--   smr.occ <- ggplot(rawocc.geo$data, -->
+<!--                     aes(x=x.var, y=Var, group=ID, color=ID)) +   -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=1.5, span=.5) + -->
+<!--     xlab('\nOccupancy Rate') + -->
+<!--     scale_color_manual(values=sm.col, -->
+<!--                        name='') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='bottom') +  -->
+<!--     ggtitle('Raw Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--   smq.occ <- ggplot(pctocc.geo$data, -->
+<!--                     aes(x=x.var, y=Var, group=ID, color=ID)) +   -->
+<!--     geom_point(alpha=.5, size=.4) + -->
+<!--     stat_smooth(se=FALSE, size=1.5, span=.5) + -->
+<!--     xlab('\nOccupancy Rate (Pcntl)') + -->
+<!--     scale_color_manual(values=sm.col, -->
+<!--                        name='') + -->
+<!--     scale_x_continuous(breaks=seq(0, 100, by=25), -->
+<!--                        labels=c('0%', '25th', '50th', '75th', '100th')) + -->
+<!--     ylab('\nSTR Preferability %') + -->
+<!--     scale_y_continuous(breaks=seq(0, 1, by=.25), -->
+<!--                        labels=c('0%', '25%', '50%', '75%', '100%')) + -->
+<!--     theme(legend.position='bottom') +  -->
+<!--     ggtitle('Percentile Rates') +  -->
+<!--     theme(plot.title = element_text(hjust = 0.5)) -->
+
+<!--  ## Plot   -->
+
+<!--   ggMultiPlots(smr.occ, smq.occ, cols=2) -->
+
+<!-- ``` -->
+
+<!-- Plotting out the nightly rate versus occupancy rate heat maps for all five geographic submarkets (\autoref{smhmps}) tells a similar story.  The 'City-Core' market offers the most potential for short-term preference with suburban and city the least.  The rural market achieves very solid short-term preference for the most expensive homes, again likely those with special amenities or links to the wine region.  Beach properties do not perform as well as might be expected in the short-term market, however, it should be kept in mind that the winter climate in Melbourne is not conducive to beach activity and therefore short-term beach properties may suffer during winter months.  -->
+
+<!-- ```{r build_svm_geo, warning=FALSE, message=FALSE, echo=FALSE} -->
+
+<!--   # Build the SVM Heatmaps -->
+
+<!--   core.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'city-core', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(strp.col, ltrp.col)) + -->
+<!--   theme(legend.position='none') + -->
+<!--     ylab('Nightly Rate Percentile') + -->
+<!--     xlab('Occupancy Rate Percentile') + -->
+<!--   annotate("text", x = 50, y = 50, label = "City-Core", size=9) -->
+
+
+<!--   city.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'city', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(strp.col, ltrp.col))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--     ylab('Nightly Rate Percentile') + -->
+<!--     xlab('Occupancy Rate Percentile') + -->
+<!--   annotate("text", x = 50, y = 50, label = "City", size=9) -->
+
+
+<!--   sub.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'suburban', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(strp.col, ltrp.col))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--     ylab('Nightly Rate Percentile') + -->
+<!--     xlab('Occupancy Rate Percentile') + -->
+<!--   annotate("text", x = 50, y = 50, label = "Suburban", size=9) -->
+
+
+<!--   rural.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'rural', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(strp.col, ltrp.col))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--     ylab('Nightly Rate Percentile') + -->
+<!--     xlab('Occupancy Rate Percentile') + -->
+<!--   annotate("text", x = 50, y = 50, label = "Rural", size=9) -->
+
+
+<!--   beach.hm.svm <- abbHeatMap(subm.data.ic[subm.data.ic$geo.mrkt == -->
+<!--                                           'beach', ], -->
+<!--                    x.field='occ.qtl', -->
+<!--                    y.field='rate.qtl', -->
+<!--                    pref.field='str.act.pref', -->
+<!--                    svm=T, -->
+<!--                    alpha.count=F, -->
+<!--                    add.points=T, -->
+<!--                    quantile=T, -->
+<!--                    fill.colors=c(strp.col, ltrp.col))+ -->
+<!--   theme(legend.position='none')+ -->
+<!--     ylab('Nightly Rate Percentile') + -->
+<!--     xlab('Occupancy Rate Percentile') + -->
+<!--   annotate("text", x = 50, y = 50, label = "Beach", size=9) -->
+
+<!-- ``` -->
+
+<!-- ```{r plot_svm_geo, message=FALSE, warning=FALSE, fig.width=8, fig.height=8, echo=FALSE, fig.cap='\\label{smhmps}Geographic Submarket Heatmaps (SVM)'} -->
+
+<!--   ggMultiPlots(core.hm.svm, city.hm.svm, sub.hm.svm, -->
+<!--                rural.hm.svm, beach.hm.svm, cols=2) -->
+
+<!-- ``` -->
+
+<!-- ## Explaining Preference -->
