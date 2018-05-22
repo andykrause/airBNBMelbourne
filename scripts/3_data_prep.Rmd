@@ -646,9 +646,11 @@ Create a polygon of the new study area
     unlist()
   
   # Study Area
-  studyarea_sf <- suburb_sf %>% 
+  studyarea <- suburb_sf %>% 
     slice(sa_ids) %>%
     st_union()
+  studyarea_sf <- st_sf(name='studyarea', geometry=studyarea)
+  
   plot(studyarea_sf)
   
   # Create Indicators in main sf fle
@@ -883,7 +885,7 @@ Looking at the distribution of the revenues from each tenure type, we see that t
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
    save(str_tdf, ltr_tdf, str_sf, ltr_sf, studyarea_sf, suburb_sf, beach_sf, sa1_sf,
-        col_df, clean_count,
+        col_df, clean_count, core_suburbs,
         file=paste0(data_path, '/prepared/prepared_data.RData'))
  
 ```
