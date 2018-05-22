@@ -883,6 +883,7 @@ Looking at the distribution of the revenues from each tenure type, we see that t
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
    save(str_tdf, ltr_tdf, str_sf, ltr_sf, studyarea_sf, suburb_sf, beach_sf, sa1_sf,
-        col_df, file=paste0(data_path, '/prepared/prepared_data.RData'))
+        col_df, clean_count,
+        file=paste0(data_path, '/prepared/prepared_data.RData'))
  
 ```
