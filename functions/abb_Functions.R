@@ -597,40 +597,40 @@ abbCreateCompTable <- function(ic.df,
   
   if(split.field == 'none'){
     
-    str.obs <- mean(ic.df$str.obs.pref)
-    str.act <- mean(ic.df$str.act.pref)
-    str.pot <- mean(ltr.df$str.pot.pref)
+    str.act <- mean(ic.df$act_pref)
+    str.lik <- mean(ic.df$lik_pref)
+    str.pot <- mean(ltr.df$pot_pref)
     
     rate.table <- data.frame(ID='all',
-                             var=c(str.obs, str.act, str.pot),
-                             rev.type=c('Observed', 
-                                        'Actual', 
+                             var=c(str.act, str.lik, str.pot),
+                             rev.type=c('Actual', 
+                                        'Likely', 
                                         'Potential'))
     
   } else {
     
     # Calculate cross-tab values
-    str.obs <- tapply2DF(ic.df$str.obs.pref, ic.df[ ,split.field], mean)
-    str.act <- tapply2DF(ic.df$str.act.pref, ic.df[ ,split.field], mean)
-    str.pot <- tapply2DF(ic.df$str.pot.pref, ic.df[, split.field], mean)
+    str.act <- tapply2DF(ic.df$act_pref, ic.df[ ,split.field], mean)
+    str.lik <- tapply2DF(ic.df$lik_pref, ic.df[ ,split.field], mean)
+    str.pot <- tapply2DF(ic.df$pot_pref, ic.df[, split.field], mean)
     
     # Add names
-    str.obs$rev.type <- 'Observed'
     str.act$rev.type <- 'Actual'
+    str.lik$rev.type <- 'Likely'
     str.pot$rev.type <- 'Potential'
     
     # Combine into table
-    rate.table <- rbind(str.obs, str.act, str.pot)
+    rate.table <- rbind(str.act, str.lik, str.pot)
     
     # Reorder factors for common split fields
-    if(split.field == 'geo.mrkt'){
+    if(split.field == 'geo_mrkt'){
       
       rate.table$ID <- factor(rate.table$ID, 
                               levels=c('city-core', 'city', 'beach',
                                        'suburban', 'rural'))
     }
     
-    if(split.field == 'host.type'){
+    if(split.field == 'host_type'){
       rate.table$ID <- factor(rate.table$ID,
                               levels=c('Profit Seeker', 'Opportunistic Sharer', 
                                        'Multi-Platform User', 'Unknown'))
@@ -1299,3 +1299,123 @@ buildRevDensPlot <- function(str_df,
   return(rd.plot)
   
 }  
+
+# Place multiple ggplots into a configuration ----------------------------------
+
+ggMultiPlots <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  
+  require(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+### Tool for setting bbox for use in get_map -------------------------------------
+
+ggmapBBox <- function(shp.file, 
+                      zoom=1
+)
+{
+  
+  # ARGUMENTS
+  #
+  # shp.file:  shapefile of area to extract
+  # zoom:      zoom factor where 1 is perfect clip to shp.file
+  
+  ## Set Libraries
+  
+  require(ggmap)
+  
+  ## Extract Bounding Box  
+  
+  bbox <- bbox(shp.file) 
+  
+  ## Apply Zoom Features  
+  
+  #NW Hemisphere
+  if(bbox[1,1]<0 & bbox[2,1] > 0){
+    return(c(bbox[1,1]*zoom, bbox[2,1]*(1/zoom),
+             bbox[1,2]*(1/zoom), bbox[2,2]*zoom))
+  }
+  
+  #NE Hemisphere
+  if(bbox[1,1] > 0 & bbox[2,1] > 0){
+    return(c(bbox[1,1]*(1/zoom), bbox[2,1]*zoom,
+             bbox[1,2]*(1/zoom), bbox[2,2]*zoom))
+  }
+  
+  #SE Hemisphere
+  if(bbox[1,1]>0 & bbox[2,1] < 0){
+    return(c(bbox[1,1]*(1/zoom), bbox[2,1]*zoom,
+             bbox[1,2]*zoom, bbox[2,2]*(1/zoom)))
+  }
+  
+  #SW Hemisphere
+  if(bbox[1,1] > 0 & bbox[2,1] > 0){
+    return(c(bbox[1,1]*zoom, bbox[2,1]*(1/zoom),
+             bbox[1,2]*zoom, bbox[2,2]*(1/zoom)))
+  }
+  
+}
+
+
+tapply2DF <- function(xData,          # Vector being tapply'd 
+                      byField,        # Field to split vector by
+                      xFunc,          # Function to apply
+                      newName='Var',  # Name of new variable 
+                      idName='ID',
+                      na.rm=FALSE)    # Name of identification field 
+{
+  
+  ## Execute tapply()
+  
+  xTable <- as.data.frame(tapply(xData, byField, xFunc, na.rm=na.rm))
+  
+  ## Add names and new fields
+  
+  # Give calculated field a name
+  names(xTable) <- newName
+  
+  # Add id field and give it a name
+  xTable[ ,2] <- rownames(xTable)
+  names(xTable)[2] <- idName
+  
+  # Reorder columns
+  xTable <- xTable[ ,c(2, 1)]
+  
+  # Remove existing field names
+  rownames(xTable) <- 1:nrow(xTable)
+  
+  ## Return values
+  
+  return(xTable)
+}
