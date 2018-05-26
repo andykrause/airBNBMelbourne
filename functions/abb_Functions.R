@@ -4,6 +4,140 @@
 #                                                                                        #
 ##########################################################################################
 
+### Calculate the booking status ---------------------------------------------------------
+
+abbCalcBookStr <- function(book_data){
+  
+  # If property has more than one status (one daily booking) find summaries
+  if (nrow(book_data) > 1){
+    
+    # Find min and max date
+    id_min <- min(book_data$date)
+    id_max <- max(book_data$date)
+    
+    # Divide by status and collapse
+    st_v <- book_data$status[1]
+    
+    for(ss in 2:length(book_data$status)){
+      
+      if(book_data$status[ss] == book_data$status[[ss - 1]]){
+        st_v <- paste0(st_v, book_data$status[[ss]])
+      } else {
+        st_v <- paste0(st_v, '.' ,book_data$status[[ss]])
+      }
+    }
+    
+    # Collapse into list objects
+    ss_. <- strsplit(st_v, '[.]')[[1]]
+    
+    # Grab the first status of each
+    sg_. <- substr(ss_.[[1]], 1, 1)
+    for(sg in 1:length(ss_.)){
+      sg_.[sg] <- substr(ss_.[[sg]], 1, 1)  
+    }
+    
+    # Find location of three types
+    id_B <- which(unlist(sg_.) == 'B')
+    id_R <- which(unlist(sg_.) == 'R')
+    id_A <- which(unlist(sg_.) == 'A')
+    
+    # Extract
+    if (length(id_R) > 0){
+      r_. <- ss_.[id_R]
+      bookings <- sum(nchar(unlist(r_.)))
+    } else {
+      bookings <- 0
+    }
+    
+    if (length(id_A) > 0){
+      a_. <- ss_.[id_A]
+      avails <- unlist(lapply(a_., nchar))
+      avail_rate <- sum(avails) / length(book_data$status)
+      
+    } else {
+      
+      avail_rate <- 0
+      
+    }
+    
+    if (length(id_B) > 0){
+      b_. <- ss_.[id_B] 
+      
+      # Count longest and blocked times
+      blocks <- unlist(lapply(b_., nchar))
+      
+      block_rate <- sum(blocks) / length(book_data$status)
+      longest_block <- max(blocks)
+      med_block <- median(blocks)
+      nbr_block <- length(id_B)
+      
+    } else {
+      
+      block_rate <- 0
+      longest_block <- 0
+      med_block <- 0
+      nbr_block <- 0
+      
+    }
+    
+    total_days <- length(book_data$status)  
+    
+  } else {
+    
+    block_rate <- NA
+    longest_block <- NA
+    med_block <- NA
+    nbr_block <- NA
+    days <- NA
+    id_min <- NA
+    id_max <- NA
+    avail_rate <- NA
+    bookings <- NA
+    
+  }  
+  
+  ## Return Values
+  
+  return(data.frame(min_date=id_min,
+                    max_date=id_max,
+                    total_days=total_days,
+                    block_rate=round(block_rate, 3),
+                    avail_rate=round(avail_rate, 3),
+                    longest_block=longest_block,
+                    nbr_block=nbr_block,
+                    med_block=med_block,
+                    bookings=bookings))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### Calculate the occupancy rates for each date in a range -------------------------------
 
@@ -177,112 +311,7 @@ apmFixDates <- function(x.date){
   
 }
 
-### Calculate the booking status ---------------------------------------------------------
 
-abbCalcBookStr <- function(id.book.data){
-  
-  # id.book.data <- book.data[book.data$property.id == id, ]
-  id.data <- id.book.data$status
-  
-  if(length(id.data) > 1){
-    
-    # Find min and max date
-    id_min <- min(id.book.data$date)
-    id_max <- max(id.book.data$date)
-    
-    # Divide by status and collapse
-    status.string <- id.data[1]
-    
-    for(ss in 2:length(id.data)){
-      
-      if(id.data[ss] == id.data[[ss - 1]]){
-        status.string <- paste0(status.string, id.data[[ss]])
-      } else {
-        status.string <- paste0(status.string, '.' ,id.data[[ss]])
-      }
-    }
-    
-    # Collapse into list objects
-    ss.list <- as.list(strsplit(status.string, '[.]')[[1]])
-    
-    # Grab the first status of each
-    sg.obj <- substr(ss.list[[1]], 1, 1)
-    for(sg in 1:length(ss.list)){
-      sg.obj[sg] <- substr(ss.list[[sg]], 1, 1)  
-    }
-    
-    # Find location of three types
-    id.B <- which(unlist(sg.obj) == 'B')
-    id.R <- which(unlist(sg.obj) == 'R')
-    id.A <- which(unlist(sg.obj) == 'A')
-    
-    # Extract
-    if(length(id.R) > 0){
-      r.list <- ss.list[id.R]
-      bookings <- sum(nchar(unlist(r.list)))
-    } else {
-      bookings <- 0
-    }
-    
-    if(length(id.A) > 0){
-      a.list <- ss.list[id.A]
-      avails <- unlist(lapply(a.list, nchar))
-      avail_rate <- sum(avails) / length(id.data)
-      
-    } else {
-      
-      avail_rate <- 0
-      
-    }
-    
-    if(length(id.B) > 0){
-      b.list <- ss.list[id.B] 
-      
-      # Count longest and blocked times
-      blocks <- unlist(lapply(b.list, nchar))
-      
-      block_rate <- sum(blocks) / length(id.data)
-      longest_block <- max(blocks)
-      med_block <- median(blocks)
-      nbr_block <- length(id.B)
-      
-    } else {
-      
-      block_rate <- 0
-      longest_block <- 0
-      med_block <- 0
-      nbr_block <- 0
-      
-    }
-    
-    total_days <- length(id.data)  
-    
-  } else {
-    
-    block_rate <- NA
-    longest_block <- NA
-    med_block <- NA
-    nbr_block <- NA
-    days <- NA
-    id_min <- NA
-    id_max <- NA
-    avail_rate <- NA
-    bookings <- NA
-
-  }  
-  
-  ## Return Values
-  
-  return(data.frame(min_date=id_min,
-                    max_date=id_max,
-                    total_days=total_days,
-                    block_rate=block_rate,
-                    avail_rate=avail_rate,
-                    longest_block=longest_block,
-                    nbr_block=nbr_block,
-                    med_block=med_block,
-                    bookings=bookings))
-}
 
 ### Set the cleaning counter -------------------------------------------------------------
 

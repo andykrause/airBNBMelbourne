@@ -1,16 +1,19 @@
 ---
 title: "Pre Processing of the Short Term Data"
-author: "Andy Krause"
-date: "April 14, 2018"
+subtitle:  "For the 'To Airbnb' paper"
+author: "Andy Krause and Gideon Aschwanden"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
 
-This script executes a number of very long running data preparation process necessary to analyze the short term rental (Airbnb) data.  If you re-knit (with RMarkdown) this file the code will not evaluate.  To actually evaluate the code you must manually re-run the code chunks
+This script executes a number of very long running data preparation process necessary to analyze the short term rental (Airbnb) data.  If you re-knit this file the code will not evaluate.  To actually evaluate the code you must manually re-run the code chunks individually in RStudio. 
 
 ```{r setup, include=FALSE}
+
   knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
+
 ```
 
 ## Preliminary Commands
@@ -25,13 +28,13 @@ We begin by setting stringsAsFactors to FALSE to avoid unnecessary factor conver
 
 Next, we load the necessary libraries
 
-```{r load_libraries}
+```{r load_libraries, warnings=FALSE, message=FALSE}
 
   library(plyr)
   library(stringr)
   library(lubridate)
   library(dplyr)
-  library(multidplyr)
+  library(multidplyr) # Note you have to instal from the github site hadley/multidplyr
   library(tidyr)
   library(tibble)
   library(magrittr)
@@ -42,13 +45,7 @@ We then set the paths to the data
 
 ```{r set_paths, echo=TRUE}
 
-  # Assign path based on computer name
-  data_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'data')
-  
-  ## Load sources
-  code_path <- file.path('c:', 'code', 'research', 'airBNBmelbourne')
-
-  source(file.path(code_path, 'functions', "abb_Functions.R"))
+  source(file.path(getwd(), 'functions', "abb_Functions.R"))
 
 ```
 
@@ -66,24 +63,25 @@ Next, we load the data. There are two files for each the property level data as 
 
 ```{r load_data}
    
-  # Property Information
-  str_raw <- read.csv(file.path(data_path, 'raw', 'melbproperties.csv'), header=T)
-  str_raw2 <- read.csv(file.path(data_path, 'raw', 'melbproperties_to_mar2017.csv'), 
-                        header=T)
-  
+  # Property information
+  str_prop_1 <- read.csv(file.path(getwd(), 'data', 'raw', 'str_prop_1.csv'), header=T)
+  str_prop_2 <- read.csv(file.path(getwd(), 'data', 'raw', 'str_prop_2.csv'), header=T)
+
   # Daily rental information
-  daily_raw  <- read.csv(file.path(data_path, 'raw', 'melbDaily.csv'), header=T)
-  daily_raw2  <- read.csv(file.path(data_path, 'raw', 'melbDaily_to_mar2017.csv'), 
-                           header=T)
+  str_daily_1 <- read.csv(file.path(getwd(), 'data', 'raw', 'str_daily_1.csv'), header=T)
+  str_daily_2 <- read.csv(file.path(getwd(), 'data', 'raw', 'str_daily_2.csv'), header=T)
   
 ```
 
-We then combine the two files for each type, standardize the field names and select only those fields which we need going forward.
+We then combine the two files for each type, standardize the field names and select only those fields which we need going forward.  We add a data origin field to the property level information so that we can take the most recent observation in later de-duplication processes. 
 
 ```{r tcr_data}
 
-  # Property Level
-  str_df <- dplyr::bind_rows(str_raw, str_raw2) %>%
+  # Property data
+  str_df <- dplyr::bind_rows(str_prop_1 %>% 
+                               dplyr::mutate(origin = 1), 
+                             str_prop_2 %>% 
+                               dplyr::mutate(origin = 2)) %>%
     dplyr::select(property_id=Property.ID, host_id=Host.ID, listing_title=Listing.Title, 
                   property_type=Property.Type, listing_type=Listing.Type,
                   created_date=Created.Date, latitude=Latitude, longitude=Longitude,
@@ -92,31 +90,34 @@ We then combine the two files for each type, standardize the field names and sel
                   nightly_rate=Published.Nightly.Rate, 
                   weekly_rate=Published.Weekly.Rate, monthly_rate=Published.Monthly.Rate, 
                   avg_nightly_rate=Average.Daily.Rate, min_stay=Minimum.Stay, 
-                  bedrooms=Bedrooms, bathrooms=Bathrooms)
+                  bedrooms=Bedrooms, bathrooms=Bathrooms, origin)
 
   # Clean up
-  rm(str_raw); rm(str_raw2)
+  rm(str_prop_1); rm(str_prop_2)
   
-  # Daily Data
-  daily_df <- dplyr::bind_rows(daily_raw2, daily_raw) %>%
+  # Daily data
+  daily_df <- dplyr::bind_rows(str_daily_1, str_daily_2) %>%
     dplyr::select(property_id=Property.ID, date=Date, status=Status, price=Price,
                   book_date=Booked.Date, resv_id=Reservation.ID)
   
   # Clean up
-  rm(daily_raw); rm(daily_raw2);gc()
+  rm(str_daily_1); rm(str_daily_2);gc()
 
 ```
 
 ## Prepare Data
 
-Due to our combining of data, we have many duplicate observations.  We new remove any duplicates.  Note that the daily data in its raw format does not have a unique identifier, so we much first create one by combining the property id with the date of the observation. 
+Due to our combining of data, we have many duplicate observations.  We now remove any duplicates.  Note that the daily data in its raw format does not have a unique identifier, so we much first create one by combining the property id with the date of the observation. 
     
 ```{r uniq_ids}    
 
-  # Structure Data
-  str_df <- str_df %>% dplyr::filter(!duplicated(property_id))  
+  # Property data
+  str_df <- str_df %>% 
+    dplyr::arrange(desc(origin)) %>%
+    dplyr::filter(!duplicated(property_id)) %>%
+    dplyr::select(-origin)
   
-  # Daily Data
+  # Daily data
   daily_df <- daily_df %>%
     dplyr::mutate(uniq_id = paste0(property_id, '_', date)) %>%
     dplyr::filter(!duplicated(uniq_id))
@@ -200,6 +201,7 @@ Finally, we write out the date to an RDS object for future use.
 
 ```{r write_out}
  
- saveRDS(str_df, file=file.path(data_path, 'prepared', 'str_data.RDS'))
+ dir.create(file.path(getwd(), 'data', 'prepared'))
+ saveRDS(str_df, file=file.path(getwd(), 'data', 'prepared', 'str_data.RDS'))
  
 ```
