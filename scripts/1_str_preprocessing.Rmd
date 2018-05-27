@@ -189,7 +189,7 @@ In order to store all of our data efficiency in a single object, we now **nest**
     dplyr::collect()
   
   # Add nested daily data to structural data
-  str_df <- str_df %>%
+  str_tdf <- str_df %>%
     as.tibble() %>%
     left_join(daily_tdf, by='property_id')
  
@@ -202,6 +202,6 @@ Finally, we write out the date to an RDS object for future use.
 ```{r write_out}
  
  dir.create(file.path(getwd(), 'data', 'prepared'))
- saveRDS(str_df, file=file.path(getwd(), 'data', 'prepared', 'str_data.RDS'))
+ saveRDS(str_tdf, file=file.path(getwd(), 'data', 'prepared', 'str_data.RDS'))
  
 ```

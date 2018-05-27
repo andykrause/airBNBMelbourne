@@ -1,10 +1,10 @@
-##########################################################################################
-#                                                                                        #    
-#  Custom functions for working with APM and AirDNA data in the ABB Project              #
-#                                                                                        #
-##########################################################################################
+#*****************************************************************************************
+#                                                                                        *    
+#  Custom functions for working with APM and AirDNA data in the ABB Project              *
+#                                                                                        *
+#*****************************************************************************************
 
-### Calculate the booking status ---------------------------------------------------------
+### Calculate the booking status ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 abbCalcBookStr <- function(book_data){
   
@@ -109,6 +109,29 @@ abbCalcBookStr <- function(book_data){
                     bookings=bookings))
 }
 
+### Correct the APM data dates ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+fixAPMDates <- function(x_date){
+  
+  # x.date:  date vector
+  
+  ## Convert to character (from factor or numberic)
+  
+  if (class(x_date) != 'character') x_date <- as.character(x_date)
+  
+  ## Remove Time suffixes  
+  
+  x_date <- str_replace_all(x_date, ' 0:00', '')
+  
+  ## Standardize all years to 2000s  
+  
+  x_date <- str_replace_all(x_date, '/20', '/')
+  
+  ## Return values as standardized, British/Australian date format  
+  
+  as.Date(x_date, "%d/%m/%y")   
+  
+}
 
 
 
@@ -284,30 +307,6 @@ abbImputeDaily <- function(prop.df,
   ## Return Values  
   
   return(imp.daily)
-  
-}
-
-### Correct the APM data dates -----------------------------------------------------------
-
-apmFixDates <- function(x.date){
-  
-  # x.date:  date vector
-  
-  ## Convert to character (from factor or numberic)
-  
-  temp.date <- as.character(x.date)
-  
-  ## Remove Time suffixes  
-  
-  temp.date <- str_replace_all(temp.date, ' 0:00', '')
-  
-  ## Standardize all years to 2000s  
-  
-  temp.date <- str_replace_all(temp.date, '/20', '/')
-  
-  ## Return values as date format  
-  
-  return(as.Date(temp.date, "%d/%m/%y"))   
   
 }
 
