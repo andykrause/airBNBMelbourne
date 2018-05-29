@@ -134,7 +134,7 @@ Before we begin the filter process, we initial the data cleaning counter -- a sm
 
 ```{r initialCC, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
-   setCleanCount()
+   clean_obj <- setCleanCount()
 
 ```
 
@@ -160,7 +160,7 @@ We then clip by time.  For the short-term data we will consider any Airbnb prope
                                                      date >= decision_date - 365)))
  # Count cleaning
 
-  countCleaning('time')
+  clean_obj <- countCleaning(clean_obj, 'time')
 
 ```
  
@@ -248,8 +248,8 @@ As the chart below show, the **Other** category only makes up a very small perce
    str_tdf <- str_tdf %>% dplyr::filter(type != 'Other')
    ltr_tdf <- ltr_tdf %>% dplyr::filter(type != 'Other')
 
-   # Count Cleaning
-   countCleaning('property_type')
+   # Count 
+   clean_obj <- countCleaning(clean_obj, 'property_type')
 
 ```
 
@@ -285,7 +285,7 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
     dplyr::filter(listing_type == 'Entire home')
 
   # Count cleaning
-  countCleaning('listing_type')
+  clean_obj <- countCleaning(clean_obj, 'listing_type')
 
 ```
  
@@ -358,7 +358,7 @@ For both short and long term rentals we see that most apartments have less than 
   ltr_tdf$bedrooms  <- ifelse(ltr_tdf$bedrooms == 0, 1, ltr_tdf$bedrooms)
   
   # Count Data Cleaning
-  countCleaning('bedrooms')
+    clean_obj <- countCleaning(clean_obj, 'bedrooms')
  
 ```
  
@@ -416,7 +416,7 @@ Here we see that nearly all properties have 3 or fewer bathrooms and we filter t
     dplyr::filter(bathrooms < 4 & bathrooms > 0)
 
    # Count cleaning
-   countCleaning('baths')
+  clean_obj <- countCleaning(clean_obj, 'baths')
    
 ```
  
@@ -478,8 +478,7 @@ From this analysis we see that there are 6 combinations that make up most all pr
     dplyr::mutate(product = paste0(substr(type, 1, 1), "_", bedbath))
 
  # Count Cleaning
-
-  countCleaning('bedbath')
+  clean_obj <- countCleaning(clean_obj, 'bedbath')
 
 ```
 
@@ -495,7 +494,7 @@ Here we combine the two Strict (regular and super) cancellation policies into on
     dplyr::filter(canc_policy %in% c('Flexible', 'Moderate', 'Strict'))
 
   # Count Cleaning
-  countCleaning('hostpolicy')
+  clean_obj <- countCleaning(clean_obj, 'hostpolicy')
 
 ```
 
@@ -737,7 +736,7 @@ Finally we add the spatial data back onto the tabular data and filtering out tho
      as.tibble()
   
    # Count Cleaning
-   countCleaning('location')
+  clean_obj <- countCleaning(clean_obj, 'location')
 
 ```
 
@@ -835,7 +834,7 @@ From these density plots we see that most long-term Rentals are greater than $20
     filter(., med_rate >= 50 & med_rate <= 500)
   
    # Count Cleaning
-   countCleaning('rates_rents')
+  clean_obj <- countCleaning(clean_obj, 'rates_rents')
    
 ```  
  
@@ -877,7 +876,7 @@ Looking at the distribution of the revenues from each tenure type, we see that t
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
    save(str_tdf, ltr_tdf, str_sf, ltr_sf, studyarea_sf, suburb_sf, beach_sf, sa1_sf,
-        col_df, clean_count, core_suburbs,
+        col_df, clean_obj, core_suburbs,
         file=paste0(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData')))
  
 ```

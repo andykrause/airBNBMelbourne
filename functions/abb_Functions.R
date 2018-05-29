@@ -133,8 +133,55 @@ fixAPMDates <- function(x_date){
   
 }
 
+### Set the cleaning counter ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+setCleanCount <- function(){
+  
+  # Make counts of initial sizes
+  str_orig <- nrow(str_tdf)
+  ltr_orig <- nrow(ltr_tdf)
+  
+  # Create initial data.frame
+  clean_df <- data.frame(operation='initial',
+                         str=str_orig,
+                         ltr=ltr_orig)
+  
+  # Return
+  structure(list(count_df = clean_df,
+                 str_running = str_orig,
+                 ltr_running = ltr_orig),
+            class='clean')
 
+}
+
+### Cleaning counting updater ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+countCleaning <- function(clean_obj, operation){
+  
+  if (!'clean' %in% class(clean_obj)){
+    message('"clean_obj" not an object of class "clean"')
+    return(NULL)
+  } 
+  
+  # Count recent cuts  
+  str_cut <- clean_obj$str_running - nrow(str_tdf)
+  ltr_cut <- clean_obj$ltr_running - nrow(ltr_tdf)
+  
+  # Build new dataframe
+  new_df <- data.frame(operation=operation,
+                       str=str_cut,
+                       ltr=ltr_cut)
+  
+  # Add to existing DF
+  comb_df <- rbind(clean_obj$count_df, new_df)
+
+  # Return
+  structure(list(count_df = comb_df,
+                 str_running = nrow(str_tdf),
+                 ltr_running = nrow(ltr_tdf)),
+            class='clean')
+
+}
 
 
 
@@ -312,48 +359,8 @@ abbImputeDaily <- function(prop.df,
 
 
 
-### Set the cleaning counter -------------------------------------------------------------
 
-setCleanCount <- function(){
-  
-  # Make counts of initial sizes
-  str_orig <- nrow(str_tdf)
-  ltr_orig <- nrow(ltr_tdf)
-  
-  # Create initial data.frame
-  clean_df <- data.frame(operation='initial',
-                         str=str_orig,
-                         ltr=ltr_orig)
-  
-  # Assign initial values to globalEnv
-  assign('clean_count', clean_df, envir=.GlobalEnv)
-  assign('str_run_total', nrow(str_tdf), envir=.GlobalEnv)
-  assign('ltr_run_total', nrow(ltr_tdf), envir=.GlobalEnv)
 
-}
-
-### Cleaning counting updater ------------------------------------------------------------
-
-countCleaning <- function(operation){
-
-  # Count recent cuts  
-  str_cut <- str_run_total - nrow(str_tdf)
-  ltr_cut <- ltr_run_total - nrow(ltr_tdf)
-  
-  # Build new dataframe
-  new_df <- data.frame(operation=operation,
-                       str=str_cut,
-                       ltr=ltr_cut)
-  
-  # Add to existing DF
-  comb_df <- rbind(clean_count, new_df)
-  
-  # Assign initial values to globalEnv
-  assign('clean_count', comb_df, envir=.GlobalEnv)
-  assign('str_run_total', nrow(str_tdf), envir=.GlobalEnv)
-  assign('ltr_run_total', nrow(ltr_tdf), envir=.GlobalEnv)
-
-}
 
 ### Cross impute rates and rents ---------------------------------------------------------
 
