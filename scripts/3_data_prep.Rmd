@@ -1,18 +1,20 @@
 ---
 title: "Data Preparation, Integration and Cleaning"
 output:
-  pdf_document: default
+  htlm_document: default
 editor_options: 
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
- knitr::opts_chunk$set(eval=FALSE)
+
+  knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
+
 ```
 
 ## Introduction
 
-This file details the initial data preparation and cleaning that we have applied to the AirBNB nightly data from www.AirDNA.co as well as to the long-term rental data from Australia Property Monitors (APM).  Both datasets have had some initial pre-processing done, the details of which are found in **1_str_preprocess.R** and **2_ltr_preprocess.R**. 
+This file details the initial data preparation and cleaning that we have applied to the AirBNB nightly data from www.AirDNA.co as well as to the long-term rental data from Australia Property Monitors (APM).  Both datasets have had some initial pre-processing done, the details of which are found in **1_str_preprocessing.RMD** and **2_ltr_preprocessing.RMD**. 
 
 &nbsp;
 &nbsp;
@@ -27,22 +29,14 @@ We begin with a number of preliminary commands.  First we load all of the necess
 
   library(tidyverse)
   library(sf)
-  library(geosphere)
-  library(ggmap)
-  library(multidplyr)
+  library(multidplyr) # Note you have to install from the github site hadley/multidplyr
   library(tmap)
-
-  options(stringsAsFactors=FALSE)
 
 ```
 
-Then we set the paths to the data
+```{r saf}
 
-```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
-
-  data_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'data')
-  code_path <- file.path('c:', 'code', 'research', 'airbnbmelbourne')
-  fig_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'figures')
+  options(stringsAsFactors=FALSE)
 
 ```
 
@@ -50,7 +44,7 @@ Next, we source the necessary custom code files for the analysis.
 
 ```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
-  source(file.path(code_path, 'functions', 'abb_Functions.R'))
+  source(file.path(getwd(), 'functions', 'abb_Functions.R'))
 
 ```
 
@@ -62,7 +56,7 @@ We then set the constants used in this study:
  
 ```{r set_constants, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
  
- exch_rate <- 1.32  
+  exch_rate <- 1.32  
 
 ```
 
@@ -95,7 +89,7 @@ We then set the constants used in this study:
  # Set specific colors
   str_col <- col_df$rgb[1]
   ltr_col <- col_df$rgb[3]
-  sm_col <- col_df$rgb[c(2, 4, 5, 8, 6)]
+  sm_cols <- col_df$rgb[c(2, 4, 5, 8, 6)]
 
 ```
 
@@ -103,25 +97,25 @@ We then set the constants used in this study:
 
 &nbsp;
 
-Next we load in the raw data.  The short-term rental (Airbnb) data is found in two separate files, one providing information on the property itself and one providing a daily record of bookings.
+Next we load in the raw data from the previous pre-processing activities. 
 
-```{r load_str_data, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+```{r load_str_data, message=FALSE, warning=FALSE, comment=FALSE}
 
-  str_tdf <- readRDS(file.path(data_path, 'prepared', 'str_data.RDS'))
+  str_tdf <- readRDS(file.path(getwd(), 'data', 'prepared', 'str_data.RDS'))
 
-  ltr_tdf <- readRDS(file.path(data_path, 'prepared', 'ltr_data.RDS'))
+  ltr_tdf <- readRDS(file.path(getwd(), 'data', 'prepared', 'ltr_data.RDS'))
 
 ```
  
-And, finally, we load three GIS shapefiles.  The first two denote suburb and Statistical Area 1 (sa1) boundaries in the Melbourne area. We also load a shapefile that contains the location of the beach areas along Port Phillip Bay.^[Only those east of the mouth of Yarra River as those to the west are primarily industrial land.]  
+Then we load three GIS shapefiles.  The first two denote suburb and Statistical Area 1 (sa1) boundaries in the Melbourne area. We also load a shapefile that contains the location of the beach areas along Port Phillip Bay.^[Only those east of the mouth of Yarra River as those to the west are primarily industrial land.]  
 
 ```{r load_sp_data, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
-  suburb_sf <- sf::st_read(file.path(data_path, 'geographic', 'melbSuburbs.shp')) %>%
+  suburb_sf <- sf::st_read(file.path(getwd(), 'data', 'geographic', 'melbSuburbs.shp')) %>%
     st_transform(crs=4283)
-  sa1_sf <- sf::st_read(file.path(data_path, 'geographic', 'sa1s.shp')) %>%
+  sa1_sf <- sf::st_read(file.path(getwd(), 'data', 'geographic', 'sa1s.shp')) %>%
     st_transform(crs=4283)
-  beach_sf <- sf::st_read(file.path(data_path, 'geographic','portPhillipBeach.shp')) %>%
+  beach_sf <- sf::st_read(file.path(getwd(), 'data', 'geographic','portPhillipBeach.shp')) %>%
     st_transform(crs=4283)
 
 ```
@@ -134,7 +128,7 @@ In this section we remove, convert and/or transform a number of data fields. We 
 
 ### Trim by Time
  
-Next we filter the observations by time.  Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term rental versus an AirBNB, short term rental approach to generating income.  To determine the likely long term rental rate for any given property, we will use the observed rental transactions from the market from September 1, 2014 to August 31, 2015.  Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.  Another reason for using these two period of data is that the AirBNB data has missing daily values prior to September 1, 2015.  While we have imputed these missing daily observations, we hold the actual observed values to be of greater accuracy and have designed the initial simulated example to take advantage of the full observed set. 
+We begin by filtering the observations by time.  Our hypothetical simulated decision is that of an investor who purchases a property on September 1, 2015 and must decide on traditional long term rental versus an AirBNB, short term rental approach to generating income.  To determine the likely long term rental rate for any given property, we will use the observed rental transactions from the market from September 1, 2014 to August 31, 2015.  Taking the AirBNB approach allows the owner to change rates over time and is subjected to daily changes in the market (supply and demand factors).  In this simulated example we will use AirBnB data from September 1, 2015 to August 31, 2016 to represent the actual AirBNB market conditions over the time period in question.  Another reason for using these two period of data is that the AirBNB data has missing daily values prior to September 1, 2015.  While we have imputed these missing daily observations, we hold the actual observed values to be of greater accuracy and have designed the initial simulated example to take advantage of the full observed set. 
  
 Before we begin the filter process, we initial the data cleaning counter -- a small function that keeps track of how many observations we remove.  
 
@@ -193,15 +187,15 @@ Next we add a monthly variable to the data for use in future modeling exercises.
 
 AirBNB units are classified into 19 different property type.  The most common are Apartments and Houses, the least common are Igloo, Tent, Treehouse and Yurt^[Property types are owner/lister defined, therfore it is likely that the Igloo, at the very least, is not a completely true representation of the property type]. For the sake of this analysis, we will collapse these twenty types into three types:
 
-1. **House**:  Includes properties labeled 'House' or 'Townhouse'
+1. **House**:  Includes properties labeled 'House', 'Townhouse' or 'Villa'
 2. **Apartment**: Includes properties labeled as 'Apartment' or 'Condominium'
-3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse', Villa' and 'Yurt.
+3. **Other**: Includes properties labeled as 'Bed & Breakfast', 'Boat', 'Bungalow', 'Cabin', 'Camper/RV', 'Chalet', 'Dorm', 'Earth House', 'Hut', 'Igloo', 'Loft', 'Other', 'Tent', 'Treehouse' and 'Yurt.
 
 Within the long-term rental data, property types fall into eight categories.  Like the AirBNB data we group these into three categories matching as best as possible to the AirBNB categories:
 
-1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace' or 'Townhouse'
+1. **House**:  Includes properties labeled 'Duplex', 'House', 'Terrace', 'Townhouse' or 'Villa'
 2. **Apartment**: Includes properties labeled as 'Unit' or 'Studio'
-3. **Other**: Includes properties labeled as 'Semi' and 'Villa'
+3. **Other**: Includes properties labeled as 'Semi'
 
 Part of the difficulty in perfectly mapping property types from these two datasets is due to the fact that the long-term data uses Australian terms while the AirBNB data conforms to North American lexicon.  This is most apparent when talking about apartment dwellings.  In Australia these are referred to as Units, while in North American they are referred to as Apartments or Condominiums (depending on ownership structure).  Additionally, Terrace homes are very common in many of the older suburbs of Melbourne and would be considered Rowhouses or, likely, Townhomes in the North American context. 
  
@@ -428,7 +422,7 @@ Here we see that nearly all properties have 3 or fewer bathrooms and we filter t
  
 ### Bed/Bath Combination
  
-In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short term ltral) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two. 
+In addition to looking at bedrooms and bathrooms as separate dimensions of properties, they can also be considered together.  In other words, it is very common in the industry (and when looking for a short term rental) to specify searches by bed/bath combination for obvious reasons -- 1 bedroom with 3 baths is inefficient and 4 bedrooms with 1 bath is uncomfortable.  As a result we examine the combinations of the two. 
  
 ```{r filtBB, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
  
@@ -510,8 +504,6 @@ Here we combine the two Strict (regular and super) cancellation policies into on
 Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer).
  
 ```{r mappoints2, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
- 
- ## Build the map object
  
   # Set colors
   tm_shape(suburb_sf) +
@@ -651,7 +643,7 @@ Create a polygon of the new study area
     st_union()
   studyarea_sf <- st_sf(name='studyarea', geometry=studyarea)
   
-  plot(studyarea_sf)
+  plot(studyarea_sf$geometry)
   
   # Create Indicators in main sf fle
   suburb_sf <- suburb_sf %>%
@@ -728,7 +720,7 @@ Add market designations.
    
 ```
  
-Finally we add the spatial data back onto the tabular data and filtering out those outside of the study area using an inner join. We then have to remove the geometry field as it causes issues with future analyses (for now)
+Finally we add the spatial data back onto the tabular data and filtering out those outside of the study area using an inner join. We then have to remove the geometry field as it causes issues with future analyses (for now).
 
 ```{r merge_spatial, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
  
@@ -853,7 +845,7 @@ Our final data filtering considers the observed revenue of the properties. For t
  
 For the short-term data, we first calculate the total number of bookings, the occupancy rate, blocked rate and proportion of the year over which the property was listed.  Using this data we sum up the total revenue from bookings. For properties that were not listed on the site for the entire year, we impute their annual revenue by dividing the actual revenue by the proportion of the year in which they were listed.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] Properties with no reserved bookings, and, therefore, no revenue, are removed.
  
-Looking at the distribution of the revenues from each tenure type, we see that those for the long-term rentals are for more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year (Figure 10).  Short term revenues range from neglible to highs of greater than \$80,000.  While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not. Also, the high number of very low yield Airbnb properties also suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing.
+Looking at the distribution of the revenues from each tenure type, we see that those for the long-term rentals are for more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year.  Short term revenues range from neglible to highs of greater than \$80,000.  While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not. Also, the high number of very low yield Airbnb properties also suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing.
  
 ```{r revdensity.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='Comparison of Revenue Distributions'}
  
@@ -886,6 +878,6 @@ Looking at the distribution of the revenues from each tenure type, we see that t
 
    save(str_tdf, ltr_tdf, str_sf, ltr_sf, studyarea_sf, suburb_sf, beach_sf, sa1_sf,
         col_df, clean_count, core_suburbs,
-        file=paste0(data_path, '/prepared/prepared_data.RData'))
+        file=paste0(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData')))
  
 ```
