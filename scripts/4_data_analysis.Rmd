@@ -53,8 +53,6 @@ Next, we source the necessary custom code files for the analysis.
   # Date of investment decision
   decision_date <- lubridate::as_date('2015-09-01')
   
-  str_col = col_df$rgb[1]
-  
 ```
 
 ## Load Data
@@ -64,7 +62,8 @@ We then load the data.
 ```{r load_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} 
 
   load(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData'))
-
+  str_col = col_df$rgb[1]
+  
 ```
 
 #### Compare Revenue Distributions
@@ -156,12 +155,12 @@ Finally a model that adds in host policies.
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   glm_lik_host <- glm(lik_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt) +
-                        I(max_guests/bedrooms) + min_stay + as.factor(canc_policy),
+                        guest_per_bed + min_stay + I(canc_policy == 'Flexible'),
                       family=binomial(link='logit'),
                       data=str_tdf)
 
   glm_pot_host <- glm(pot_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt) +
-                        I(max_guests/bedrooms) + min_stay + as.factor(canc_policy),
+                        I(max_guests/bedrooms) + min_stay + I(canc_policy == 'Flexible'),
                       family=binomial(link='logit'),
                       data=str_tdf)
   
@@ -251,10 +250,10 @@ And re-run the logistic regression models.
   ht_. <- split(str_tdf, str_tdf$host_type)
   
   lik_spec <- as.formula(lik_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt) +
-                          I(max_guests/bedrooms) + min_stay + as.factor(canc_policy))
+                          guest_per_bed + min_stay + I(canc_policy == 'Flexible'))
 
   pot_spec <- as.formula(pot_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt) +
-                          I(max_guests/bedrooms) + min_stay + as.factor(canc_policy))
+                          guest_per_bed + min_stay + I(canc_policy == 'Flexible'))
 
   lik_ht_glms <- purrr::map(ht_.,
                          .f=glm,

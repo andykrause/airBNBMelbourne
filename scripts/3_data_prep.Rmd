@@ -498,6 +498,19 @@ Here we combine the two Strict (regular and super) cancellation policies into on
 
 ```
 
+Next, a small number of properties have very long minimum stays, we round any minimum stay greater than 7 days to be 7 days.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+
+  str_tdf <- str_tdf %>%
+   dplyr::mutate(min_stay = if_else(min_stay > 7L, 7L, min_stay))
+
+  str_tdf <- str_tdf %>%
+   dplyr::mutate(guest_per_bed = round(max_guests / bedrooms, 2)) %>%
+   dplyr::mutate(guest_per_bed = if_else(guest_per_bed > 4, 4, guest_per_bed))
+
+```
+
 ### Locations and Submarkets
  
 Location is clearly an important determinant in both the short and long term rental markets. At the broadest scale, the long-term Melbourne residential market is usually discussed in terms of Inner, Middle and Outer suburbs.  In general, prices are highest in the inner suburbs and lowest in the outer, with a number of exceptions in the high end neighborhoods in the east and southeastern areas of the middle suburbs.  Suburbs in Melbourne are much smaller than their North American counterparts.  The specific suburb of a property is the second, or finer scale, at which the market operates. The plot below shows the three large submarkets (Inner, Middle and Outer).
