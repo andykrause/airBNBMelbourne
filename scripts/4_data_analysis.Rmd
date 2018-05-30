@@ -1,7 +1,6 @@
 ---
-title: "Should I Airbnb My Property: Analytic Code Explanation"
-author: "Andy Krause and Gideon Aschwanden"
-date: "March 10, 2017"
+title: "Data Analysis and Modeling"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -9,7 +8,7 @@ editor_options:
 
 ### Introduction
 
-This document describes all of the code used to the generate the output included in the 'Should I Airbnb my Property' study.  Additional analysis that were not included in the final report are also found within this document.  This analysis uses the output from the **3_data_prep.rmd** file found in the same online repository. 
+This document describes all of the code used to the generate the output included in the 'To Airbnb?' study. This analysis uses the output from the **3_data_prep.rmd** file found in the same online repository. 
 
 ## Preliminary Commands
 
@@ -26,19 +25,13 @@ We begin with a number of preliminary commands.  First we load all of the necess
   library(multidplyr)
   library(tmap)
 
+```
+
+```{r set_options, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+
   options(stringsAsFactors=FALSE)
   options(xtable.comment = FALSE)
   options(xtable.caption.placement='top')
-
-```
-
-Then we set the paths to the data
-
-```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
-
-  data_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'data')
-  code_path <- file.path('c:', 'code', 'research', 'airbnbmelbourne')
-  fig_path <- file.path('c:', 'dropbox', 'research', 'airBNB', 'figures')
 
 ```
 
@@ -46,33 +39,37 @@ Next, we source the necessary custom code files for the analysis.
 
 ```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
-  source(file.path(code_path, 'functions', 'abb_Functions.R'))
+  source(file.path(getwd(), 'functions', 'abb_Functions.R'))
 
 ```
 
 ### Set Parameters
 
 ```{r set_constants, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
- 
+  
+  # Exchange rate: AUS to US 
   exch_rate <- 1.32  
 
+  # Date of investment decision
   decision_date <- lubridate::as_date('2015-09-01')
   
 ```
 
 ## Load Data
 
+We then load the data.
+
 ```{r load_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} 
 
-  load(file.path(data_path, 'prepared', 'prepared_data.RData'))
+  load(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData'))
 
 ```
 
 ### Calculating Net Revenues
 
-We begin the analysis by calculating the net revenues for the short term data.  We calculate three types of net revenues, Observed, Extrapolated (Actual) and Potential. The difference are described more fully in the writeup.
+We begin the analysis by calculating the net revenues for the short term data.  We calculate three types of net revenues, Actual, Likely (Extrapolated) and Potential. The differences are described more fully in the writeup.
 
-Before we start, we estimate two figures necessary to determine utility costs: 1) Costs per person per day (cpppd) and the average number of guests per bedroom.The State of Victoria gives energy costs at \$330 (apartment) to \$520 (house).  For 2 persons in an apartment that works out to \$5 per person per day.  For a house of 4 persons that works out to about \$4 per person per day. We use a mid point value of \$4.50 per person per day.  We use an estimate of 1.5 persons per bedroom in each unit.
+Before we start, we estimate two figures necessary to determine utility costs: 1) Costs per person per day (cpppd) and the average number of guests per bedroom. The State of Victoria gives energy costs at \$330 (apartment) to \$520 (house).  For 2 persons in an apartment that works out to \$5 per person per day.  For a house of 4 persons that works out to about \$4 per person per day. We use a mid point value of \$4.50 per person per day.  We use an estimate of 1.5 persons per bedroom in each unit.
 
 ```{r utility_estimates, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
@@ -84,6 +81,8 @@ Before we start, we estimate two figures necessary to determine utility costs: 1
 
 ```
 
+We then calculate the actual net revenue by multiplying booking times median rate - utility costs.  
+
 ```{r act_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   str_tdf$act_revenue <- ((str_tdf$bookings * str_tdf$med_rate) -
@@ -92,23 +91,53 @@ Before we start, we estimate two figures necessary to determine utility costs: 1
 
 ```
 
+Next we create Likely Revenue, by imputing occupancy rates and revenues for the remainder of the year for those properties
+
 ```{r lik_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Create daily rate summary
+  rate_summ <- str_tdf %>% 
+   dplyr::select(property_id, daily_data) %>%
+    tidyr::unnest() %>%
+    dplyr::filter(status != 'B') %>%
+    dplyr::group_by(date) %>%
+    summarize(rate = length(which(status == 'R')) / n(),
+            obs = n())
+
+  # Create new cluster
+  abb_cl <- get_default_cluster() 
+
+  # Register function and variable
+  cluster_copy(abb_cl, impLikelyBookings)
+  cluster_copy(abb_cl, rate_summ)
+  cluster_library(abb_cl, c("magrittr", 'dplyr', 'tidyr'))
+
+  # Summarize daily by property
+  lik_book_df <- str_tdf %>%
+    dplyr::filter(total_days != 366) %>%
+    multidplyr::partition(property_id, cluster=abb_cl) %>% 
+    dplyr::do(impLikelyBookings(., std=g)) %>% 
+    dplyr::collect()
+
+  # Add to the existing data
+  str_tdf <- str_tdf %>%
+    left_join(lik_book_df, by='property_id') %>%
+    dplyr::mutate(lik_bookings = if_else(is.na(lik_bookings), bookings, as.integer(lik_bookings)))
+
+  # Calculate likely revenue
+  str_tdf$lik_revenue <- ((str_tdf$lik_bookings * str_tdf$med_rate) -
+                           (str_tdf$lik_bookings * str_tdf$avg_guests * cpppd))
 
   # Create Extrapolation parameter
   str_tdf$extr_par <- 366 / str_tdf$total_days
 
-  # Calculate likely revenue
-  str_tdf$lik_revenue <- ((str_tdf$bookings * str_tdf$extr_par * str_tdf$med_rate) -
-                           (str_tdf$bookings * str_tdf$avg_guests *
-                             cpppd * str_tdf$extr_par))
 ```
 
 ```{r pot_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   str_tdf$occ_rate <- 1 - (str_tdf$block_rate + str_tdf$avail_rate)
 
-  str_tdf$pot_occ_rate <- ((str_tdf$bookings * str_tdf$extr_par) /
-                             (366 - (366 * str_tdf$block_rate)))
+  str_tdf$pot_occ_rate <- ((str_tdf$lik_bookings) / (366 - (366 * str_tdf$block_rate)))
 
   str_tdf$pot_revenue <- ((str_tdf$pot_occ_rate * 366 * str_tdf$med_rate) -
                            (str_tdf$pot_occ_rate * 366 * str_tdf$avg_guests * cpppd))

@@ -183,6 +183,37 @@ countCleaning <- function(clean_obj, operation){
 
 }
 
+### Impute likely bookings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+impLikelyBookings <- function(prop_df, 
+                              rate_summ){
+  
+  # Unnest the str prop data
+  prop_df <- prop_df %>% 
+    tidy::unnest()
+  
+  # Get relative booking rate (prop versus other props on those days)
+  rsp <- rate_summ %>%
+    dplyr::filter(date %in% prop_df$date)
+  w_obs <- sum(rsp$obs * rsp$rate) / sum(rsp$obs)
+  rel_rate <- (1 - prop_df$block_rate - prop_df$avail_rate) / w_obs
+  
+  # Estimate likely bookings with dates not currently in property
+  rso <- rate_summ %>%
+    dplyr::filter(!date %in% prop_df$date)
+  lik_book <- round(sum(rso$obs * rso$rate) / sum(rso$obs) * nrow(rso) * rel_rate, 0)
+  
+  # Add to existing to create likely and limit columns
+  p_df <- prop_df %>% 
+    dplyr::mutate(lik_bookings = bookings + lik_book) %>%
+    dplyr::select(property_id, lik_bookings) %>%
+    dplyr::slice(1)
+  
+  # Return
+  p_df
+  
+}
+
 
 
 

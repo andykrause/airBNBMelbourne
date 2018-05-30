@@ -1,6 +1,5 @@
 ---
 title: "Pre Processing of the Long Term Data"
-author: "Andy Krause and Gideon Aschwanden"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 editor_options: 
