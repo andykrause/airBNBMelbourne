@@ -53,6 +53,8 @@ Next, we source the necessary custom code files for the analysis.
   # Date of investment decision
   decision_date <- lubridate::as_date('2015-09-01')
   
+  str_col = col_df$rgb[1]
+  
 ```
 
 ## Load Data
@@ -62,85 +64,6 @@ We then load the data.
 ```{r load_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} 
 
   load(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData'))
-
-```
-
-### Calculating Net Revenues
-
-We begin the analysis by calculating the net revenues for the short term data.  We calculate three types of net revenues, Actual, Likely (Extrapolated) and Potential. The differences are described more fully in the writeup.
-
-Before we start, we estimate two figures necessary to determine utility costs: 1) Costs per person per day (cpppd) and the average number of guests per bedroom. The State of Victoria gives energy costs at \$330 (apartment) to \$520 (house).  For 2 persons in an apartment that works out to \$5 per person per day.  For a house of 4 persons that works out to about \$4 per person per day. We use a mid point value of \$4.50 per person per day.  We use an estimate of 1.5 persons per bedroom in each unit.
-
-```{r utility_estimates, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Set cost per person per day
-  cpppd <- 4.5
-
-  # Calculate avg number of guests
-  str_tdf$avg_guests <- str_tdf$bedrooms * 1.5
-
-```
-
-We then calculate the actual net revenue by multiplying booking times median rate - utility costs.  
-
-```{r act_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  str_tdf$act_revenue <- ((str_tdf$bookings * str_tdf$med_rate) -
-                                 (str_tdf$bookings * str_tdf$avg_guests * cpppd))
-
-
-```
-
-Next we create Likely Revenue, by imputing occupancy rates and revenues for the remainder of the year for those properties
-
-```{r lik_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  # Create daily rate summary
-  rate_summ <- str_tdf %>% 
-   dplyr::select(property_id, daily_data) %>%
-    tidyr::unnest() %>%
-    dplyr::filter(status != 'B') %>%
-    dplyr::group_by(date) %>%
-    summarize(rate = length(which(status == 'R')) / n(),
-            obs = n())
-
-  # Create new cluster
-  abb_cl <- get_default_cluster() 
-
-  # Register function and variable
-  cluster_copy(abb_cl, impLikelyBookings)
-  cluster_copy(abb_cl, rate_summ)
-  cluster_library(abb_cl, c("magrittr", 'dplyr', 'tidyr'))
-
-  # Summarize daily by property
-  lik_book_df <- str_tdf %>%
-    dplyr::filter(total_days != 366) %>%
-    multidplyr::partition(property_id, cluster=abb_cl) %>% 
-    dplyr::do(impLikelyBookings(., std=g)) %>% 
-    dplyr::collect()
-
-  # Add to the existing data
-  str_tdf <- str_tdf %>%
-    left_join(lik_book_df, by='property_id') %>%
-    dplyr::mutate(lik_bookings = if_else(is.na(lik_bookings), bookings, as.integer(lik_bookings)))
-
-  # Calculate likely revenue
-  str_tdf$lik_revenue <- ((str_tdf$lik_bookings * str_tdf$med_rate) -
-                           (str_tdf$lik_bookings * str_tdf$avg_guests * cpppd))
-
-  # Create Extrapolation parameter
-  str_tdf$extr_par <- 366 / str_tdf$total_days
-
-```
-
-```{r pot_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
-
-  str_tdf$occ_rate <- 1 - (str_tdf$block_rate + str_tdf$avail_rate)
-
-  str_tdf$pot_occ_rate <- ((str_tdf$lik_bookings) / (366 - (366 * str_tdf$block_rate)))
-
-  str_tdf$pot_revenue <- ((str_tdf$pot_occ_rate * 366 * str_tdf$med_rate) -
-                           (str_tdf$pot_occ_rate * 366 * str_tdf$avg_guests * cpppd))
 
 ```
 
@@ -191,9 +114,9 @@ From the imputed results, we extract the imputed rental values and merge to the 
   # Extract out DFs (only those that imputed)
   str_tdf <- str_tdf %>%
     dplyr::left_join(imp_df, by='property_id') %>%
-    dplyr::mutate(act_pref = ifelse(act_revenue > ltr_imp_revenue, 1, 0),
-                  lik_pref = ifelse(lik_revenue > ltr_imp_revenue, 1, 0),
-                  pot_pref = ifelse(pot_revenue > ltr_imp_revenue, 1, 0))
+    dplyr::mutate(act_pref = ifelse(revenue_net > ltr_imp_revenue, 1, 0),
+                  lik_pref = ifelse(lik_revenue_net > ltr_imp_revenue, 1, 0),
+                  pot_pref = ifelse(pot_revenue_net > ltr_imp_revenue, 1, 0))
 
 ```
 
@@ -277,7 +200,7 @@ We then add the number of blocked periods
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  ggplot(str_tdf, aes(x=block_rate, y=nbr_block * extr_par)) + 
+  ggplot(str_tdf, aes(x=block_rate, y=nbr_block * (366/total_days))) + 
     geom_point(fill=str_col, color=str_col, size=.2) +
     ylab('Nbr of Blocked Periods\n') + 
     xlab('\n% of Time Property is Blocked') +
@@ -292,7 +215,7 @@ No real pattern emerges, so we divide manually.
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
-  str_tdf$blockpertime <- round(str_tdf$nbr_block * str_tdf$extr_par, 1)
+  str_tdf$blockpertime <- round(str_tdf$nbr_block * (366 / str_tdf$total_days), 1)
 
   str_tdf$host_type <- 'Unknown'
   str_tdf$host_type[str_tdf$blockpertime > 12] <- 'Multi-Platform User'
@@ -348,8 +271,9 @@ And re-run the logistic regression models.
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
+  dir.create(file.path(getwd(), 'data', 'analyzed'))
   save(str_tdf, ltr_tdf, ltr_df, col_df, suburb_sf, studyarea_sf, sa1_sf, str_sf, ltr_sf,
        pot_glms, pot_ht_glms, lik_glms, lik_ht_glms, core_suburbs,
-       file=file.path(data_path, 'analyzed', 'analyzed_data.RData'))
+       file=file.path(getwd(), 'data', 'analyzed', 'analyzed_data.RData'))
 
 ```

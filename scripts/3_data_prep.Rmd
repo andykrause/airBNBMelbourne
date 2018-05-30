@@ -821,7 +821,6 @@ From these density plots we see that most long-term Rentals are greater than $20
 
 ```
  
- 
 ```{r ltprice_fltr33s, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
  
    ## Filter the long term data
@@ -841,34 +840,148 @@ From these density plots we see that most long-term Rentals are greater than $20
 #### Observed Revenue
  
 Our final data filtering considers the observed revenue of the properties. For the long-term rentals the observed revenue is the weekly rate multiplied by 52 minus the number of weeks the property was on the market.  In a number of extreme cases, time on market was extremely long and the total observed revenues very low. To remove these outlying observations, we filter out any properties with less than $5,000 in revenue.
+
+```{r ltr_rev}
+
+   ltr_tdf <- ltr_tdf %>%
+     dplyr::mutate(trans_data = map(trans_data, 
+                                    ~mutate(., 
+                                            gross_revenue = price * (52 - dom / 7)))) %>%
+     dplyr::mutate(trans_data = map(trans_data, 
+                                    ~filter(., gross_revenue >= 5000)))
+  
+```
+
+For the short-term data, we first calculate the total number of bookings, the occupancy rate, blocked rate and proportion of the year over which the property was listed.  Using this data we sum up the total revenue from bookings. 
  
-For the short-term data, we first calculate the total number of bookings, the occupancy rate, blocked rate and proportion of the year over which the property was listed.  Using this data we sum up the total revenue from bookings. For properties that were not listed on the site for the entire year, we impute their annual revenue by dividing the actual revenue by the proportion of the year in which they were listed.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] Properties with no reserved bookings, and, therefore, no revenue, are removed.
+ For properties that were not listed on the site for the entire year, we impute their annual revenue by dividing the actual revenue by the proportion of the year in which they were listed.^[Properties listed in summer, but not winter may be over imputed and vice versa, however, we expect the biases to cancel out over the entire sample.] Properties with no reserved bookings, and, therefore, no revenue, are removed.
  
 Looking at the distribution of the revenues from each tenure type, we see that those for the long-term rentals are for more consistent, with the vast majority totaling between \$12,000 to \$30,000 per year.  Short term revenues range from neglible to highs of greater than \$80,000.  While this simple analysis does not control for location and product differences, it does highlight the fact that some Airbnb owners are likely making greater revenues than in long-term rentals, but that most are likely not. Also, the high number of very low yield Airbnb properties also suggests that some owners may not be focused on maximizing revenue, but instead prefer the flexibility of short-term leasing.
  
-```{r revdensity.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, fig.width=6,fig.height=3.5, fig.cap='Comparison of Revenue Distributions'}
+```{r obs_bookings, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE}
  
    # Compute bookings count and str revenue
    countBookings <- function(x){
      length(which(x$status == 'R'))
    } 
-   makePotBookings <- function(x){
-     round(nrow(x) * (length(which(x$status == 'R')) / 
-                        length(which(x$status != 'B'))), 0)
-   } 
 
    str_tdf <- str_tdf %>%
      mutate(bookings = unlist(map(daily_data, ~countBookings(.))),
-            pot_bookings = unlist(map(daily_data, ~makePotBookings(.))),
-            gross_revenue = bookings * med_rate,
-            pot_revenue = pot_bookings * med_rate)
-           
-   # compute long term revenue
-   ltr_tdf <- ltr_tdf %>%
-     dplyr::mutate(trans_data = map(trans_data, 
-                                    ~mutate(., 
-                                            gross_revenue = price * (52 - dom / 7))))
-   
+            occ_rate = bookings / 366,
+            revenue = bookings * med_rate)
+
+```
+
+Next we impute the likely bookings for properties which were not listed on the portal for the entire year.
+
+```{r lik_bookings, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE}
+
+  # Create daily rate summary
+  rate_summ <- str_tdf %>% 
+   dplyr::select(property_id, daily_data) %>%
+    tidyr::unnest() %>%
+    dplyr::filter(status != 'B') %>%
+    dplyr::group_by(date) %>%
+    dplyr::summarize(rate = length(which(status == 'R')) / n(),
+                     obs = n())
+
+  # Create new cluster
+  abb_cl <- get_default_cluster() 
+
+  # Register function and variable
+  cluster_copy(abb_cl, impLikelyBookings)
+  cluster_copy(abb_cl, rate_summ)
+  cluster_library(abb_cl, c("magrittr", 'dplyr', 'tidyr'))
+
+  # Summarize daily by property
+  lik_book_df <- str_tdf %>%
+    dplyr::filter(total_days != 366) %>%
+    multidplyr::partition(property_id, cluster = abb_cl) %>% 
+    dplyr::do(impLikelyBookings(., rate_summ = rate_summ)) %>% 
+    dplyr::collect()
+
+  # Add to the existing data
+  str_tdf <- str_tdf %>%
+    left_join(lik_book_df, by='property_id') %>%
+    dplyr::mutate(lik_bookings = if_else(is.na(lik_bookings), 
+                                         bookings, 
+                                         as.integer(lik_bookings)),
+                  lik_occ_rate = lik_bookings / 366)
+
+```
+
+Finally, we compute the potential bookings, assuming that blocked periods were rented at the same rate as the non-block, controlling for dates and property specific performance on non-blocked dates. 
+
+```{r pot_bookings, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE}
+
+    # Create new cluster
+  abb_cl <- get_default_cluster() 
+
+  # Register function and variable
+  cluster_copy(abb_cl, impPotentialBookings)
+  cluster_copy(abb_cl, rate_summ)
+  cluster_library(abb_cl, c("magrittr", 'dplyr', 'tidyr'))
+
+  # Summarize daily by property
+  pot_book_df <- str_tdf %>%
+    dplyr::filter(block_rate > 0) %>%
+    multidplyr::partition(property_id, cluster = abb_cl) %>% 
+    dplyr::do(impPotentialBookings(., rate_summ = rate_summ)) %>% 
+    dplyr::collect()
+
+  # Add to the existing data
+  str_tdf <- str_tdf %>%
+    left_join(pot_book_df, by='property_id') %>%
+    dplyr::mutate(pot_bookings = if_else(is.na(pot_bookings), 
+                                         bookings, 
+                                         as.integer(pot_bookings)),
+                  pot_bookings = if_else(pot_bookings > 366L, 366L, pot_bookings),
+                  pot_occ_rate = pot_bookings / 366)
+
+```
+
+### Calculating Net Revenues
+
+We begin the analysis by calculating the net revenues for the short term data.  We calculate three types of net revenues, Actual, Likely (Extrapolated) and Potential. The differences are described more fully in the writeup.
+
+Before we start, we estimate two figures necessary to determine utility costs: 1) Costs per person per day (cpppd) and the average number of guests per bedroom. The State of Victoria gives energy costs at \$330 (apartment) to \$520 (house).  For 2 persons in an apartment that works out to \$5 per person per day.  For a house of 4 persons that works out to about \$4 per person per day. We use a mid point value of \$4.50 per person per day.  We use an estimate of 1.5 persons per bedroom in each unit.
+
+```{r utility_estimates, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Set cost per person per day
+  cpppd <- 4.5
+
+  # Calculate avg number of guests
+  str_tdf$avg_guests <- str_tdf$bedrooms * 1.5
+
+```
+
+We then calculate the actual net revenue by multiplying booking times median rate - utility costs.  
+
+```{r act_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str_tdf$revenue_net <- ((str_tdf$bookings * str_tdf$med_rate) -
+                             (str_tdf$bookings * str_tdf$avg_guests * cpppd))
+
+```
+
+Next we create Likely Revenue, by imputing occupancy rates and revenues for the remainder of the year for those properties,
+
+```{r lik_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Calculate likely revenue
+  str_tdf$lik_revenue_net <- ((str_tdf$lik_bookings * str_tdf$med_rate) -
+                                (str_tdf$lik_bookings * str_tdf$avg_guests * cpppd))
+
+```
+
+Then we create Potential Revenue, by imputing occupancy rates and revenues for blocked periods. 
+
+```{r pot_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str_tdf$pot_revenue_net <- ((str_tdf$pot_bookings * str_tdf$med_rate) -
+                                (str_tdf$pot_bookings * str_tdf$avg_guests * cpppd))
+
 ```
 
 ## Write out data  
