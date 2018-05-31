@@ -1,7 +1,6 @@
 ---
-title: "5_data_viz"
-author: "Andy Krause"
-date: "May 10, 2018"
+title: "Data Visualization"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -155,7 +154,7 @@ editor_options:
     geom_density(alpha=.5) +
     scale_fill_manual(values=dens_cols) +
     scale_color_manual(values=dens_cols) +
-    ggtitle('Short Term Revenue vs Long Term Revenue') +
+    ggtitle('Revenue Comparison: Short Term vs Long Term Properties') +
     xlab('Annual Revenue') +
     scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
                        labels=c('$0', '$20,000', '$40,000', '$60,000'))+
