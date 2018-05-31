@@ -46,6 +46,10 @@ editor_options:
   load(file.path(getwd(), 'data', 'analyzed', 'analyzed_data.RData'))
 
 ```
+## Abstract
+
+The growth of Airbnb and other short-term rental platforms have presented owners of residential properties with a choice of leasing strategy: traditional long-term rental or a short-term approach ("Airbnb-ing").  In this paper we identify those sitations -- location, structure type and property characteristics -- that lead to the highest likelihood of favoring a short-term strategy over a long term one. We also find that hosting policies matter, suggesting that even the right property needs the right owner(s) to make short-term rental the more profitable approach.  
+
 
 ## Introduction
 
