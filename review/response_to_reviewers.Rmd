@@ -11,22 +11,101 @@ header-includes:
    - \usepackage{caption}
    - \captionsetup[table]{skip=10pt}
 geometry: margin=3.3cm
-bibliography: abb.bib
 editor_options: 
   chunk_output_type: console
 ---
 
 ## Reviewer #1
 
-Thank you for your helpful and encouraging comments. 
+*I reviewed this paper from the comfort of a beachside Airbnb, one that I suspect is booked
+by short-‐term tenants like myself when the owner is elsewhere. I frequently book
+accommodation through the Airbnb portal, thus I found this paper quite interesting. Not
+only is it a welcome contribution to the body of research on short-‐term rentals, it also
+contributes to a broader category of research, namely how technology is impacting real
+estate via the sharing economy.*
+
+* Thank you for your helpful and encouraging comments. 
+
+*Firstly, a few minor changes.*
+
+1. *Page 10, line 48: the word ‘American’ should be changed to ‘America’*
+2. *Page 30, line 37: the word ‘than’ should be changed to ‘that’*
+3. *Page 31, line 57: the word ‘extend’ should be changed to ‘extent’*
 
 * Thank you for pointing out the three typographical errors on pages 10, 30 and 31.  We have corrected these.
 
-* We agree that there are many future avenue of research that can be pursued here, especially as data quality and quantity in this direction improves.  We appreciate your understanding of the difficulty of working with limited data and the necessity of our assumptions.
+*Next, there are two issues embedded in this research that have the potential to be
+problematic but are adequately addressed by the researcher(s). Firstly, the difficulty of
+combining the data sets and the lack of shared property characteristics can lead to
+unreliable findings. To alleviate these problems, the author(s) make reasonable
+assumptions justifying their approach to variable selection and manipulation. These
+assumptions are methodically detailed and defended thus, should better data be made
+available in the future, the results can be retested to ensure they are reliable.*
+
+* We agree that there are many future avenues of research that can be pursued here, especially as data quality and quantity in this direction improves.  We appreciate your understanding of the difficulty of working with limited data and the necessity of our assumptions.
+
+*Further, Melbourne is in a class of cities that support large, short-term rental markets based
+on their desirability as tourist destinations and also support large, long-term rental markets
+due to the number of amenities found in the central city and surrounding suburbs.
+Melbourne is arguably the premiere example of these types of urban areas and is frequently
+cited as the world’s most liveable city. However, while incomes, property values, and rents
+tend to increase based on proximity to the CBD, the situation is reversed in many North
+American markets. Because every urban area is different, the generalizability of the results
+is limited. Regardless, the author(s) present a framework for conducting similar studies in
+other urban areas that can be relatively easily replicated. Hopefully they will expand this
+research as it will be interesting to see how these results compare to other markets,
+including those that are less tourism-intensive.*
 
 * Regarding the structure of cities and the generalizability of the findings.  We agree that Melbourne, as a world class tourist destination and (arguably) the world's most livable city, does provide an example that does not necessarily translate well to a second or third tier city in many other parts of the world. As you noted, this desire for both tourists and residents to occupy the same space is what, in our minds, made this the ideal city for this analysis. We do feel that many of the world's first class cities are experiencing the same phenomenon -- namely that a large segment of the local population desires the same walkable, vibrant locations that tourists do, thus leading to increased demand and increasingly contentious discussions over the negative externalities of a thriving short-term rental market.  We've added some language in the beginning of the 'Limitations' section that addresses the issues of generalizability.  Finally, we are in the process of additional data collection to expand the research to a more representative sample.  
 
 ## Reviewer #2
 
+1. *The authors state “And, even if we knew that the blocked days were simply due to the host wanting to use the property themselves during that time, this deduction in revenue should not necessarily apply to the hypothetical investor in our examined scenario.” I agree with this statement. However, if the majority of the properties are vacation homes that owners rent out when they are not using them personally, then the hypothetical exercise performed in the paper is for naught. By definition, the owners cannot use a LTR strategy since it would preclude personal use throughout the year. In which case, the question “To Airbnb?” is not a question at all.*
 
-5. Thank you for pointing out this typographic error.  We have corrected it. 
+* We agree that this exercise wouldn't apply to an owner who leases out their home while away but occupies it at other times.  If an investor were to buy that home they would have the choice of doing either an LTR or an STR which is why we framed the hypothetical situation as that of an investor. In the sensitivity analysis we attempted to address this potential bias in the sample by separately looking at those properties which were listed as Available or Reserved (not Blocked) at least 75% of the time.  We believe that these are clearly situations where it is not an owner-occupied who is being opportunistic, but rather a profit-seeking owner/investor.  For context, the "Opportunistic Sharers", those owners who only list their home very periodically (less than 25\% of the time), make up only 18% of all owners in our sample.  
+
+*This is an issue as the authors state “Beach properties are, relatively speaking, over-represented in the short-term market... Given the over-representation of beach properties, the differing STR and LTR revenues may be a product of the property-type (vacation vs. non-vacation) or a clientele effect (vacation homeowners vs. investor). The owner of a vacation home rents their property to subsidize its cost when they are not consuming its services personally. Thus, the only choice for the vacation home is the STR strategy. Short-term vacation rentals existed prior to Airbnb, so this is not a new phenomenon.*
+
+* It is true that beach properties (mostly beach apartments) are overrepresented in the STR data.  As are city-core apartment.  In a situation with much greater quantities of data and the ability to match exact properties from STR and LTR markets, a matching approach would be the preferred method to eliminate these sample differences. We also considered some down-sampling of these two over-represented classes, but felt that further restricting an already small sample was not advantageous.  What we have done to limit the impact of these differences is three fold: 
+
+1) We have limited the study area (along the beach) to the 'urban' area of Melbourne where employment opportunities abound and where long-term renters are likely to demand to live.  More simply, we have not considered homes in the Mornington Peninsula, the tradition summer beach vacation area for Melburnians -- an area where there are many beach (and inland) homes whose highest and best use is heavily favored towards short term rentals (they are set up for large groups, include hot tubs, game rooms, extensive parking, etc. )    
+
+2) When estimating the long-term rental values we segment the models by submarket, so that we are only using beach properties to create beach rental values.  In this way, our comparison become a comparison of relative willingness to pay between short and long term renters for beach properties, not all properties.  
+
+3) We control for submarket type in statistical models that we run.
+
+Certainly, not all of the clientele effects are covered by these controls, but we feel that we have done what is available given the data quantity and quality.  The results, which show that beach properties have a considerably higher long-term preferance rate, suggest that many of the obvious 'beach house'-type dwellings used by owners for vacations have been controlled for in the study.  
+
+ * Response
+
+2. *Sample selection issues are a big concern given the limited amount of property-level information available in the Airbnb data. If the properties in the STR and LTR samples systematically differ then the hypothetical exercise and imputed values provide little insight (garbage in, garbage out).*
+
+ * It is certainly true that is there are unobserved and systematic differences between the two samples -- say in quality and condition -- then the imputed values are biased.  Much like our search for supporting evidence on the differences in costs, we were unable to find any existing research on the differences in quality and condition between STR and LTR properties.  The literature does offer solid evidence for a differences in quality and condition between rental and owner occupied dwellings, however, we felt uncomfortable making this same assumption for short and long term rentals.  One could argue that short term rentals pay a steeper price (in terms of bad reviews and the resulting immediate negative revenue) for possessing substandard internal amenities and, therefore, are likely to be kept in a better condition and offer higher quality finishes internally. On the other hand, long term rentals are inspected by potential occupants prior to occupancy and therefore less likely to deceive via a few good photographs and therefore, perhaps, LTR properties would be more likely to keep quality and condition levels high.  We struggled with which of the two scenario to believe and settled on making no assumption here at all. For the sake of comparison, in the current scenario about 28% of properties were STR preferable.  If we were to have overestimated the LTR imputed rents by 10%, this number rises to 32%, if we had underestimated by 10% this number falls to 25%.  So there is some sensitivity to the long term rent numbers, but it is not dramatic.  Further, this sensitivity represents a change in the base rate of STR preference (model intercept) and not necessarily a change in the impacts of any of the variables on STR preference itself. Overall the coefficients themselves are relatively stable across Tables 2, 4 and 6 suggesting that the influences of individual variable are robust across different base rates of STR preference.  
+ 
+3. *The short-term costs in Eq. 6 are understated. The authors note that short-term rentals are furnished by the owner, but do not include them as a cost. Given the feedback system built into Airbnb the furnishings may be a non-trivial expense. In other words, if the furnishing are in disrepair it may hurt the owners’ ratings and increase the vacancy rate of the STR. For this reason, I also expect the maintenance costs to be higher for the STR (especially since LTR has a security deposit to cover repairs that are not “normal wear and tear”). In addition, the authors do not address the question of who is managing the STR and responding to the Airbnb requests. Given the weekly (perhaps even nightly) turnover associated with STRs this is another cost that should be included/considered.*
+
+ * As furnishings are a durable good, only some small percentage of the costs is truly experienced during the first year, the period this exercise examines.  While furniture is a bit like automobilies, the minute you sleep on a mattress, it loses a good bit of value, year old furniture -- especially non-beds/sofa items do hold value relatively well.  Thus, furnishing costs are borne over a long time period.  Further, we were not able to determine which of the LTR rental are furnished so likely there is a bit of upward bias in those estimated values as well.  Neither of these facts eliminates the need to buy furniture to outfit an Airbnb, we simply did not have enough information on what the likely one year cost of furniture would be.  This is a relevant comment and we've tried to address its potential impact in sensivity analysis discussed a few paragraphs below.  
+ 
+ * We do agree that on-going (month by month) maintenance costs will likely be higher in an STR, however, large improvements, new carpets, painting, etc. do burden LTRs at tenant turnover.  As we mentioned on page 6, we believe there is an argument to be made that LTR tenants actually burden a property as much if not more by virtue of moving furniture in and out, hanging decorations and, likely, spending more actual time in the dwelling than a tourist would.  As a result of this and the fact that we were not able to find any evidence of greater maintenance costs on either side, we decided on assumming equivalent costs. 
+
+  * Certainly there are time costs of managing an STR.  These costs vary widely based on the owner's proximity to the STR and their individual imputed wage (the value of their time).  In general, these costs are somewhat idiosyncratic to the owner and we struggled with producing a standardized estimate.  On the converse, STR does allow for an early exit strategy, occupation or transfer to LTR on short notice, options which also have an unknown (or at least very owner-specific) value.  We opted to allow these two forces to 'balance' out and have not accounted for either.  The intent of the hypothetical exercise was to present the case of a simple investor (say a family) making one investment, not a large STR aggregation firm.  Note that there are firms in Melbourne and other cities that will manage your Airbnb for you.  Anecdotally, we've seen fees ranging from 8% to 15% for this service.  
+  
+  * All of the above concerns, seem to point to a potential over-estimate of STR costs, which would lower STR net revenues.  As a further senitivit analysis, we reduced net revenues by 15% (10% for management fee and 5% for a furnishing costs) **Do a 15% reduction in lik_revenue_net simulation**
+  
+4. *The STR vs. LTR decision may not apply to every property. In the United States, some HOAs ban short-term rentals and impose substantial fines. Are there similar situations in Melbourne? Similarly, some cities in the United States have proposed legislature to ban STR if it is not the homeowner’s primary residence (example here). Are there similar situations in Australia?*
+
+ * Very true.  The legality of short term rentals is very much in flux at the moment and varies from municipality to municipality, even building to building. One could imagine that in an area with high demand and a large number of dwelling being ineligible for STR leasing, that a premium might accrue to those that were eligible. At the time of this research, there were no governmental restrictions on short term use in Melbourne, though they were being hotly debated (which was the original impetus for this research).  Fines are now able to be levied for noise violations. Additionally, currently, the State of Victoria has regulations that directly impact properties that allow more than five occupants (business license required). The City of Sydney has moved from being opposed to any regulations to now proposing that individual condominium buildings enact rules that they see fit.  Of course, rules can only be enforced if adequate data on occupancies is available.  
+ 
+5. 
+a) *The abstract states “The growth of Airbnb and other short-term rental platforms have presented owners of residential properties with a choice of leasing strategy: traditional long-term rental or a short-term approach ("Airbnb-ing").” This option was available prior to Airbnb and the internet. Airbnb has “disrupted” the STR market, but it did not create it.*
+
+* Great point.  The short-term market for large, natural amenitiy-rich (ski + beach) properties is decades (if not centuries old).  We believe that Airbnb and its sister-sites have opened up this market to small, urban properties as well decreased search costs to the point that, from an owner perspective,  very short stays, even of a single night, can be economically feasible.  We have updated the abstract to represent the distinction that you have made.  
+
+b) *The next sentence in the abstract states “In this paper we identify those sitations -- location, structure type and property characteristics -- that lead to the highest likelihood of favoring a short-term strategy over a long term one.” I think sitations is a typo. I only point it out because it is in the abstract.*
+
+* Thank you for pointing out this typographic error.  We have corrected it. 
+
+6. The tables and figures do not have any supporting notes.
+
+ * Response
+ 

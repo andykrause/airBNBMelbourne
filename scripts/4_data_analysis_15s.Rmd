@@ -1,0 +1,278 @@
+---
+title: "Data Analysis and Modeling"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+### Introduction
+
+This document describes all of the code used to the generate the output included in the 'To Airbnb?' study. This analysis uses the output from the **3_data_prep.rmd** file found in the same online repository. 
+
+## Preliminary Commands
+
+&nbsp;
+
+We begin with a number of preliminary commands.  First we load all of the necessary R libraries for this analysis. 
+
+```{r load_libraries, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+
+  library(tidyverse)
+  library(sf)
+  library(geosphere)
+  library(ggmap)
+  library(multidplyr)
+  library(tmap)
+
+```
+
+```{r set_options, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+
+  options(stringsAsFactors=FALSE)
+  options(xtable.comment = FALSE)
+  options(xtable.caption.placement='top')
+
+```
+
+Next, we source the necessary custom code files for the analysis.  
+
+```{r source_files, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+
+  source(file.path(getwd(), 'functions', 'abb_Functions.R'))
+
+```
+
+### Set Parameters
+
+```{r set_constants, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
+  
+  # Exchange rate: AUS to US 
+  exch_rate <- 1.32  
+
+  # Date of investment decision
+  decision_date <- lubridate::as_date('2015-09-01')
+  
+```
+
+## Load Data
+
+We then load the data.
+
+```{r load_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} 
+
+  load(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData'))
+  str_col = col_df$rgb[1]
+  
+```
+
+#### Compare Revenue Distributions
+
+```{r flatten_ltr}
+
+  ltr_df <- ltr_tdf %>% 
+    unnest() %>%
+    select(-suburb.x) %>%
+    rename(suburb=suburb.y)
+
+```
+
+Before we examine the distributions of the observed short-term revenues and the estimated long-term revenues, we must produce the estimates of long-term revenue for the short-term properties.
+
+We start by specifying the imputation model specification we will use to estimated likely long-term (weekly) rental prices for each short-term property.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ltr_mod_spec <- formula(log(price) ~ as.factor(type) +
+                            as.factor(bedbath) + as.factor(suburb) +
+                            as.factor(month))
+
+```
+
+We then employ a custom function to impute the long term rents for the short-term properties.  The 'clip.field' is a spatial fixed effects that add spatial recognition to the models.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str_tdf$tbg <- paste0(str_tdf$product,'_', str_tdf$geo_mrkt)
+  ltr_df$tbg <- paste0(ltr_df$product,'_', ltr_df$geo_mrkt)
+
+  imp_df <- abbImputeCompare(str.df=str_tdf, 
+                                ltr.df=ltr_df, 
+                                mod.spec=ltr_mod_spec, 
+                                match.factor='suburb',
+                                split.field='tbg', 
+                                verbose=FALSE) 
+  
+  
+```
+
+From the imputed results, we extract the imputed rental values and merge to the original short-term data.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  # Extract out DFs (only those that imputed)
+  str_tdf <- str_tdf %>%
+    dplyr::left_join(imp_df, by='property_id') %>%
+    dplyr::mutate(act_pref = ifelse(.85*revenue_net > ltr_imp_revenue, 1, 0),
+                  lik_pref = ifelse(.85*lik_revenue_net > ltr_imp_revenue, 1, 0),
+                  pot_pref = ifelse(.85*pot_revenue_net > ltr_imp_revenue, 1, 0))
+
+```
+
+
+## Logit models
+
+Now we attempt to explain the drivers of preference with a set of logistic regression models.  
+
+First, a basic model with just structural characteristics.
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  glm_lik_str <- glm(lik_pref ~ type + as.factor(bedbath),
+                     family=binomial(link='logit'),
+                     data=str_tdf)
+
+  glm_pot_str <- glm(pot_pref~type+as.factor(bedbath),
+                       family=binomial(link='logit'),
+                       data=str_tdf)
+```
+
+Then a model that adds in the geographic submarkets
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  glm_lik_loc <- glm(lik_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt),
+                     family=binomial(link='logit'),
+                     data=str_tdf)
+
+  glm_pot_loc <- glm(pot_pref ~ type + as.factor(bedbath)+ as.factor(geo_mrkt),
+                     family=binomial(link='logit'),
+                     data=str_tdf)
+```
+
+Finally a model that adds in host policies. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  glm_lik_host <- glm(lik_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt) +
+                        guest_per_bed + min_stay + I(canc_policy == 'Flexible'),
+                      family=binomial(link='logit'),
+                      data=str_tdf)
+
+  glm_pot_host <- glm(pot_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt) +
+                        I(max_guests/bedrooms) + min_stay + I(canc_policy == 'Flexible'),
+                      family=binomial(link='logit'),
+                      data=str_tdf)
+  
+  lik_glms <- list(str=glm_lik_str,
+                   loc=glm_lik_loc,
+                   host=glm_lik_host)
+  
+  pot_glms <- list(str=glm_pot_str,
+                   loc=glm_pot_loc,
+                   host=glm_pot_host)
+  
+```
+
+### Host types
+
+Finally, we test to see if grouping by hosts types has any impact.  
+
+First we must divide hosts up.  We start by looking at block rate.  
+    
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ggplot(str_tdf, aes(x=block_rate)) + 
+    geom_density(fill=str_col, color=str_col) +
+    ylab('Frequency\n') + 
+    xlab('\n% of Time Property is Blocked') +
+    scale_x_continuous(breaks=seq(0,1,.2),
+                       labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+      ggtitle('Host Block Rate Frequency\n') +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(axis.text.y=element_blank(),
+          axis.ticks.y=element_blank())
+
+```
+
+We then add the number of blocked periods
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ggplot(str_tdf, aes(x=block_rate, y=nbr_block * (366/total_days))) + 
+    geom_point(fill=str_col, color=str_col, size=.2) +
+    ylab('Nbr of Blocked Periods\n') + 
+    xlab('\n% of Time Property is Blocked') +
+    scale_x_continuous(breaks=seq(0, 1, .2),
+                       labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+
+```
+
+No real pattern emerges, so we divide manually. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str_tdf$blockpertime <- round(str_tdf$nbr_block * (366 / str_tdf$total_days), 1)
+
+  str_tdf$host_type <- 'Unknown'
+  str_tdf$host_type[str_tdf$blockpertime > 12] <- 'Multi-Platform User'
+  str_tdf$host_type[str_tdf$block_rate <= .25] <- 'Profit Seeker'
+  str_tdf$host_type[str_tdf$block_rate >= .75] <- 'Opportunistic Sharer'
+  str_tdf$host_type <- factor(str_tdf$host_type,
+                              levels=c('Profit Seeker', 'Opportunistic Sharer', 
+                                        'Multi-Platform User', 'Unknown'))
+
+ ggplot(str_tdf, 
+       aes(x=block_rate, y=blockpertime, color=host_type)) + 
+  geom_point(alpha=.5, size=.8, shape=16) +
+  ylab('Number of Blocked Periods\n') + 
+  xlab('\n% of Time Property is Blocked') +
+      ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+ 
+    scale_x_continuous(breaks=seq(0, 1, .2),
+                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    scale_color_manual(values=c(col_df$rgb[2], col_df$rgb[4], col_df$rgb[7], 
+                                col_df$rgb[9])) + 
+    theme(legend.position='bottom',
+           legend.title = element_blank(),
+         plot.title = element_text(hjust = 0.5))+
+     guides(colour = guide_legend(override.aes = list(size=3,
+                                                     alpha=1)))
+
+```
+
+And re-run the logistic regression models. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ht_. <- split(str_tdf, str_tdf$host_type)
+  
+  lik_spec <- as.formula(lik_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt) +
+                          guest_per_bed + min_stay + I(canc_policy == 'Flexible'))
+
+  pot_spec <- as.formula(pot_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt) +
+                          guest_per_bed + min_stay + I(canc_policy == 'Flexible'))
+
+  lik_ht_glms <- purrr::map(ht_.,
+                         .f=glm,
+                         formula=lik_spec,
+                         family=binomial(link='logit'))
+  
+  pot_ht_glms <- purrr::map(ht_.,
+                         .f=glm,
+                         formula=pot_spec,
+                         family=binomial(link='logit'))
+    
+```
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  dir.create(file.path(getwd(), 'data', 'analyzed'))
+  save(str_tdf, ltr_tdf, ltr_df, col_df, suburb_sf, studyarea_sf, sa1_sf, str_sf, ltr_sf,
+       pot_glms, pot_ht_glms, lik_glms, lik_ht_glms, core_suburbs,
+       file=file.path(getwd(), 'data', 'analyzed', 'analyzed_data.RData'))
+
+```
