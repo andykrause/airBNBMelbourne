@@ -1,0 +1,32 @@
+---
+title: "Reviewer Responses: To Airbnb?: A Question of Revenue"
+subtitle: "Andy Krause and Gideon Aschwanden"
+author: "Greenfield Advisors and University of Melbourne"
+date: "July 22nd, 2018"
+output:
+  pdf_document: default
+  html_document: default
+header-includes: 
+   - \usepackage{setspace}\doublespacing
+   - \usepackage{caption}
+   - \captionsetup[table]{skip=10pt}
+geometry: margin=3.3cm
+bibliography: abb.bib
+editor_options: 
+  chunk_output_type: console
+---
+
+## Reviewer #1
+
+Thank you for your helpful and encouraging comments. 
+
+* Thank you for pointing out the three typographical errors on pages 10, 30 and 31.  We have corrected these.
+
+* We agree that there are many future avenue of research that can be pursued here, especially as data quality and quantity in this direction improves.  We appreciate your understanding of the difficulty of working with limited data and the necessity of our assumptions.
+
+* Regarding the structure of cities and the generalizability of the findings.  We agree that Melbourne, as a world class tourist destination and (arguably) the world's most livable city, does provide an example that does not necessarily translate well to a second or third tier city in many other parts of the world. As you noted, this desire for both tourists and residents to occupy the same space is what, in our minds, made this the ideal city for this analysis. We do feel that many of the world's first class cities are experiencing the same phenomenon -- namely that a large segment of the local population desires the same walkable, vibrant locations that tourists do, thus leading to increased demand and increasingly contentious discussions over the negative externalities of a thriving short-term rental market.  We've added some language in the beginning of the 'Limitations' section that addresses the issues of generalizability.  Finally, we are in the process of additional data collection to expand the research to a more representative sample.  
+
+## Reviewer #2
+
+
+5. Thank you for pointing out this typographic error.  We have corrected it. 
