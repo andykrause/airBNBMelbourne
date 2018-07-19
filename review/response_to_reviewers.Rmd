@@ -90,7 +90,132 @@ Certainly, not all of the clientele effects are covered by these controls, but w
 
   * Certainly there are time costs of managing an STR.  These costs vary widely based on the owner's proximity to the STR and their individual imputed wage (the value of their time).  In general, these costs are somewhat idiosyncratic to the owner and we struggled with producing a standardized estimate.  On the converse, STR does allow for an early exit strategy, occupation or transfer to LTR on short notice, options which also have an unknown (or at least very owner-specific) value.  We opted to allow these two forces to 'balance' out and have not accounted for either.  The intent of the hypothetical exercise was to present the case of a simple investor (say a family) making one investment, not a large STR aggregation firm.  Note that there are firms in Melbourne and other cities that will manage your Airbnb for you.  Anecdotally, we've seen fees ranging from 8% to 15% for this service.  
   
-  * All of the above concerns, seem to point to a potential over-estimate of STR costs, which would lower STR net revenues.  As a further senitivit analysis, we reduced net revenues by 15% (10% for management fee and 5% for a furnishing costs) **Do a 15% reduction in lik_revenue_net simulation**
+  * All of the above concerns seem to point to a potential underestimate of STR costs, which would lower STR net revenues.  As a further senitivity analysis, we reduced net STR revenues by 15% (10% for management fee and 5% for a furnishing costs), the results of which are found in the Table below. These should be compared to Table 2 in the paper.  Reducing STR revenues by 15% has the likely impact of decreasing the base rate of STR preference from 28% down to 22% (also evidenced in the intercept terms Table 1.)  The coefficients on the set of variables tested (while moving) have generally remained stable in both terms of magnitude and direction.  We feel that your comments regarding management and furniture are worthwhile.  We worry about adding another table of sensitivity results to the paper in terms of confusion.  We have added additional language to the Discussion section to note these omission, explain our rationale for doing so and discuss the sensitivity test shown in Table 1 of this response. 
+  
+```{r load_libraries, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'}
+
+  library(tidyverse)
+  library(sf)
+  library(geosphere)
+  library(ggmap)
+  library(multidplyr)
+  library(tmap)
+  library(xtable)
+  library(ROCR)
+  library(xtable)
+
+```
+
+```{r options_functions, message=FALSE, warning=FALSE, comment=FALSE, echo=FALSE, results='hide'}
+
+  options(stringsAsFactors=FALSE)
+  options(xtable.comment = FALSE)
+  options(xtable.caption.placement='top')
+  setwd('..')
+  source(file.path(getwd(), 'functions', 'abb_Functions.R'))
+
+```
+
+```{r load_data, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, results='hide'}
+
+  setwd('..')
+  load(file.path(getwd(), 'data', 'analyzed', 'analyzed_data_15s.RData'))
+
+```
+
+```{r log_model, echo=FALSE, message=FALSE, comment=FALSE}
+
+ ## Extract data
+
+  m1 <- as.data.frame(summary(lik_glms$str)$coefficients)
+  m2 <- as.data.frame(summary(lik_glms$loc)$coefficients)
+  m3 <- as.data.frame(summary(lik_glms$host)$coefficients)
+
+ ## Create vector with significance stars
+
+  m1sig <- makeStatSig(m1[ ,4])
+  m2sig <- makeStatSig(m2[ ,4])
+  m3sig <- makeStatSig(m3[ ,4])
+
+ ## Create coefficients for the table (with stars)
+
+  m1$table.coef <- paste0(ifelse(m1$Estimate>0, ' ', ''),
+                          sprintf('%.3f', round(m1$Estimate,3)),
+                          m1sig)
+  m2$table.coef <- paste0(ifelse(m2$Estimate>0, ' ', ''),
+                          sprintf('%.3f',round(m2$Estimate,3)),
+                          m2sig)
+  m3$table.coef <- paste0(ifelse(m3$Estimate>0, ' ', ''),
+                          sprintf('%.3f',round(m3$Estimate,3)),
+                          m3sig)
+
+ ## Even out the lengths
+
+  m1c <- c(m1$table.coef, rep(' ', nrow(m3)-nrow(m1)))
+  m2c <- c(m2$table.coef, rep(' ', nrow(m3)-nrow(m2)))
+  m3c <- m3$table.coef
+
+ ##  Create the variable section of table
+ full.table <- as.data.frame(cbind(rep('x', length(m1c)), m1c, m2c, m3c))
+ names(full.table) <- c('Variable', 'Model 1', "Model 2", "Model 3")
+ full.table$Variable <- c('Intercept', 'House (Type)', '2 Bed & 1 Bath',
+                          '2 Bed & 2 Bath', '3 Bed & 1 Bath', '3 Bed & 2 Bath',
+                          '3 Bed & 3 Bath','4 Bed & 2 Bath','4 Bed & 3 Bath', 
+                          'City (Submarket)',
+                          'Suburban (Submarket)', 'Rural (Submarket)',
+                          'Beach (Submarket)', 'Guests per Bedroom',
+                          'Minimum Stay', 'Flexible Cancel')
+
+ ## Create model diagnostics
+
+  # Extract diagnostics
+  str.dx <- logDx(lik_glms$str, str_tdf, str_tdf$lik_pref)
+  sm.dx <- logDx(lik_glms$loc, str_tdf, str_tdf$lik_pref)
+  host.dx <- logDx(lik_glms$host, str_tdf, str_tdf$lik_pref)
+
+  # Create diagnostic table
+  diag.table <- data.frame(Variable=c('', 'Diagnostics', 'AIC', 'LogLik',
+                                      'AUC'),
+                           Str.Model=c('', '', round(str.dx$AIC,0),
+                                       round(str.dx$logLik, 0),
+                                       round(as.numeric(str.dx$auc@y.values),
+                                             3)),
+                           Sm.Model=c('', '', round(sm.dx$AIC,0),
+                                      round(sm.dx$logLik, 0),
+                                      round(as.numeric(sm.dx$auc@y.values), 3)),
+                           Host.Model=c('', '', round(host.dx$AIC,0),
+                                        round(host.dx$logLik, 0),
+                                        round(as.numeric(host.dx$auc@y.values),
+                                              3)))
+  names(diag.table) <- c('Variable', 'Model 1', "Model 2", "Model 3")
+
+ ## Combine into full table
+
+  full.table <- rbind(full.table, diag.table)
+```
+
+```{r table_logmodel, results='asis', echo=FALSE, message=FALSE, comment=FALSE}
+
+  # XTable
+  x.full <- xtable(full.table,
+                  caption='Logistic Modeling Results (15% Cost Increase: Likely Revenue)\n')
+  align(x.full) <- 'lllll'
+
+  
+  # comment          <- list()
+  # comment$pos      <- list()
+  # comment$pos[[1]] <- c(nrow(x.full))
+  # comment$command  <- c("your footnote, caption or whatever.  \n")
+
+  # Print
+  print(x.full,
+       include.rownames=FALSE,
+       hline.after=c(-1,0,16,21,21),
+       # add.to.row = comment,
+       caption.placement='top')
+
+```
+  
   
 4. *The STR vs. LTR decision may not apply to every property. In the United States, some HOAs ban short-term rentals and impose substantial fines. Are there similar situations in Melbourne? Similarly, some cities in the United States have proposed legislature to ban STR if it is not the homeowner’s primary residence (example here). Are there similar situations in Australia?*
 
@@ -105,7 +230,7 @@ b) *The next sentence in the abstract states “In this paper we identify those 
 
 * Thank you for pointing out this typographic error.  We have corrected it. 
 
-6. The tables and figures do not have any supporting notes.
+6. *The tables and figures do not have any supporting notes.*
 
- * Response
+ * We are unclear as to what sort of supporting notes are desired.   Information on data sources are provided in the accompanying text.  We are happy to add whatever is necessary to help the reader, if you can provide some examples here.  
  

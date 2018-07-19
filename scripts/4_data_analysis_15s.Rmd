@@ -273,6 +273,6 @@ And re-run the logistic regression models.
   dir.create(file.path(getwd(), 'data', 'analyzed'))
   save(str_tdf, ltr_tdf, ltr_df, col_df, suburb_sf, studyarea_sf, sa1_sf, str_sf, ltr_sf,
        pot_glms, pot_ht_glms, lik_glms, lik_ht_glms, core_suburbs,
-       file=file.path(getwd(), 'data', 'analyzed', 'analyzed_data.RData'))
+       file=file.path(getwd(), 'data', 'analyzed', 'analyzed_data_15s.RData'))
 
 ```

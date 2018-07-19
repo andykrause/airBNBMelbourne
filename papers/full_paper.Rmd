@@ -2,7 +2,7 @@
 title: "To Airbnb?: A Question of Revenue"
 subtitle: "Andy Krause and Gideon Aschwanden"
 author: "Greenfield Advisors and University of Melbourne"
-date: "May 30th, 2018"
+date: "July 22nd, 2018"
 output:
   pdf_document: default
   html_document: default
@@ -36,14 +36,18 @@ editor_options:
   options(xtable.comment = FALSE)
   options(xtable.caption.placement='top')
   setwd('..')
-  source(file.path(getwd(), 'functions', 'abb_Functions.R'))
+  #source(file.path(getwd(), 'functions', 'abb_Functions.R'))
+  source(file.path('c:/code', 'research', 'airbnbMelbourne', 'functions', 'abb_Functions.R'))
 
+  
 ```
 
 ```{r load_data, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE, results='hide'}
 
-  setwd('..')
-  load(file.path(getwd(), 'data', 'analyzed', 'analyzed_data.RData'))
+  # setwd('..')
+  # load(file.path(getwd(), 'data', 'analyzed', 'analyzed_data.RData'))
+  load(file.path('c:', 'code', 'research', 'airbnbMelbourne','data', 'analyzed',
+                 'analyzed_data.RData'))
 
 ```
 ## Abstract
@@ -710,7 +714,7 @@ Next, there are few shared property characterstics between the two datasets, whi
 
 Additionally, we have opted to make comparisons between short- and long-term strategies by imputing long-term rents for short-term properties with a hedonic price model. Alternatively, a matching procedure could be employed that would match like properties between the two markets and use comparisons between the two as evidence of potential short and long-term revenues.
 
-In this work, we have made the assumption that, over the course of a year, the general maintenance costs (excluding basic janitorial) are identical between short and long-term leasing options.  We have done so as we were unable to location any evidence to suggest that one was higher than the other.  This may be a limitation of our study and could prove to be an avenue of future research.
+In this work, we have made the assumption that, over the course of a year, the general maintenance costs (excluding basic janitorial) are identical between short and long-term leasing options.  We have done so as we were unable to location any evidence to suggest that one was higher than the other. Additionally, in the reported results we have not made allowances for furniture and the turnover costs associated with managing an STR.  This omission is intentional as we felt these costs were highly idiosyncratic (turnover) and/or not limited to the one-year scenario period (furniture).  Sensitivity tests on these two costs (both of which lower STR revenues) do create decrease in the base rate of STR preference, but show little change to the coefficients across the various regression models. There is limited research around STR rental hosting costs and this uncertainty around cost estimates is a limitation of our study and could prove to be an avenue of future research.
 
 Beyond Airbnb.com other short-term platforms exist (e.g. www.homeaway.com). This project doesn't take into account that individual properties may be advertised and rented out through different platforms. These are additional revenue streams that are not take into account and might increase the occupancy and revenue for short-term rentals. We do suggest that, due to block patterns, a number of host do appear to be employing this approach but cannot confirm the extend to which this is actually happening.
 
