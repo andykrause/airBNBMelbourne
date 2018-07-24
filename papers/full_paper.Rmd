@@ -1,8 +1,8 @@
 ---
 title: "To Airbnb?: A Question of Revenue"
-subtitle: "Andy Krause and Gideon Aschwanden"
-author: "Greenfield Advisors and University of Melbourne"
-date: "July 22nd, 2018"
+#subtitle: "(Andy Krause and Gideon Aschwanden)Rev"
+#author: "Greenfield Advisors and University of Melbourne"
+date: "Revised: July 22nd, 2018"
 output:
   pdf_document: default
   html_document: default
@@ -52,7 +52,7 @@ editor_options:
 ```
 ## Abstract
 
-The growth of Airbnb and other short-term rental platforms have presented owners of residential properties with a choice of leasing strategy: traditional long-term rental or a short-term approach ("Airbnb-ing").  In this paper we identify those sitations -- location, structure type and property characteristics -- that lead to the highest likelihood of favoring a short-term strategy over a long term one. We also find that hosting policies matter, suggesting that even the right property needs the right owner(s) to make short-term rental the more profitable approach.  
+The growth of Airbnb and other short-term rental platforms have presented owners of residential properties with a choice of leasing strategy: traditional long-term rental or a short-term approach ("Airbnb-ing").  In this paper we identify those situations -- location, structure type and property characteristics -- that lead to the highest likelihood of favoring a short-term strategy over a long term one. We also find that hosting policies matter, suggesting that even the right property needs the right owner(s) to make short-term rental the more profitable approach.  
 
 
 ## Introduction
@@ -722,7 +722,11 @@ Finally, our analysis looks at a single year, beginning in September (spring) an
 
 #### Reproducibility
 
-All code used to complete this analysis, done in the R language^[Using the following packages: \texttt{sp} [@sp], \texttt{maptools} [@maptools], \texttt{ggplot2} [@ggplot2], \texttt{xtable} [@xtable], \texttt{ggmap} [@ggmap], \texttt{plyr} [@plyr], \texttt{reshape2} [@reshape2], \texttt{stringr} [@stringr], \texttt{knitr} [@knitr], \texttt{rmarkdown} [@rmarkdown], \texttt{lmtest} [@lmtest], \texttt{ROCR} [@ROCR], and \texttt{kernlab} [@kernlab]], is available for download at **[www.github.com/andykrause/airbnbmelbourne](https://www.github.com/andykrause/airbnbmelbourne)**. 
+All code used to complete this analysis, done in the R language^[Using the following packages: \texttt{sp} [@sp], \texttt{maptools} [@maptools], \texttt{ggplot2} [@ggplot2], \texttt{xtable} [@xtable], \texttt{ggmap} [@ggmap], \texttt{plyr} [@plyr], \texttt{reshape2} [@reshape2], \texttt{stringr} [@stringr], \texttt{knitr} [@knitr], \texttt{rmarkdown} [@rmarkdown], \texttt{lmtest} [@lmtest], \texttt{ROCR} [@ROCR], and \texttt{kernlab} [@kernlab]], is available for download at **[www.github.com/anonymousreauthor/to_airbnb](https://www.github.com/anonymousreauthor/to_airbnb)**.
+
+<!--  -->
+
+
 
 ### Acknowledgements
 
