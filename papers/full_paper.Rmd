@@ -2,7 +2,7 @@
 title: "To Airbnb?: A Question of Revenue"
 #subtitle: "(Andy Krause and Gideon Aschwanden)Rev"
 #author: "Greenfield Advisors and University of Melbourne"
-date: "Revised: July 22nd, 2018"
+date: "Revised: October 16th, 2018"
 output:
   pdf_document: default
   html_document: default
