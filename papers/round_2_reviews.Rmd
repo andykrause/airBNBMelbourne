@@ -5,7 +5,21 @@ date: "10/17/2018"
 output: html_document
 ---
 
-Reviewer 1
+### Key Points:
+
+#### Reviewer 1
+
+* Add in something on Short term vs long term bonds
+* Doesn't trust hedonic estimation.  Do matched pairs. (maybe cal OOB error rates)
+
+#### Reviewer 2
+
+* Can't determine who are actually investors, so the research question isn't valid
+* Make tables/figures self contained
+
+### Full comments
+
+#### Reviewer 1
 
 This is an interesting paper. It is clear that, given the data limitation, the author has made a significant effort to conduct a detailed analysis to address the performance issues on short term versus long term leases. However, at this moment, the paper seems to be more like a very high quality consulting report than an academic paper. I have two suggestions for the author to improve the paper.
 
@@ -13,7 +27,7 @@ The first issue is on the motivation of the paper. There is a long literature on
 
 The second issue is on the empirical design. I understand that it is difficult to gather a perfect data set. However, to use hedonic pricing model to estimate the long run rent might not provide the accuracy level that is required for the purpose of the study. This is especially true because I suspect that there is self-selection bias built into the samples.  Certain types of investors and certain types of properties might be the determining factors for the use of long term versus short term leases. Given this, the long run rent derived from a hedonic estimation will have identification problem. I suggest that the author also uses the matched pair method to see if the hedonic result holds. I understand that the author might not be able to gather perfect matched pairs. However, a matched pair based first on same building (in the same condominium or the same complex) and then adjusted by size might provide a much more accurate estimate than that provided by a hedonic price model with few independent variables.
 
-Reviewer 2
+#### Reviewer 2
 
 The primary goal of this paper is to characterize the property features – location, structure type, and property characteristics – that lead to the highest likelihood of favoring a short-term rental (STR) over a long-term rental (LTR) strategy.
  
