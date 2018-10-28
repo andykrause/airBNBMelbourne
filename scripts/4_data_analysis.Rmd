@@ -115,14 +115,14 @@ We then employ a custom function to impute the long term rents for the short-ter
            ltr_imp_revenue = .5 * (ltr_imp_revenueH + ltr_imp_revenueK),
            lir_hi = ltr_imp_revenue * 1.15,
            lir_lo = ltr_imp_revenue * .85)
+  imp_df <- imp_df %>%
+    left_join(str_tdf %>%
+                dplyr::select(property_id, bedrooms, bathrooms, type, latitude,
+                              longitude),
+              by='property_id')
   
-  
-  
-  
-  
-  
-  
-  
+    save(imp_df, file=file.path(getwd(), 'data', 'analyzed', 'reviewers.RData'))
+
 ```
 
 From the imputed results, we extract the imputed rental values and merge to the original short-term data.
@@ -287,11 +287,13 @@ And re-run the logistic regression models.
 ```
 
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
   dir.create(file.path(getwd(), 'data', 'analyzed'))
   save(str_tdf, ltr_tdf, ltr_df, col_df, suburb_sf, studyarea_sf, sa1_sf, str_sf, ltr_sf,
        pot_glms, pot_ht_glms, lik_glms, lik_ht_glms, core_suburbs,
        file=file.path(getwd(), 'data', 'analyzed', 'analyzed_data.RData'))
+  
+  save(ltr_df, file=file.path(getwd(), 'data', 'analyzed', 'reviewers.RData'))
 
 ```

@@ -1,7 +1,7 @@
 ---
 title: "Round_2_Reviews"
-author: "Andy Krause"
-date: "10/17/2018"
+author: "Andy Krause and Gideon Aschwanden"
+date: "10/25/2018"
 output: html_document
 ---
 
@@ -9,42 +9,85 @@ output: html_document
 
 #### Reviewer 1
 
-* Add in something on Short term vs long term bonds
-* Doesn't trust hedonic estimation.  Do matched pairs. (maybe cal OOB error rates)
+* ~~Add in something on Short term vs long term bonds~~
+* ~~Doesn't trust hedonic estimation.  Do matched pairs.~~
 
 #### Reviewer 2
 
-* Can't determine who are actually investors, so the research question isn't valid
-* Make tables/figures self contained
+* (in Progress) Can't determine who are actually investors, so the research question isn't valid
+* ~~Make tables/figures self contained~~
 
 ### Full comments
 
 #### Reviewer 1
 
-This is an interesting paper. It is clear that, given the data limitation, the author has made a significant effort to conduct a detailed analysis to address the performance issues on short term versus long term leases. However, at this moment, the paper seems to be more like a very high quality consulting report than an academic paper. I have two suggestions for the author to improve the paper.
+*This is an interesting paper. It is clear that, given the data limitation, the author has made a significant effort to conduct a detailed analysis to address the performance issues on short term versus long term leases. However, at this moment, the paper seems to be more like a very high quality consulting report than an academic paper. I have two suggestions for the author to improve the paper.*
 
-The first issue is on the motivation of the paper. There is a long literature on the selection of long term versus short term bonds and the trade-off between fixed rate versus adjustable rate mortgages. The general issues on the selection of short-term lease versus long-term lease should not differ too much from the term structure issues of bonds and mortgages. The author should try to tie the issues they would like to examine (using leases) to the general issues reported in the term structure literature. After the author has identified the general issues, they can motivate the paper much better and the paper will contribute more to the main literature. At this moment, the main finding of this paper that short leases sometimes perform much better (and sometimes worse) than long term leases is something practitioners might be interested in, but is not an important contribution to the literature. This is the reason why I said that this paper is more like a consulting report than an academic research.
+*The first issue is on the motivation of the paper. There is a long literature on the selection of long term versus short term bonds and the trade-off between fixed rate versus adjustable rate mortgages. The general issues on the selection of short-term lease versus long-term lease should not differ too much from the term structure issues of bonds and mortgages. The author should try to tie the issues they would like to examine (using leases) to the general issues reported in the term structure literature. After the author has identified the general issues, they can motivate the paper much better and the paper will contribute more to the main literature. At this moment, the main finding of this paper that short leases sometimes perform much better (and sometimes worse) than long term leases is something practitioners might be interested in, but is not an important contribution to the literature. This is the reason why I said that this paper is more like a consulting report than an academic research.*
 
-The second issue is on the empirical design. I understand that it is difficult to gather a perfect data set. However, to use hedonic pricing model to estimate the long run rent might not provide the accuracy level that is required for the purpose of the study. This is especially true because I suspect that there is self-selection bias built into the samples.  Certain types of investors and certain types of properties might be the determining factors for the use of long term versus short term leases. Given this, the long run rent derived from a hedonic estimation will have identification problem. I suggest that the author also uses the matched pair method to see if the hedonic result holds. I understand that the author might not be able to gather perfect matched pairs. However, a matched pair based first on same building (in the same condominium or the same complex) and then adjusted by size might provide a much more accurate estimate than that provided by a hedonic price model with few independent variables.
+**As Real Estate is an asset class much like bonds there likely warrants a larger theoretical discussion on the short vs. long term holding structure.  However, we do not feel that this paper is the correct place to do so given its empirical focus.  The fact that this comment was raised (and the input from another reviewer regarding our research question) has led us to re-focus our research question and the aim of this study.  In short, we want to focus on the built environment side of the question, not the financial structuring side.  In other words, what types of properties in which locations are short term preferable, rather than attempting to make a judgement about the financial decision-making of an owner -- a situation whereby many individual and idiosyncratic factors play a large role  We appreciate you raising this concern as it has helped us think through the ultimate goal of our work.**
+
+*The second issue is on the empirical design. I understand that it is difficult to gather a perfect data set. However, to use hedonic pricing model to estimate the long run rent might not provide the accuracy level that is required for the purpose of the study. This is especially true because I suspect that there is self-selection bias built into the samples.  Certain types of investors and certain types of properties might be the determining factors for the use of long term versus short term leases. Given this, the long run rent derived from a hedonic estimation will have identification problem. I suggest that the author also uses the matched pair method to see if the hedonic result holds. I understand that the author might not be able to gather perfect matched pairs. However, a matched pair based first on same building (in the same condominium or the same complex) and then adjusted by size might provide a much more accurate estimate than that provided by a hedonic price model with few independent variables.*
+
+**To address this issue we have added a 'matched-pairs'-type estimation to our imputation of long-term rents.  More specifically we do an ensemble of 3, 5, and 7 comparable matched-pairs type valuations using the nearest 3, 5, and 7 transactions that have identical bedrooms, bathrooms and structure type (apartment/detached). For apartments this often pulled in transactions in the same building, for detached dwelling on the same block or street. Results from this estimation show a 91% correlation with our hedonic results, though there did seem to be a deviation in the high end apartment market, especially for 1 bedroom units.  As a result, we take the average of the matched pairs ensemble and the hedonic model.**
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+    
+  library(ggplot2)
+
+   load(file.path('c:/code', 'research', 'airbnbMelbourne',
+                  'data', 'analyzed', 'reviewers.RData'))
+
+  imp_df$bed_lab <- paste0(imp_df$bedrooms, ' Beds')
+  fig_cap <- paste0('This figure compares the estimated long term rent for short term rental properties via the hedonic\n imputation method (X-axis) and the matched pairs-type method (Y-axis).  It is broken down by\n structure type (Apartment vs House) and by bedroom count.')
+  
+  ggplot(imp_df,
+         aes(x=ltr_imp_revenueH, y=ltr_imp_revenueK, col = type)) + 
+    geom_point(alpha = .5, size=.5) + 
+    facet_grid(type ~ bed_lab) + 
+    xlab('\nHedonic Revenue\n') + 
+    ylab('Matched Pairs Revenue\n') + 
+    theme(legend.position = 'none',
+          plot.caption=element_text(hjust = 0.3),
+          plot.title = element_text(hjust = 0.5)) +
+    scale_color_manual(values = c('red', 'blue')) + 
+    scale_x_continuous(breaks = c(15000, 30000, 45000),
+                       labels = c('$15k', '$30k', '$45k'))+
+    scale_y_continuous(breaks = c(15000, 30000, 45000),
+                       labels = c('$15k', '$30k', '$45k'))+
+    geom_abline(intercept = 0, slope = 1, linetype = 2,
+                color = 'gray50') +
+    labs(caption = fig_cap,
+         title = 'Comparison of Hedonic and Matched Pairs Imputation')
+  
+
+```
 
 #### Reviewer 2
 
-The primary goal of this paper is to characterize the property features – location, structure type, and property characteristics – that lead to the highest likelihood of favoring a short-term rental (STR) over a long-term rental (LTR) strategy.
+*The primary goal of this paper is to characterize the property features – location, structure type, and property characteristics – that lead to the highest likelihood of favoring a short-term rental (STR) over a long-term rental (LTR) strategy.*
  
-In my opinion, the research question is misguided. A clientele effect likely determines whether a property owner uses a STR over a LTR strategy. For simplicity’s sake, let us assume there are three distinct user groups on Airbnb:
+*In my opinion, the research question is misguided. A clientele effect likely determines whether a property owner uses a STR over a LTR strategy. For simplicity’s sake, let us assume there are three distinct user groups on Airbnb:*
 
-- Owner-occupiers
-- Vacation home owners
-- Investors
+* *Owner-occupiers*  **(Wait, what?  How do these factor in?  You can't occupy given our study design.)**
+* *Vacation home owners* **(Our study design eliminates most of these give our boundary)**
+* *Investors*
 
-By definition, two of the three groups cannot choose a LTR strategy. If owner-occupiers use a LTR strategy they would have to find new housing. Similarly, vacation home owners cannot use a LTR strategy as it would preclude their use of the property for vacation purposes. If either group did use a LTR strategy, then they would no longer be a part of that group and would, by definition, transition to the investors group. Thus, for the purposes of this paper we are only interested in the investors decision between LTR and STR. Unfortunately, due to data limitations, the authors cannot identify and isolate the Airbnb listings by the investors group.
+*By definition, two of the three groups cannot choose a LTR strategy. If owner-occupiers use a LTR strategy they would have to find new housing. Similarly, vacation home owners cannot use a LTR strategy as it would preclude their use of the property for vacation purposes. If either group did use a LTR strategy, then they would no longer be a part of that group and would, by definition, transition to the investors group. Thus, for the purposes of this paper we are only interested in the investors decision between LTR and STR. Unfortunately, due to data limitations, the authors cannot identify and isolate the Airbnb listings by the investors group.*
 
-The authors note that they isolate “those properties which were listed as Available or Reserved (not Blocked) at least 75% of the time (Tables 5 and 6). We believe that these are clearly situations where it is not an owner-occupied who is being opportunistic, but rather a profit-seeking owner/investor.” However, the filter does not remove properties listed by vacation home owners. Again, the vacation home owners do not have the option to choose a LTR strategy, so for them the question “To Airbnb?” is not a question at all – it is their only option. Instead, the vacation home owners use the STR strategy to subsidize the cost of their vacation home when they are not using it themselves. If vacation home owners represent a large fraction of the Airbnb users, then the proposed research question is incorrect.
+*The authors note that they isolate “those properties which were listed as Available or Reserved (not Blocked) at least 75% of the time (Tables 5 and 6). We believe that these are clearly situations where it is not an owner-occupied who is being opportunistic, but rather a profit-seeking owner/investor.” However, the filter does not remove properties listed by vacation home owners. Again, the vacation home owners do not have the option to choose a LTR strategy, so for them the question “To Airbnb?” is not a question at all – it is their only option. Instead, the vacation home owners use the STR strategy to subsidize the cost of their vacation home when they are not using it themselves. If vacation home owners represent a large fraction of the Airbnb users, then the proposed research question is incorrect.*
 
-The authors also fail to address the relationship between risk and return. Even if the STR strategy offers a higher return (i.e. more revenue), it is also carries a higher risk given the nightly/weekly turnover and susceptibility to economic conditions. Thus, the investor group would consider the risk adjusted returns of the two strategies. In other words, the question “To Airbnb?” cannot be answered by simply comparing imputed revenue streams.
+**[Forthcoming] Discuss how our study design eliminated most vacation homes.  Move the Sensitive test on Maximizers to be the key focus of the paper**
 
-Overall, I think the authors did the best they could with the data provided to them. However, I fail to see a major contribution in the paper. In essence, the paper proposes that investors will choose a strategy that nets them the highest revenue. However, the paper does not control for several important factors such as the riskiness of the cash flows or the amount of time/effort expended to manage a STR vs. a LTR.
+*The authors also fail to address the relationship between risk and return. Even if the STR strategy offers a higher return (i.e. more revenue), it is also carries a higher risk given the nightly/weekly turnover and susceptibility to economic conditions. Thus, the investor group would consider the risk adjusted returns of the two strategies. In other words, the question “To Airbnb?” cannot be answered by simply comparing imputed revenue streams.*
+
+**[Forthcoming] Make a note about pivoting away from financial calculus to location/utility argument**
+
+*Overall, I think the authors did the best they could with the data provided to them. However, I fail to see a major contribution in the paper. In essence, the paper proposes that investors will choose a strategy that nets them the highest revenue. However, the paper does not control for several important factors such as the riskiness of the cash flows or the amount of time/effort expended to manage a STR vs. a LTR.*
+
 
 Minor Comment
 
-Most academic journals require figures and tables to be self-contained. In other words, a reader should be able to interpret a table or figure without reading the text. Including a short note that describes each figure and table is an easy way to accomplish this goal. See, for example, the figures and tables in the latest version of Journal of Real Estate Research (v40, n2, 2018).
+*Most academic journals require figures and tables to be self-contained. In other words, a reader should be able to interpret a table or figure without reading the text. Including a short note that describes each figure and table is an easy way to accomplish this goal. See, for example, the figures and tables in the latest version of Journal of Real Estate Research (v40, n2, 2018).*
+
+**Great suggestion.  We've updated our figures and table to contain such.**
