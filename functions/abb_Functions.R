@@ -454,6 +454,53 @@ imputeLtrRents <- function(ltr.df,
               model=ltr.mod))
 }
 
+
+
+knnImputeWrap <- function(ltr_df, 
+                          str_df,
+                          knns = c(3, 5, 7)){
+  
+  # Create Split Lists
+  ltr_ <- plyr::dlply(ltr_df, .variables = c('bedrooms', 'bathrooms', 
+                                             'type'))
+  str_ <- plyr::dlply(str_tdf, .variables = c('bedrooms', 'bathrooms', 
+                                              'type'))
+  ltr_ <- ltr_[names(ltr_) %in% names(str_)]
+  
+  k_ <- list()
+  
+  for (j in knns){
+    
+    k_[[j]] <- purrr::map2(.x = str_,
+                           .y = ltr_,
+                           .f = knnImpute,
+                           k = j) %>%
+      dplyr::bind_rows()
+  }
+  
+  x <- tidyr::spread(k_ %>% bind_rows(), k, weekly_rent)
+  x$mean <- rowMeans(x[,grepl('k_', names(x))])
+  x$year <- x$mean * 52
+  x
+}
+
+knnImpute <- function(s_df, l_df, k){
+  
+  nn <- RANN::nn2(data=l_df[, c('longitude', 'latitude')],
+                  query = s_df[, c('longitude', 'latitude')],
+                  k = k)
+  
+  getMed <- function(x,y){median(y$price[x])}
+  
+  kp_df <- plyr::adply(nn$nn.idx, 1, getMed, y=l_df)
+  
+  return(data.frame(property_id = s_df$property_id,
+                    weekly_rent = kp_df$V1,
+                    k = paste0('k_', k)))
+  
+}
+
+
 ### Impute days on market for the airbnb properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 imputeDOM <- function(str.df,

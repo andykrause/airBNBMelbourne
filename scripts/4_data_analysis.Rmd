@@ -103,6 +103,25 @@ We then employ a custom function to impute the long term rents for the short-ter
                                 split.field='tbg', 
                                 verbose=FALSE) 
   
+  kimp_df <- knnImputeWrap(ltr_df = ltr_df, 
+                           str_df = str_tdf,
+                           knns = c(3, 5, 7))
+  
+  imp_df$ltr_imp_revenueK <- kimp_df$year[match(imp_df$property_id,
+                                               kimp_df$property_id)]
+  imp_df <- imp_df %>%
+    rename(ltr_imp_revenueH = ltr_imp_revenue) %>%
+    mutate(ltr_imp_revenueK = ((365-imp_dom)/365) * ltr_imp_revenueK,
+           ltr_imp_revenue = .5 * (ltr_imp_revenueH + ltr_imp_revenueK),
+           lir_hi = ltr_imp_revenue * 1.15,
+           lir_lo = ltr_imp_revenue * .85)
+  
+  
+  
+  
+  
+  
+  
   
 ```
 
