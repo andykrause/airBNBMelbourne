@@ -479,7 +479,11 @@ knnImputeWrap <- function(ltr_df,
   }
   
   x <- tidyr::spread(k_ %>% bind_rows(), k, weekly_rent)
-  x$mean <- rowMeans(x[,grepl('k_', names(x))])
+  if (length(unique(knns)) > 1){
+   x$mean <- rowMeans(x[,grepl('k_', names(x))])
+  } else {
+    x$mean <- x[,grepl('k_', names(x))]
+  }
   x$year <- x$mean * 52
   x
 }

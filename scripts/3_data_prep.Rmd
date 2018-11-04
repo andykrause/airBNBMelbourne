@@ -115,7 +115,7 @@ Then we load three GIS shapefiles.  The first two denote suburb and Statistical 
     st_transform(crs=4283)
   sa1_sf <- sf::st_read(file.path(getwd(), 'data', 'geographic', 'sa1s.shp')) %>%
     st_transform(crs=4283)
-  beach_sf <- sf::st_read(file.path(getwd(), 'data', 'geographic','portPhillipBeach.shp')) %>%
+  beach_sf <- sf::st_read(file.path(getwd(), 'data', 'geographic','portPhillipBeach_no_outer.shp')) %>%
     st_transform(crs=4283)
 
 ```
@@ -288,6 +288,82 @@ As long-term rentals do not offer **Private Room** or **Shared Room** options^[O
   clean_obj <- countCleaning(clean_obj, 'listing_type')
 
 ```
+ 
+ 
+### Host types
+
+Finally, we test to see if grouping by hosts types has any impact.  
+
+First we must divide hosts up.  We start by looking at block rate.  
+    
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ggplot(str_tdf, aes(x=block_rate)) + 
+    geom_density(fill=str_col, color=str_col) +
+    ylab('Frequency\n') + 
+    xlab('\n% of Time Property is Blocked') +
+    scale_x_continuous(breaks=seq(0,1,.2),
+                       labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+      ggtitle('Host Block Rate Frequency\n') +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(axis.text.y=element_blank(),
+          axis.ticks.y=element_blank())
+
+```
+
+We then add the number of blocked periods
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  ggplot(str_tdf, aes(x=block_rate, y=nbr_block * (366/total_days))) + 
+    geom_point(fill=str_col, color=str_col, size=.2) +
+    ylab('Nbr of Blocked Periods\n') + 
+    xlab('\n% of Time Property is Blocked') +
+    scale_x_continuous(breaks=seq(0, 1, .2),
+                       labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+    theme(plot.title = element_text(hjust = 0.5)) 
+
+```
+
+No real pattern emerges, so we divide manually. 
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+
+  str_tdf$blockpertime <- round(str_tdf$nbr_block * (366 / str_tdf$total_days), 1)
+
+  str_tdf$host_type <- 'Unknown'
+  #str_tdf$host_type[str_tdf$blockpertime > 12] <- 'Multi-Platform User'
+  str_tdf$host_type[str_tdf$block_rate <= .25] <- 'Profit Seeker'
+  str_tdf$host_type[str_tdf$block_rate >= .75] <- 'Opportunistic Sharer'
+  # str_tdf$host_type <- factor(str_tdf$host_type,
+  #                             levels=c('Profit Seeker', 'Opportunistic Sharer', 
+  #                                       'Multi-Platform User', 'Unknown'))
+  str_tdf$host_type <- factor(str_tdf$host_type,
+                              levels=c('Profit Seeker', 'Opportunistic Sharer', 
+                                       'Unknown'))
+
+ ggplot(str_tdf, 
+       aes(x=block_rate, y=blockpertime, color=host_type)) + 
+  geom_point(alpha=.5, size=.8, shape=16) +
+  ylab('Number of Blocked Periods\n') + 
+  xlab('\n% of Time Property is Blocked') +
+      ggtitle('Block Rate vs. Nbr. of Blocked Periods\n') +
+ 
+    scale_x_continuous(breaks=seq(0, 1, .2),
+                     labels=c('0%', '20%', '40%', '60%', '80%', '100%')) +
+    scale_color_manual(values=c(col_df$rgb[2], col_df$rgb[4], col_df$rgb[7])) + 
+    theme(legend.position='bottom',
+           legend.title = element_blank(),
+         plot.title = element_text(hjust = 0.5))+
+     guides(colour = guide_legend(override.aes = list(size=3,
+                                                     alpha=1)))
+ 
+ str_tdf_all <- str_tdf
+ str_tdf <- str_tdf %>% dplyr::filter(host_type == 'Profit Seeker')
+
+``` 
+ 
  
 ## Structural Characteristics
  
@@ -591,15 +667,15 @@ Next we assign the suburb, SA1, city-core and beach designations to observations
                       dplyr::select(suburb = NAME_2006,
                                     sub_des = suburbDesi,
                                     geometry)) %>%
-   dplyr::filter(!is.na(sub_des))
+   dplyr::filter(!is.na(sub_des) & sub_des != 'Outer')
     
    ltr_sf <- st_join(ltr_sf, 
                      suburb_sf %>% 
                        dplyr::select(suburb = NAME_2006,
                                      sub_des = suburbDesi,
                                      geometry)) %>%
-   dplyr::filter(!is.na(sub_des))
-
+   dplyr::filter(!is.na(sub_des) & sub_des != 'Outer')
+  
 ```
 
 Determine which suburbs are represented in both datasets and trim to those observations to suburbs with at least three transactions
@@ -705,30 +781,26 @@ Add market designations.
   ## Add to STR
  
    # Add individual classes
-   str_sf$geo_mrkt <- 'rural'
-   str_sf$geo_mrkt[str_sf$sub_des == 'Middle'] <- 'suburban'
+   str_sf$geo_mrkt <- 'suburban'
    str_sf$geo_mrkt[str_sf$sub_des == 'Inner'] <- 'city'
    str_sf$geo_mrkt[str_sf$suburb %in% core_suburbs] <- 'city-core'
    str_sf$geo_mrkt[str_sf$beach == 1] <- 'beach'
    
    # Order the factors properly
    str_sf$geo_mrkt <- factor(str_sf$geo_mrkt,
-                               levels=c('city-core', 'city', 'suburban',
-                                        'rural', 'beach'))
+                               levels=c('city-core', 'city', 'suburban', 'beach'))
    
    ## Add to LTR  
      
    # Add individual classes
-   ltr_sf$geo_mrkt <- 'rural'
-   ltr_sf$geo_mrkt[ltr_sf$sub_des == 'Middle'] <- 'suburban'
+   ltr_sf$geo_mrkt <- 'suburban'
    ltr_sf$geo_mrkt[ltr_sf$sub_des == 'Inner'] <- 'city'
    ltr_sf$geo_mrkt[ltr_sf$suburb %in% core_suburbs] <- 'city-core'
    ltr_sf$geo_mrkt[ltr_sf$beach == 1] <- 'beach'
    
    # Order the factors properly
    ltr_sf$geo_mrkt <- factor(ltr_sf$geo_mrkt,
-                               levels=c('city-core', 'city', 'suburban',
-                                        'rural', 'beach'))
+                               levels=c('city-core', 'city', 'suburban', 'beach'))
    
 ```
  
@@ -978,15 +1050,15 @@ We then calculate the actual net revenue by multiplying booking times median rat
 
 ```
 
-Next we create Likely Revenue, by imputing occupancy rates and revenues for the remainder of the year for those properties,
+<!-- Next we create Likely Revenue, by imputing occupancy rates and revenues for the remainder of the year for those properties, -->
 
-```{r lik_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+<!-- ```{r lik_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
 
-  # Calculate likely revenue
-  str_tdf$lik_revenue_net <- ((str_tdf$lik_bookings * str_tdf$med_rate) -
-                                (str_tdf$lik_bookings * str_tdf$avg_guests * cpppd))
+<!--   # Calculate likely revenue -->
+<!--   str_tdf$lik_revenue_net <- ((str_tdf$lik_bookings * str_tdf$med_rate) - -->
+<!--                                 (str_tdf$lik_bookings * str_tdf$avg_guests * cpppd)) -->
 
-```
+<!-- ``` -->
 
 Then we create Potential Revenue, by imputing occupancy rates and revenues for blocked periods. 
 
@@ -1002,7 +1074,7 @@ Then we create Potential Revenue, by imputing occupancy rates and revenues for b
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
    save(str_tdf, ltr_tdf, str_sf, ltr_sf, studyarea_sf, suburb_sf, beach_sf, sa1_sf,
-        col_df, clean_obj, core_suburbs,
+        col_df, clean_obj, core_suburbs, str_tdf_all,
         file=paste0(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData')))
  
 ```

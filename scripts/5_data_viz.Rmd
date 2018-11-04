@@ -134,16 +134,16 @@ editor_options:
 
    # Add together for plotting
    rev_df <- bind_rows(str_tdf %>% 
-                         dplyr::select(type, revenue=lik_revenue_net) %>%
-                         dplyr::mutate(tenure = 'Short Term (Likely)   ',
+                         dplyr::select(type, revenue=revenue_net) %>%
+                         dplyr::mutate(tenure = '  Short Term (Actual)   ',
                                        alpha = .5),
                        str_tdf %>% 
                          dplyr::select(type, revenue=pot_revenue_net) %>%
-                         dplyr::mutate(tenure = 'Short Term (Potential)   ',
+                         dplyr::mutate(tenure = '  Short Term (Potential)   ',
                                        alpha = .4),
                        ltr_df %>%
                          dplyr::select(type, revenue=gross_revenue) %>%
-                         dplyr::mutate(tenure = 'Long-Term   ',
+                         dplyr::mutate(tenure = '  Long-Term   ',
                                        alpha = .9))
 
   png(filename = file.path(getwd(), 'images', "rev_dens.png"), 
@@ -179,7 +179,7 @@ Host type investigation
 
   ## Create table of host block frequencies
 
-  host.block.freq <- ggplot(str_tdf, aes(x=block_rate)) +
+  host.block.freq <- ggplot(str_tdf_all, aes(x=block_rate)) +
      geom_density(fill=str.col, color=str.col) +
      ylab('Frequency\n') +
      xlab('\n% of Time Property is Blocked') +
@@ -190,7 +190,7 @@ Host type investigation
      theme(axis.text.y=element_blank(),
            axis.ticks.y=element_blank())
   
-  block.rate.period <- ggplot(str_tdf, aes(x=block_rate, y=nbr_block * (366/total_days))) +
+  block.rate.period <- ggplot(str_tdf_all, aes(x=block_rate, y=nbr_block * (366/total_days))) +
     geom_point(fill=str.col, color=str.col, size=.2) +
     ylab('Nbr of Blocked Periods\n') +
     xlab('\n% of Time Property is Blocked') +
@@ -210,7 +210,7 @@ Host type investigation
 
 ```{r host_types2}
 
-  base.host <- ggplot(str_tdf,
+  base.host <- ggplot(str_tdf_all,
                     aes(x=block_rate, y=blockpertime)) +
                 geom_point(alpha=.7, size=.4, shape=16, color='gray70') +
                 ylab('# Blckd Periods\n') +
@@ -227,27 +227,27 @@ Host type investigation
                 guides(colour = guide_legend(override.aes = list(size=3,                                                                       alpha=1)))
 
    ps.host <- base.host +
-    geom_point(data=str_tdf[str_tdf$host_type == 'Profit Seeker', ], size=.4)  +
+    geom_point(data=str_tdf_all[str_tdf_all$host_type == 'Profit Seeker', ], size=.4)  +
     ggtitle('Profit Seekers')
 
   os.host <- base.host +
-    geom_point(data=str_tdf[str_tdf$host_type == 'Opportunistic Sharer', ],
+    geom_point(data=str_tdf_all[str_tdf_all$host_type == 'Opportunistic Sharer', ],
                size=.4)  +
     ggtitle('Opportunistic Sharer')
 
-  mu.host <- base.host +
-    geom_point(data=str_tdf[str_tdf$host_type == 'Multi-Platform User', ],
-               size=.4)  +
-    ggtitle('Multi-Platform User')
+  # mu.host <- base.host +
+  #   geom_point(data=str_tdf_all[str_tdf_all$host_type == 'Multi-Platform User', ],
+  #              size=.4)  +
+  #   ggtitle('Multi-Platform User')
 
   un.host <- base.host +
-    geom_point(data=str_tdf[str_tdf$host_type == 'Unknown', ], size=.4)  +
+    geom_point(data=str_tdf_all[str_tdf_all$host_type == 'Unknown', ], size=.4)  +
     ggtitle('Unknown')
 
   png(filename = file.path(getwd(), 'images', "host_scat.png"), 
-       width = 5.5, height = 3, units = 'in', res = 300)
+       width = 4, height = 6.5, units = 'in', res = 300)
 
-    ggMultiPlots(ps.host, mu.host, os.host, un.host, cols=2)
+    ggMultiPlots(ps.host, un.host, os.host, cols=1)
 
   dev.off()  
      
@@ -260,14 +260,13 @@ Host type investigation
   png(filename = file.path(getwd(), 'images', "host_bar.png"), 
        width = 3, height = 3, units = 'in', res = 300)
 
- ggplot(str_tdf, aes(host_type, fill=host_type)) +
+ ggplot(str_tdf_all, aes(host_type, fill=host_type)) +
     geom_bar() +
-    scale_fill_manual(values=c(col_df$rgb[2], col_df$rgb[4], col_df$rgb[7], 
-                               col_df$rgb[9]))+
+    scale_fill_manual(values=c(col_df$rgb[2], col_df$rgb[4], col_df$rgb[9]))+
     theme(legend.position='none') +
     ylab('Frequency\n') +
     xlab('\nHost Type') +
-    scale_x_discrete(labels=c('Profit','Sharer','Multi','Unknown'))+
+    scale_x_discrete(labels=c('Profit-Seekers','Opportunistic Sharers','Unknowns'))+
     #ggtitle('short-term Host Types') +
     theme(plot.title = element_text(hjust = 0.5))
 
