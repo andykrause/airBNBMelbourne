@@ -6,7 +6,7 @@ date: "11/8/2018"
 output: pdf_document
 ---
 
-### What's Changed
+## What's Changed
 
 1. Refined sample to better fit research question
 * Further focused on urban properties by removing rural homes from the sample due to likelihood of being second homes occasionally used by owners
@@ -23,11 +23,13 @@ output: pdf_document
 
 5. Updated title to represent change in focus
 
+6. Shortened data preparation section
+
 &nbsp;
 &nbsp;
 &nbsp;
 
-### Direct responses to reviewers
+## Direct responses to reviewers
 
 &nbsp;
 &nbsp;
@@ -54,40 +56,6 @@ output: pdf_document
 
 &nbsp;
 
-```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
-    
-  library(ggplot2)
-
-   load(file.path('c:/code', 'research', 'airbnbMelbourne',
-                  'data', 'analyzed', 'reviewers.RData'))
-
-  imp_df$bed_lab <- paste0(imp_df$bedrooms, ' Beds')
-  fig_cap <- paste0('This figure compares the estimated long term rent for short term rental properties via the hedonic\n imputation method (X-axis) and the matched pairs-type method (Y-axis).  It is broken down by\n structure type (Apartment vs House) and by bedroom count.')
-  
-  ggplot(imp_df,
-         aes(x=ltr_imp_revenueH, y=ltr_imp_revenueK, col = type)) + 
-    geom_point(alpha = .5, size=.5) + 
-    facet_grid(type ~ bed_lab) + 
-    xlab('\nHedonic Revenue\n') + 
-    ylab('Matched Pairs Revenue (A$)\n') + 
-    theme(legend.position = 'none',
-          plot.caption=element_text(hjust = 0.3),
-          plot.title = element_text(hjust = 0.5)) +
-    scale_color_manual(values = c('red', 'blue')) + 
-    scale_x_continuous(breaks = c(15000, 30000, 45000),
-                       labels = c('$15k', '$30k', '$45k'))+
-    scale_y_continuous(breaks = c(15000, 30000, 45000),
-                       labels = c('$15k', '$30k', '$45k'))+
-    geom_abline(intercept = 0, slope = 1, linetype = 2,
-                color = 'gray50') +
-    labs(caption = fig_cap,
-         title = 'Comparison of Hedonic and Matched Pairs Imputation')
-  
-
-```
-
-&nbsp;
-&nbsp;
 
 #### Reviewer 2
 
