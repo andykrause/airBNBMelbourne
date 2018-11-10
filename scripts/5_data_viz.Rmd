@@ -22,6 +22,7 @@ editor_options:
 ```
 
 ```{r load_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, results='hide'}
+  load(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData'))
 
   load(file.path(getwd(), 'data', 'analyzed', 'analyzed_data.RData'))
 
@@ -44,6 +45,16 @@ editor_options:
   mid_sf <- suburb_sf %>% dplyr::filter(class == 'Middle' & 
                                           name != 'Seabrook' &  
                                            name != 'Altona Meadows') %>% st_union()
+  
+  sub_sdf <- ltr_tdf %>%
+    group_by(suburb.x, Submarket) %>%
+    dplyr::summarize(count=n())
+  sub_sf <- suburb_sf %>%
+    dplyr::left_join(sub_sdf %>%
+                       dplyr::select(name = suburb.x, Submarket))
+  
+  cc_sf <- sub_sf %>% dplyr::filter(Submarket == '   City-Core   ') %>% st_union()
+  beach_sf <- sub_sf %>% dplyr::filter(Submarket == '   Beach   ') %>% st_union()
   
    # Make map
   
@@ -73,34 +84,56 @@ editor_options:
   
   ltr_map <-   tm_shape(mid_sf) + 
     tm_fill(col='gray95', lwd=1) +
+    tm_borders(col = 'gray40', lwd=1) +
   tm_shape(inn_sf) + 
-    tm_fill(col='gray90', lwd=1) +
+    tm_fill(col='gray85', lwd=1) +  
+  tm_shape(cc_sf) + 
+    tm_fill(col='gray75', lwd=1) +
+  tm_shape(beach_buffer) + 
+    tm_fill(col='gray65', lwd=1) +
+  tm_shape(suburb_sf %>% dplyr::filter(in_studyarea == 1)) +
+    tm_borders(col='gray70', lwd=.5) +
   tm_shape(studyarea_sf) + 
     tm_borders(col='black', lwd=2) +
-  tm_shape(suburb_sf %>% dplyr::filter(in_studyarea == 1)) +
-    tm_borders(col='gray80', lwd=.5) +
   tm_shape(ltr_sf %>% dplyr::rename(Submarket = geo_mrkt)) +
     tm_symbols('Submarket', size=.02,
                palette = sm_col, alpha=.9, shape=16, legend.col.show=TRUE)+
     tm_layout(title = "LTR Observations",
-              title.position = c("center", "top"),
-              title.size = .8)
-  
-  
-  str_map <- tm_shape(mid_sf) + 
-    tm_fill(col='gray95', lwd=1) +
+              title.position = c("left", "top"),
+              title.size = .8) +
   tm_shape(inn_sf) + 
-    tm_fill(col='gray90', lwd=1) +
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(cc_sf) + 
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(beach_buffer) + 
+    tm_borders(col = 'gray40', lwd=1)
+  
+  
+  str_map <-   tm_shape(mid_sf) + 
+    tm_fill(col='gray95', lwd=1) +
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(inn_sf) + 
+    tm_fill(col='gray85', lwd=1) +  
+  tm_shape(cc_sf) + 
+    tm_fill(col='gray75', lwd=1) +
+  tm_shape(beach_buffer) + 
+    tm_fill(col='gray65', lwd=1) +
+  tm_shape(suburb_sf %>% dplyr::filter(in_studyarea == 1)) +
+    tm_borders(col='gray70', lwd=.5) +
   tm_shape(studyarea_sf) + 
     tm_borders(col='black', lwd=2) +
-  tm_shape(suburb_sf %>% dplyr::filter(in_studyarea == 1)) +
-    tm_borders(col='gray80', lwd=.5) +
   tm_shape(str_sf %>% dplyr::rename(Submarket = geo_mrkt)) +
     tm_symbols('Submarket', size=.02,
-               palette = sm_col, alpha=.9, shape=16) + 
-    tm_layout(title = "STR Observations",
-              title.position = c("center", "top"),
-              title.size = .8)
+               palette = sm_col, alpha=.9, shape=16, legend.col.show=TRUE)+
+    tm_layout(title = "LTR Observations",
+              title.position = c("left", "top"),
+              title.size = .8) +
+  tm_shape(inn_sf) + 
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(cc_sf) + 
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(beach_buffer) + 
+    tm_borders(col = 'gray40', lwd=1)
   
   
   sltr_map <- tmap_arrange(ltr_map, str_map) 
@@ -365,4 +398,51 @@ Host type investigation
 
   dev.off()  
   
+```
+
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
+    
+  library(ggplot2)
+
+   load(file.path('c:/code', 'research', 'airbnbMelbourne',
+                  'data', 'analyzed', 'reviewers.RData'))
+
+  imp_df$bed_lab <- paste0(imp_df$bedrooms, ' Beds')
+  fig_cap <- paste0('This figure compares the estimated long term rent for short term rental properties via the hedonic imputation\nmethod (X-axis) and the matched pairs-type method (Y-axis).  It is broken down by bedroom count and\nstructure type (Apartment vs House). Overall correlation is 89.4%')
+  
+  # imp_cor <- imp_df %>%
+  #   dplyr::group_by(type, bed_lab) %>%
+  #   dplyr::summarize(count = n(),
+  #                    cor = cor(ltr_imp_revenueH, ltr_imp_revenueK))
+  # 
+  #   
+  # d1 + geom_text(data=data.frame(x=0.25, y=1.5e+04, label=1:7, 
+  #                              color=c("D","E","F","G","H","I","J")), 
+  #              aes(x,y,label=label), inherit.aes=FALSE)
+  
+  png(filename = file.path(getwd(), 'images', "imp_cor.png"), 
+       width = 7, height = 4, units = 'in', res = 300)
+
+  ggplot(imp_df,
+         aes(x=ltr_imp_revenueH, y=ltr_imp_revenueK, col = type)) + 
+    geom_point(alpha = .5, size=.5) + 
+    facet_grid(type ~ bed_lab) + 
+    xlab('\nHedonic Revenue (A$)\n') + 
+    ylab('Matched Pairs Revenue (A$)\n') + 
+    theme(legend.position = 'none',
+          plot.caption=element_text(hjust = 0),
+          plot.title = element_text(hjust = 0.5)) +
+    scale_color_manual(values = c(col_df$rgb[8], col_df$rgb[10])) + 
+    scale_x_continuous(breaks = c(15000, 30000, 45000),
+                       labels = c('$15k', '$30k', '$45k'))+
+    scale_y_continuous(breaks = c(15000, 30000, 45000),
+                       labels = c('$15k', '$30k', '$45k'))+
+    geom_abline(intercept = 0, slope = 1, linetype = 2,
+                color = 'gray50') +
+    labs(caption = fig_cap)
+ 
+  dev.off()  
+   
+
 ```

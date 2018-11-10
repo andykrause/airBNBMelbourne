@@ -147,6 +147,8 @@ Now we attempt to explain the drivers of preference with a set of logistic regre
 
 First, a basic model with just structural characteristics.
 
+
+
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
 
   glm_pot_str <- glm(pot_pref~type+as.factor(bedbath),
@@ -158,6 +160,8 @@ First, a basic model with just structural characteristics.
   glm_pot_str_us <- glm(pot_pref_us~type+as.factor(bedbath),
                        family=binomial(link='logit'),
                        data=str_tdf)
+  
+  
 
 
 ```
@@ -210,6 +214,39 @@ Finally a model that adds in host policies.
   
   
 ```
+
+```{r message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE}
+  str_cc <- str_tdf %>% dplyr::filter(geo_mrkt == 'city-core')
+  str_city <- str_tdf %>% dplyr::filter(geo_mrkt == 'city')
+  str_sub <- str_tdf %>% dplyr::filter(geo_mrkt == 'suburban')
+  str_beach <- str_tdf %>% dplyr::filter(geo_mrkt == 'beach')
+
+  glm_pot_host_cc <- glm(pot_pref_us ~ type + as.factor(bedbath) +
+                        I(max_guests/bedrooms) + min_stay + I(canc_policy == 'Flexible'),
+                      family=binomial(link='logit'),
+                      data=str_cc)
+  glm_pot_host_city <- glm(pot_pref_us ~ type + as.factor(bedbath) +
+                        I(max_guests/bedrooms) + min_stay + I(canc_policy == 'Flexible'),
+                      family=binomial(link='logit'),
+                      data=str_city)
+  glm_pot_host_sub <- glm(pot_pref_us ~ type + as.factor(bedbath) +
+                        I(max_guests/bedrooms) + min_stay + I(canc_policy == 'Flexible'),
+                      family=binomial(link='logit'),
+                      data=str_sub)
+  glm_pot_host_beach <- glm(pot_pref_us ~ type + as.factor(bedbath) +
+                        I(max_guests/bedrooms) + min_stay + I(canc_policy == 'Flexible'),
+                      family=binomial(link='logit'),
+                      data=str_beach)
+  
+  pot_sub_glms <- list(cc=glm_pot_host_cc,
+                       cc=glm_pot_host_city,
+                       cc=glm_pot_host_sub,
+                       cc=glm_pot_host_beach)  
+  
+  
+
+```
+
 
 <!-- ### Host types -->
 

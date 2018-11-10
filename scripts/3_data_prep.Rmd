@@ -115,8 +115,9 @@ Then we load three GIS shapefiles.  The first two denote suburb and Statistical 
     st_transform(crs=4283)
   sa1_sf <- sf::st_read(file.path(getwd(), 'data', 'geographic', 'sa1s.shp')) %>%
     st_transform(crs=4283)
-  beach_sf <- sf::st_read(file.path(getwd(), 'data', 'geographic','portPhillipBeach_no_outer.shp')) %>%
+  beach_sf <- sf::st_read(file.path(getwd(), 'data', 'geographic','portPhillipBeach_saclip.shp')) %>%
     st_transform(crs=4283)
+  
 
 ```
  
@@ -1074,7 +1075,7 @@ Then we create Potential Revenue, by imputing occupancy rates and revenues for b
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
 
    save(str_tdf, ltr_tdf, str_sf, ltr_sf, studyarea_sf, suburb_sf, beach_sf, sa1_sf,
-        col_df, clean_obj, core_suburbs, str_tdf_all,
+        col_df, clean_obj, core_suburbs, str_tdf_all, beach_buffer,
         file=paste0(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData')))
  
 ```
