@@ -1,7 +1,6 @@
 ---
 title: "To Airbnb?: Factors impacting short-term leasing preference"
-subtitle: "Round 2 Reviews"
-author: "Andy Krause and Gideon Aschwanden"
+subtitle: 'Reviewer Responses'
 date: "11/8/2018"
 output: pdf_document
 ---

@@ -1,0 +1,22 @@
+---
+title: "To Airbnb?: Factors impacting short-term leasing preference"
+subtitle: 'Reviewer Responses'
+date: "11/8/2018"
+output:
+  pdf_document: default
+  html_document: default
+header-includes: 
+   - \usepackage{setspace}\doublespacing
+   - \usepackage{caption}
+   - \captionsetup[table]{skip=10pt}
+geometry: margin=3.3cm
+bibliography: abb.bib
+---
+
+## What's Changed
+
+1. Bolstered the literature review
+* Provided larger coverage of the short-term rental issues by extending discussion to some non-Real Estate centric work [@kakar2018visible; @cheng2018sharing]
+* Added in a few very recent publications to help solidify the importance of this work [@manning2018hotel] and to provide deeper look at previous short term rental pricing work[@gibbs2018use; @gibbs2018pricing; @oskam2018s]
+
+## References
