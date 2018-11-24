@@ -446,3 +446,74 @@ Host type investigation
    
 
 ```
+
+
+```{r}
+ ## 1/1 plots
+  x <- pred_df[pred_df$bedbath == "1_1", ]
+  cap11 <- paste0('Plot shows the conditional probability of short term preference for ',
+                  '1 bedroom, 1 bathroom homes given differences\n',
+                  'in their structure type (Apt vs House), cancellation policy (strict',
+                  ' vs flexible), location (City-Core, City, Beach, Suburban),\n',
+                  'Number of allowed guest per bedroom and minimum number of night stay ',
+                  'reguired. Larger and darker dots indicate\na higher probabilty ',
+                  'of short-term preference with full dots showing 50%+.')
+
+  ggplot(x, aes(x=ms, y=gpb, color = prob)) + 
+    geom_point(aes(shape = sh, size = prob)) + 
+    facet_grid(sm~ct) +
+    scale_color_gradient(low='gray80', high='black', name='STP Probability',
+                         labels = c('0%', '25%', '50%', '75%'),
+                         breaks = c(0,.25, .50, .75)) +
+    scale_shape_manual(values = c(16,1), name = 'Is STP?', labels=c('True', 'False')) + 
+    scale_size(range = c(.5, 3), guide = FALSE) + 
+    xlab('\n Minimum Stay  (In Days)\n') +
+    ylab('Allowed Guests per Bedroom\n') + 
+    labs(title = '1 Bed, 1 Bath Home - Conditional STP Probabilities\n',
+         caption = cap11) + 
+    theme(plot.caption=element_text(hjust = 0),
+          plot.title = element_text(hjust = 0.5)) -> cpp_11
+  
+  
+  png(filename = file.path(getwd(), 'images', "cpp_11.png"), 
+       width = 7, height = 5, units = 'in', res = 300)
+     cpp_11
+  dev.off()
+       
+```
+
+```{r}
+
+ ## 1/1 plots
+  x <- pred_df[pred_df$bedbath == "3_2", ]
+  cap11 <- paste0('Plot shows the conditional probability of short term preference for ',
+                  '3 bedroom, 2 bathroom homes given differences\n',
+                  'in their structure type (Apt vs House), cancellation policy (strict',
+                  ' vs flexible), location (City-Core, City, Beach, Suburban),\n',
+                  'Number of allowed guest per bedroom and minimum number of night stay ',
+                  'reguired. Larger and darker dots indicate\na higher probabilty ',
+                  'of short-term preference with full dots showing 50%+.')
+
+  ggplot(x, aes(x=ms, y=gpb, color = prob)) + 
+    geom_point(aes(shape = sh, size = prob)) + 
+    facet_grid(sm~ct) +
+    scale_color_gradient(low='gray80', high='black', name='STP Probability',
+                         labels = c('0%', '25%', '50%', '75%'),
+                         breaks = c(0,.25, .50, .75)) +
+    scale_shape_manual(values = c(16,1), name = 'Is STP?', labels=c('True', 'False')) + 
+    scale_size(range = c(.5, 3), guide = FALSE) + 
+    xlab('\n Minimum Stay (In Days)\n') +
+    ylab('Allowed Guests per Bedroom\n') + 
+    labs(title = '3 Bed, 2 Bath Home - Conditional STP Probabilities\n',
+         caption = cap11) + 
+    theme(plot.caption=element_text(hjust = 0),
+          plot.title = element_text(hjust = 0.5)) -> cpp_32
+  
+  
+  png(filename = file.path(getwd(), 'images', "cpp_32.png"), 
+       width = 7, height = 5, units = 'in', res = 300)
+     cpp_32
+  dev.off()
+       
+```
+

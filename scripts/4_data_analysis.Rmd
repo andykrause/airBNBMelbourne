@@ -247,6 +247,85 @@ Finally a model that adds in host policies.
 
 ```
 
+### Prediction Chart
+
+```{r}
+
+# Create New variables
+
+ str_tdf$gpb <- str_tdf$max_guests / str_tdf$bedrooms
+ str_tdf$canc <- ifelse(str_tdf$canc_policy == 'Flexible', 1, 0)
+
+# Recreate Model 
+  
+ pred_model <- glm(pot_pref ~ type + as.factor(bedbath) + as.factor(geo_mrkt) +
+                    gpb + min_stay + canc,
+                      family=binomial(link='logit'),
+                      data=str_tdf)
+  
+```
+
+```{r}
+ 
+### Create variables for pred 
+
+  bedbath <- unique(str_tdf$bedbath)
+  type <- unique(str_tdf$type)
+  geo_mrkt <- unique(str_tdf$geo_mrkt)
+  canc <- c(0,1)
+  min_stay <- c(1,2,3,4,7)
+  gpb <- 1:5
+  
+  pred_df <- expand.grid(bedbath, type, geo_mrkt, canc, min_stay, gpb)
+  names(pred_df) <- c('bedbath', 'type', 'geo_mrkt', 'canc', 'min_stay', 'gpb')
+  
+  pred_df$id <- apply(pred_df, 1, function(x) paste0(substr(x['type'], 1,1),
+                                                     x['bedbath'], 
+                                                     substr(x['geo_mrkt'], 1, 5)))
+  
+  str_tdf$id <- apply(str_tdf, 1, function(x) paste0(substr(x['type'], 1,1),
+                                                     x['bedbath'], 
+                                                     substr(x['geo_mrkt'], 1, 5)))
+  pred_df$aid <- apply(pred_df, 1, function(x) paste0(x['bedbath'], 
+                                                      substr(x['geo_mrkt'], 1, 5)))
+  str_tdf$aid <- apply(str_tdf, 1, function(x) paste0(x['bedbath'], 
+                                                      substr(x['geo_mrkt'], 1, 5)))
+  
+```
+
+```{r}
+
+# Make predictions
+  pred_df$raw <- predict(pred_model, newdata = pred_df)
+  pred_df$prob <-  exp(pred_df$raw)/(1+exp(pred_df$raw))
+  pred_df$sh <- ifelse(pred_df$prob > .5, 1, 0)
+  pred_df$sh <- factor(pred_df$sh, levels = c(1,0))
+  
+  #pred_df$min_stay <- as.factor(pred_df$min_stay)
+  pred_df$gpb <- as.factor(pred_df$gpb)
+  pred_df$cc <- ifelse(pred_df$canc == 1, 'Flexible', 'Strict')
+  pred_df$ct <- paste0(ifelse(pred_df$type == 'House', 'House', 'Apt'), 
+                       " - ",  pred_df$cc)
+
+  pred_df$ms <- as.character(pred_df$min_stay)
+  pred_df$ms[pred_df$ms == '4'] <- '4-6'
+  pred_df$ms[pred_df$ms == '7'] <- '7+'
+  pred_df$ms <- factor(pred_df$ms, levels=c('1', '2', '3', '4-6', '7+'))
+  
+  pred_df$sm <- as.character(pred_df$geo_mrkt)
+  pred_df$sm[pred_df$sm == 'city-core'] <- 'City-Core'
+  pred_df$sm[pred_df$sm == 'city'] <- 'City'
+  pred_df$sm[pred_df$sm == 'beach'] <- 'Beach'
+  pred_df$sm[pred_df$sm == 'suburban'] <- 'Suburban'
+  pred_df$sm <- factor(pred_df$sm, levels = c('City-Core', 'City', 'Beach', 'Suburban'))
+
+  pred_df$ct <- factor(pred_df$ct, levels = c('Apt - Strict', 'House - Strict', 
+                                              'Apt - Flexible', 'House - Flexible'))
+    
+```
+
+
+
 
 <!-- ### Host types -->
 
@@ -347,7 +426,7 @@ Finally a model that adds in host policies.
   dir.create(file.path(getwd(), 'data', 'analyzed'))
   save(str_tdf, ltr_tdf, ltr_df, col_df, suburb_sf, studyarea_sf, sa1_sf, str_sf, ltr_sf,
        pot_glms, core_suburbs, str_tdf_all, pot_mc_glms, pot_us_glms,
-       #pot_ht_glms, lik_ht_glms,
+       #pot_ht_glms, lik_ht_glms, pred_df, 
        file=file.path(getwd(), 'data', 'analyzed', 'analyzed_data.RData'))
   
   save(ltr_df, file=file.path(getwd(), 'data', 'analyzed', 'reviewers.RData'))
