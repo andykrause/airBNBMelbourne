@@ -1,7 +1,7 @@
 ---
 title: "To Airbnb?: Factors impacting short-term leasing preference"
-subtitle: "Andy Krause and Gideon Aschwanden"
-author: "Zillow and University of Melbourne"
+# subtitle: "Andy Krause and Gideon Aschwanden"
+# author: "Zillow and University of Melbourne"
 date: "Revised: November 25th, 2018"
 output:
   pdf_document: default
