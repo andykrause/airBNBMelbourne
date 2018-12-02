@@ -1,12 +1,12 @@
 ---
-title: "Pre Processing of the Short Term Data"
+title: "Script 1: Pre Processing of the Short Term Data"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
 
-This script executes a number of very long running data preparation process necessary to analyze the short term rental (Airbnb) data.  If you re-knit this file the code will not evaluate.  To actually evaluate the code you must manually re-run the code chunks individually in RStudio. 
+This script executes a number of very long running data preparation process necessary to analyze the short term rental (Airbnb) data.  If you re-knit this file the code will not evaluate.  To actually evaluate the code you must manually re-run the code chunks individually. 
 
 ```{r setup, include=FALSE}
 
@@ -16,7 +16,7 @@ This script executes a number of very long running data preparation process nece
 
 ## Preliminary Commands
 
-We begin by setting stringsAsFactors to FALSE to avoid unnecessary factor conversions
+We begin by setting `stringsAsFactors` to FALSE to avoid unnecessary factor conversions
 
 ```{r saf}
 
@@ -137,6 +137,7 @@ The date fields read in as characters, so we also must convert these to an R dat
 ```
 
 Next, we trim the daily data by date, limiting the observations to the one month period from September 1 2015 to August 31, 2016. We'll eliminate the property-level observations which are outside of the range through a future join. 
+
 ```{r date_trim}
 
   daily_df <- daily_df %>%

@@ -1,5 +1,5 @@
 ---
-title: "Data Preparation, Integration and Cleaning"
+title: "Script 3: Data Preparation, Integration and Cleaning"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 editor_options: 
@@ -334,12 +334,8 @@ No real pattern emerges, so we divide manually.
   str_tdf$blockpertime <- round(str_tdf$nbr_block * (366 / str_tdf$total_days), 1)
 
   str_tdf$host_type <- 'Unknown'
-  #str_tdf$host_type[str_tdf$blockpertime > 12] <- 'Multi-Platform User'
   str_tdf$host_type[str_tdf$block_rate <= .25] <- 'Profit Seeker'
   str_tdf$host_type[str_tdf$block_rate >= .75] <- 'Opportunistic Sharer'
-  # str_tdf$host_type <- factor(str_tdf$host_type,
-  #                             levels=c('Profit Seeker', 'Opportunistic Sharer', 
-  #                                       'Multi-Platform User', 'Unknown'))
   str_tdf$host_type <- factor(str_tdf$host_type,
                               levels=c('Profit Seeker', 'Opportunistic Sharer', 
                                        'Unknown'))
@@ -1050,16 +1046,6 @@ We then calculate the actual net revenue by multiplying booking times median rat
                              (str_tdf$bookings * str_tdf$avg_guests * cpppd))
 
 ```
-
-<!-- Next we create Likely Revenue, by imputing occupancy rates and revenues for the remainder of the year for those properties, -->
-
-<!-- ```{r lik_revenues, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=TRUE} -->
-
-<!--   # Calculate likely revenue -->
-<!--   str_tdf$lik_revenue_net <- ((str_tdf$lik_bookings * str_tdf$med_rate) - -->
-<!--                                 (str_tdf$lik_bookings * str_tdf$avg_guests * cpppd)) -->
-
-<!-- ``` -->
 
 Then we create Potential Revenue, by imputing occupancy rates and revenues for blocked periods. 
 

@@ -1,5 +1,5 @@
 ---
-title: "Data Visualization"
+title: "Script 5: Data Visualization"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 editor_options: 
@@ -12,6 +12,8 @@ editor_options:
 
 ```
 
+Load the necessary libraries
+
 ```{r set_paths, message=FALSE, warning=FALSE, comment=FALSE, echo=TRUE, results='hide'}
 
   library(tmap)
@@ -19,7 +21,11 @@ editor_options:
   library(dplyr)
   library(ggplot2)
 
+  source(file.path(getwd(), 'functions', "abb_Functions.R"))
+
 ```
+
+Next we load the data objects that we built earlier.
 
 ```{r load_data, message=FALSE, warning=FALSE, comment=FALSE, cache=TRUE, echo=FALSE, results='hide'}
   load(file.path(getwd(), 'data', 'prepared', 'prepared_data.RData'))
@@ -32,242 +38,11 @@ editor_options:
     
 ```
 
-## Suburb Location Map
+### Host type investigation
 
-```{r sub_loc.map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
- 
-  # Set submarket colors
-  suburb_sf$col <- 'gray80'
-  suburb_sf$col[suburb_sf$class == 'Middle'] <- 'gray50'
-  suburb_sf$col[suburb_sf$class == 'Inner'] <- 'gray20'
-  
-  inn_sf <- suburb_sf %>% dplyr::filter(class == 'Inner') %>% st_union()
-  mid_sf <- suburb_sf %>% dplyr::filter(class == 'Middle' & 
-                                          name != 'Seabrook' &  
-                                           name != 'Altona Meadows') %>% st_union()
-  
-  sub_sdf <- ltr_tdf %>%
-    group_by(suburb.x, Submarket) %>%
-    dplyr::summarize(count=n())
-  sub_sf <- suburb_sf %>%
-    dplyr::left_join(sub_sdf %>%
-                       dplyr::select(name = suburb.x, Submarket))
-  
-  cc_sf <- sub_sf %>% dplyr::filter(Submarket == '   City-Core   ') %>% st_union()
-  beach_sf <- sub_sf %>% dplyr::filter(Submarket == '   Beach   ') %>% st_union()
-  
-   # Make map
-  
-  png(filename = file.path(getwd(), 'images', "sub_loc_map.png"), 
-       width = 4.5, height = 4.5, units = 'in', res = 300)
-
-  tm_shape(suburb_sf %>% dplyr::filter(class != 'Outer')) +
-    tm_polygons("class", palette=c('gray50', 'gray80'), title='Suburb Class') +
-  tm_shape(studyarea_sf) + 
-    tm_borders(col='black', lwd=5) +
-    tm_add_legend(type='fill', border.lwd=3, col='white', border.col='black',
-                  title='Study Area')+
-  tm_layout(
-    legend.position = c("left","bottom"),
-    legend.text.size = 0.5)
-  
-  dev.off()  
-  
-```
-
-## Point Location Maps
-
-```{r location map}
-
-  sm_col <- c(col_df$rgb[3], col_df$rgb[4], col_df$rgb[5], 
-              col_df$rgb[6])
-  
-  ltr_map <-   tm_shape(mid_sf) + 
-    tm_fill(col='gray95', lwd=1) +
-    tm_borders(col = 'gray40', lwd=1) +
-  tm_shape(inn_sf) + 
-    tm_fill(col='gray85', lwd=1) +  
-  tm_shape(cc_sf) + 
-    tm_fill(col='gray75', lwd=1) +
-  tm_shape(beach_buffer) + 
-    tm_fill(col='gray65', lwd=1) +
-  tm_shape(suburb_sf %>% dplyr::filter(in_studyarea == 1)) +
-    tm_borders(col='gray70', lwd=.5) +
-  tm_shape(studyarea_sf) + 
-    tm_borders(col='black', lwd=2) +
-  tm_shape(ltr_sf %>% dplyr::rename(Submarket = geo_mrkt)) +
-    tm_symbols('Submarket', size=.02,
-               palette = sm_col, alpha=.9, shape=16, legend.col.show=TRUE)+
-    tm_layout(title = "LTR Observations",
-              title.position = c("left", "top"),
-              title.size = .8) +
-  tm_shape(inn_sf) + 
-    tm_borders(col = 'gray40', lwd=1) +
-  tm_shape(cc_sf) + 
-    tm_borders(col = 'gray40', lwd=1) +
-  tm_shape(beach_buffer) + 
-    tm_borders(col = 'gray40', lwd=1)
-  
-  
-  str_map <-   tm_shape(mid_sf) + 
-    tm_fill(col='gray95', lwd=1) +
-    tm_borders(col = 'gray40', lwd=1) +
-  tm_shape(inn_sf) + 
-    tm_fill(col='gray85', lwd=1) +  
-  tm_shape(cc_sf) + 
-    tm_fill(col='gray75', lwd=1) +
-  tm_shape(beach_buffer) + 
-    tm_fill(col='gray65', lwd=1) +
-  tm_shape(suburb_sf %>% dplyr::filter(in_studyarea == 1)) +
-    tm_borders(col='gray70', lwd=.5) +
-  tm_shape(studyarea_sf) + 
-    tm_borders(col='black', lwd=2) +
-  tm_shape(str_sf %>% dplyr::rename(Submarket = geo_mrkt)) +
-    tm_symbols('Submarket', size=.02,
-               palette = sm_col, alpha=.9, shape=16, legend.col.show=TRUE)+
-    tm_layout(title = "LTR Observations",
-              title.position = c("left", "top"),
-              title.size = .8) +
-  tm_shape(inn_sf) + 
-    tm_borders(col = 'gray40', lwd=1) +
-  tm_shape(cc_sf) + 
-    tm_borders(col = 'gray40', lwd=1) +
-  tm_shape(beach_buffer) + 
-    tm_borders(col = 'gray40', lwd=1)
-  
-  
-  sltr_map <- tmap_arrange(ltr_map, str_map) 
-    
-  png(filename = file.path(getwd(), 'images', "ltr_loc_map.png"), 
-       width = 7, height = 3.5, units = 'in', res = 300)
-    sltr_map
-  dev.off()  
-    
-
-
-```
-
-```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.width=9}
- 
-   # Make Airbnb submarket map
-   str_tdf$Submarket <- as.character(str_tdf$geo_mrkt)
-   str_tdf$Submarket[str_tdf$Submarket == 'city-core'] <- '   City-Core   '
-   str_tdf$Submarket[str_tdf$Submarket == 'city'] <- '   City   '
-   str_tdf$Submarket[str_tdf$Submarket == 'beach'] <- '   Beach   '
-   str_tdf$Submarket[str_tdf$Submarket == 'suburban'] <- '   Suburban   '
-   str_tdf$Submarket <- factor(str_tdf$Submarket, 
-                                  levels = c('   City-Core   ', '   City   ', 
-                                             '   Suburban   ', '   Beach   '))
-   
-   strtype_bar <- ggplot() +
-     geom_bar(data=str_tdf, aes(x=Submarket, fill=Submarket)) +
-     scale_fill_manual(values=sm_col, name='Submarket') +
-     facet_wrap(~type) +
-     ylab('# of Properties\n') + xlab('')+
-     theme(legend.position = 'none',
-           legend.title = element_blank(),
-           axis.ticks.x=element_blank()) +
-     ggtitle('Short Term Properties')+
-     theme(plot.title = element_text(size = 10, hjust = 0.5),
-           axis.text.y=element_blank(),
-           axis.text.x=element_text(size = 6),
-           axis.ticks.y=element_blank(),
-           plot.caption=element_text(size=6, hjust=.5)) + 
-     labs(caption = paste0('\nBreakdown of 2,415 short-term properties by submarket and ',
-                           ' structure type.\n'))
-  # strtype_bar
-   
-   # Make Long term rental map
- 
-   ltr_tdf$Submarket <- as.character(ltr_tdf$geo_mrkt)
-   ltr_tdf$Submarket[ltr_tdf$Submarket == 'city-core'] <- '   City-Core   '
-   ltr_tdf$Submarket[ltr_tdf$Submarket == 'city'] <- '   City   '
-   ltr_tdf$Submarket[ltr_tdf$Submarket == 'beach'] <- '   Beach   '
-   ltr_tdf$Submarket[ltr_tdf$Submarket == 'suburban'] <- '   Suburban   '
-   ltr_tdf$Submarket <- factor(ltr_tdf$Submarket, 
-                                  levels = c('   City-Core   ', '   City   ', 
-                                             '   Suburban   ', '   Beach   '))
-   ltrtype_bar <- ggplot() +
-     geom_bar(data=ltr_tdf, aes(x=Submarket, fill=Submarket)) +
-     scale_fill_manual(values=sm_col) +
-     facet_wrap(~type) +
-     ylab('# of Properties\n') + xlab('')+
-     theme(legend.position = 'none',
-           legend.title = element_blank(),
-           axis.text.x=element_blank(),
-           axis.ticks.x=element_blank()) +
-     ggtitle('Long Term Properties')+
-     theme(plot.title = element_text(size = 10, hjust = 0.5),
-           axis.text.y=element_blank(),
-           axis.text.x=element_text(size = 6),
-           axis.ticks.y=element_blank(),
-           plot.caption=element_text(size=6, hjust=.5)) + 
-     labs(caption = paste0('\nBreakdown of 64,305 long-term properties by submarket and ',
-                           ' structure type\n'))
-     #ltrtype_bar
-   
-     png(filename = file.path(getwd(), 'images', "loc_bar.png"), 
-       width = 8, height = 4, units = 'in', res = 300)
- 
-     ggMultiPlots(strtype_bar, ltrtype_bar, cols=2)
-     dev.off()  
- 
-       
-```
-
-```{r maps}
-
-   dens_cols <- c(col_df$rgb[3], col_df$rgb[1], col_df$rgb[2])
-
-   # Add together for plotting
-   rev_df <- bind_rows(str_tdf %>% 
-                         dplyr::select(type, revenue=revenue_net) %>%
-                         dplyr::mutate(tenure = '  Short Term (Actual)   ',
-                                       alpha = .5),
-                       str_tdf %>% 
-                         dplyr::select(type, revenue=pot_revenue_net) %>%
-                         dplyr::mutate(tenure = '  Short Term (Potential)   ',
-                                       alpha = .4),
-                       ltr_df %>%
-                         dplyr::select(type, revenue=gross_revenue) %>%
-                         dplyr::mutate(tenure = '  Long-Term   ',
-                                       alpha = .9))
-
-  png(filename = file.path(getwd(), 'images', "rev_dens.png"), 
-       width = 5.5, height = 4, units = 'in', res = 300)
- 
-   ggplot(rev_df,
-          aes(x=revenue, fill=tenure, color=tenure)) +
-    geom_density(alpha=.5) +
-    scale_fill_manual(values=dens_cols) +
-    scale_color_manual(values=dens_cols) +
-    # ggtitle('Revenue Comparison: Short Term vs Long Term Properties') +
-    xlab('Annual Revenue (A$)') +
-    ylab('')+
-    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
-                       labels=c('A$0', 'A$20,000', 'A$40,000', 'A$60,000'))+
-    theme(legend.position='bottom',
-          legend.title = element_blank())+
-     theme(plot.title = element_text(size = 10, hjust = 0.5),
-           axis.text.y=element_blank(),
-           axis.text.x=element_text(size = 6),
-           axis.ticks.y=element_blank(),
-           plot.caption=element_text(size=6, hjust=0)) + 
-     labs(caption = paste0('\nComparison of the distribution of observed long-term rental',
-                           ' revenues of 64,305 properties (blue) to observed revenues of ', 
-                           ' 2,415 short\nterm properties (pink).  The purple curve ',
-                           ' represents the potential revenues of the 2,415 short term ',
-                           ' properties (includes imputed bookings).')) +
-    coord_cartesian(xlim=c(0, 70000)) 
-
-    dev.off()  
-        
-```
-
-Host type investigation
+We look at host behavior, in aiming to identify cases the profit maximizing hosts. 
 
 ```{r host_types}
-
 
   str.col <- col_df$rgb[1]
 
@@ -349,11 +124,6 @@ Host type investigation
                size=.4)  +
     ggtitle('Opportunistic Sharer')
 
-  # mu.host <- base.host +
-  #   geom_point(data=str_tdf_all[str_tdf_all$host_type == 'Multi-Platform User', ],
-  #              size=.4)  +
-  #   ggtitle('Multi-Platform User')
-
   un.host <- base.host +
     geom_point(data=str_tdf_all[str_tdf_all$host_type == 'Unknown', ], size=.4)  +
     ggtitle('Unknown')
@@ -380,8 +150,6 @@ Host type investigation
     theme(legend.position='none') +
     ylab('') +
     xlab('') +
-    scale_x_discrete(labels=c('Profit-Seekers','Opportunistic Sharers','Unknowns'))+
-    # ggtitle('short-term Host Types') +
      theme(plot.title = element_text(size = 10, hjust = 0.5),
            axis.text.y=element_blank(),
            axis.text.x=element_text(size = 6),
@@ -399,7 +167,257 @@ Host type investigation
   dev.off()  
   
 ```
+### Observation Bar Chart
 
+Here we make bar charts breaking down the number of observations by type and submarket. 
+
+```{r smtype.plot, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE, fig.width=9}
+ 
+  sm_col <- c(col_df$rgb[3], col_df$rgb[4], col_df$rgb[5], 
+              col_df$rgb[6])
+  
+   # Make Airbnb submarket map
+   str_tdf$Submarket <- as.character(str_tdf$geo_mrkt)
+   str_tdf$Submarket[str_tdf$Submarket == 'city-core'] <- '   City-Core   '
+   str_tdf$Submarket[str_tdf$Submarket == 'city'] <- '   City   '
+   str_tdf$Submarket[str_tdf$Submarket == 'beach'] <- '   Beach   '
+   str_tdf$Submarket[str_tdf$Submarket == 'suburban'] <- '   Suburban   '
+   str_tdf$Submarket <- factor(str_tdf$Submarket, 
+                                  levels = c('   City-Core   ', '   City   ', 
+                                             '   Suburban   ', '   Beach   '))
+   
+   strtype_bar <- ggplot() +
+     geom_bar(data=str_tdf, aes(x=Submarket, fill=Submarket)) +
+     scale_fill_manual(values=sm_col, name='Submarket') +
+     facet_wrap(~type) +
+     ylab('# of Properties\n') + xlab('')+
+     theme(legend.position = 'none',
+           legend.title = element_blank(),
+           axis.ticks.x=element_blank()) +
+     ggtitle('Short Term Properties')+
+     theme(plot.title = element_text(size = 10, hjust = 0.5),
+           axis.text.y=element_blank(),
+           axis.text.x=element_text(size = 6),
+           axis.ticks.y=element_blank(),
+           plot.caption=element_text(size=6, hjust=.5)) + 
+     labs(caption = paste0('\nBreakdown of 2,415 short-term properties by submarket and ',
+                           ' structure type.\n'))
+  # strtype_bar
+   
+   # Make Long term rental map
+ 
+   ltr_tdf$Submarket <- as.character(ltr_tdf$geo_mrkt)
+   ltr_tdf$Submarket[ltr_tdf$Submarket == 'city-core'] <- '   City-Core   '
+   ltr_tdf$Submarket[ltr_tdf$Submarket == 'city'] <- '   City   '
+   ltr_tdf$Submarket[ltr_tdf$Submarket == 'beach'] <- '   Beach   '
+   ltr_tdf$Submarket[ltr_tdf$Submarket == 'suburban'] <- '   Suburban   '
+   ltr_tdf$Submarket <- factor(ltr_tdf$Submarket, 
+                                  levels = c('   City-Core   ', '   City   ', 
+                                             '   Suburban   ', '   Beach   '))
+   ltrtype_bar <- ggplot() +
+     geom_bar(data=ltr_tdf, aes(x=Submarket, fill=Submarket)) +
+     scale_fill_manual(values=sm_col) +
+     facet_wrap(~type) +
+     ylab('# of Properties\n') + xlab('')+
+     theme(legend.position = 'none',
+           legend.title = element_blank(),
+           axis.text.x=element_blank(),
+           axis.ticks.x=element_blank()) +
+     ggtitle('Long Term Properties')+
+     theme(plot.title = element_text(size = 10, hjust = 0.5),
+           axis.text.y=element_blank(),
+           axis.text.x=element_text(size = 6),
+           axis.ticks.y=element_blank(),
+           plot.caption=element_text(size=6, hjust=.5)) + 
+     labs(caption = paste0('\nBreakdown of 64,305 long-term properties by submarket and ',
+                           ' structure type\n'))
+     #ltrtype_bar
+   
+     png(filename = file.path(getwd(), 'images', "loc_bar.png"), 
+       width = 8, height = 4, units = 'in', res = 300)
+ 
+     ggMultiPlots(strtype_bar, ltrtype_bar, cols=2)
+     dev.off()  
+ 
+       
+```
+## Suburb Location Map
+
+We start by create the maps of the observation locations, the study area and the suburb boundaries. 
+
+First the suburb boundaries and study areas. 
+
+```{r sub_loc.map, message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=TRUE}
+ 
+  # Set submarket colors
+  suburb_sf$col <- 'gray80'
+  suburb_sf$col[suburb_sf$class == 'Middle'] <- 'gray50'
+  suburb_sf$col[suburb_sf$class == 'Inner'] <- 'gray20'
+  
+  inn_sf <- suburb_sf %>% dplyr::filter(class == 'Inner') %>% st_union()
+  mid_sf <- suburb_sf %>% dplyr::filter(class == 'Middle' & 
+                                          name != 'Seabrook' &  
+                                           name != 'Altona Meadows') %>% st_union()
+  
+  sub_sdf <- ltr_tdf %>%
+    group_by(suburb.x, Submarket) %>%
+    dplyr::summarize(count=n())
+  sub_sf <- suburb_sf %>%
+    dplyr::left_join(sub_sdf %>%
+                       dplyr::select(name = suburb.x, Submarket))
+  
+  cc_sf <- sub_sf %>% dplyr::filter(Submarket == '   City-Core   ') %>% st_union()
+  beach_sf <- sub_sf %>% dplyr::filter(Submarket == '   Beach   ') %>% st_union()
+  
+   # Make map
+  
+  png(filename = file.path(getwd(), 'images', "sub_loc_map.png"), 
+       width = 4.5, height = 4.5, units = 'in', res = 300)
+
+  tm_shape(suburb_sf %>% dplyr::filter(class != 'Outer')) +
+    tm_polygons("class", palette=c('gray50', 'gray80'), title='Suburb Class') +
+  tm_shape(studyarea_sf) + 
+    tm_borders(col='black', lwd=5) +
+    tm_add_legend(type='fill', border.lwd=3, col='white', border.col='black',
+                  title='Study Area')+
+  tm_layout(
+    legend.position = c("left","bottom"),
+    legend.text.size = 0.5)
+  
+  dev.off()  
+  
+```
+
+## Point Location Maps
+
+We then add the short and long term observation locations to the maps. 
+
+```{r location map}
+
+
+  ltr_map <-   tm_shape(mid_sf) + 
+    tm_fill(col='gray95', lwd=1) +
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(inn_sf) + 
+    tm_fill(col='gray85', lwd=1) +  
+  tm_shape(cc_sf) + 
+    tm_fill(col='gray75', lwd=1) +
+  tm_shape(beach_buffer) + 
+    tm_fill(col='gray65', lwd=1) +
+  tm_shape(suburb_sf %>% dplyr::filter(in_studyarea == 1)) +
+    tm_borders(col='gray70', lwd=.5) +
+  tm_shape(studyarea_sf) + 
+    tm_borders(col='black', lwd=2) +
+  tm_shape(ltr_sf %>% dplyr::rename(Submarket = geo_mrkt)) +
+    tm_symbols('Submarket', size=.02,
+               palette = sm_col, alpha=.9, shape=16, legend.col.show=TRUE)+
+    tm_layout(title = "LTR Observations",
+              title.position = c("left", "top"),
+              title.size = .8) +
+  tm_shape(inn_sf) + 
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(cc_sf) + 
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(beach_buffer) + 
+    tm_borders(col = 'gray40', lwd=1)
+  
+  
+  str_map <-   tm_shape(mid_sf) + 
+    tm_fill(col='gray95', lwd=1) +
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(inn_sf) + 
+    tm_fill(col='gray85', lwd=1) +  
+  tm_shape(cc_sf) + 
+    tm_fill(col='gray75', lwd=1) +
+  tm_shape(beach_buffer) + 
+    tm_fill(col='gray65', lwd=1) +
+  tm_shape(suburb_sf %>% dplyr::filter(in_studyarea == 1)) +
+    tm_borders(col='gray70', lwd=.5) +
+  tm_shape(studyarea_sf) + 
+    tm_borders(col='black', lwd=2) +
+  tm_shape(str_sf %>% dplyr::rename(Submarket = geo_mrkt)) +
+    tm_symbols('Submarket', size=.02,
+               palette = sm_col, alpha=.9, shape=16, legend.col.show=TRUE)+
+    tm_layout(title = "STR Observations",
+              title.position = c("left", "top"),
+              title.size = .8) +
+  tm_shape(inn_sf) + 
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(cc_sf) + 
+    tm_borders(col = 'gray40', lwd=1) +
+  tm_shape(beach_buffer) + 
+    tm_borders(col = 'gray40', lwd=1)
+  
+  
+  sltr_map <- tmap_arrange(ltr_map, str_map) 
+    
+  png(filename = file.path(getwd(), 'images', "ltr_loc_map.png"), 
+       width = 7, height = 3.5, units = 'in', res = 300)
+    sltr_map
+  dev.off()  
+    
+
+
+```
+
+
+
+### Revenue Density
+
+Here we make the density plots of the short and long term observed revenues. 
+
+```{r maps}
+
+   dens_cols <- c(col_df$rgb[3], col_df$rgb[1], col_df$rgb[2])
+
+   # Add together for plotting
+   rev_df <- bind_rows(str_tdf %>% 
+                         dplyr::select(type, revenue=revenue_net) %>%
+                         dplyr::mutate(tenure = '  Short Term (Actual)   ',
+                                       alpha = .5),
+                       str_tdf %>% 
+                         dplyr::select(type, revenue=pot_revenue_net) %>%
+                         dplyr::mutate(tenure = '  Short Term (Potential)   ',
+                                       alpha = .4),
+                       ltr_df %>%
+                         dplyr::select(type, revenue=gross_revenue) %>%
+                         dplyr::mutate(tenure = '  Long-Term   ',
+                                       alpha = .9))
+
+  png(filename = file.path(getwd(), 'images', "rev_dens.png"), 
+       width = 5.5, height = 4, units = 'in', res = 300)
+ 
+   ggplot(rev_df,
+          aes(x=revenue, fill=tenure, color=tenure)) +
+    geom_density(alpha=.5) +
+    scale_fill_manual(values=dens_cols) +
+    scale_color_manual(values=dens_cols) +
+    # ggtitle('Revenue Comparison: Short Term vs Long Term Properties') +
+    xlab('Annual Revenue (A$)') +
+    ylab('')+
+    scale_x_continuous(breaks=c(seq(0,60000, by=20000)),
+                       labels=c('A$0', 'A$20,000', 'A$40,000', 'A$60,000'))+
+    theme(legend.position='bottom',
+          legend.title = element_blank())+
+     theme(plot.title = element_text(size = 10, hjust = 0.5),
+           axis.text.y=element_blank(),
+           axis.text.x=element_text(size = 6),
+           axis.ticks.y=element_blank(),
+           plot.caption=element_text(size=6, hjust=0)) + 
+     labs(caption = paste0('\nComparison of the distribution of observed long-term rental',
+                           ' revenues of 64,305 properties (blue) to observed revenues of ', 
+                           ' 2,415 short\nterm properties (pink).  The purple curve ',
+                           ' represents the potential revenues of the 2,415 short term ',
+                           ' properties (includes imputed bookings).')) +
+    coord_cartesian(xlim=c(0, 70000)) 
+
+    dev.off()  
+        
+```
+
+### Compare Imputation methods
+
+We build a plot to compare the two imputation methods, hedonic and KNN. 
 
 ```{r message=FALSE, warning=FALSE, comment=FALSE, cache=FALSE, echo=FALSE}
     
@@ -410,16 +428,6 @@ Host type investigation
 
   imp_df$bed_lab <- paste0(imp_df$bedrooms, ' Beds')
   fig_cap <- paste0('This figure compares the estimated long term rent for short term rental properties via the hedonic imputation\nmethod (X-axis) and the matched pairs-type method (Y-axis).  It is broken down by bedroom count and\nstructure type (Apartment vs House). Overall correlation is 89.4%')
-  
-  # imp_cor <- imp_df %>%
-  #   dplyr::group_by(type, bed_lab) %>%
-  #   dplyr::summarize(count = n(),
-  #                    cor = cor(ltr_imp_revenueH, ltr_imp_revenueK))
-  # 
-  #   
-  # d1 + geom_text(data=data.frame(x=0.25, y=1.5e+04, label=1:7, 
-  #                              color=c("D","E","F","G","H","I","J")), 
-  #              aes(x,y,label=label), inherit.aes=FALSE)
   
   png(filename = file.path(getwd(), 'images', "imp_cor.png"), 
        width = 7, height = 4, units = 'in', res = 300)
@@ -447,6 +455,11 @@ Host type investigation
 
 ```
 
+## Conditional Expectation Plots
+
+Finally, we build the conditional expectation plots.  
+
+First, the 1 bed/1bath option. 
 
 ```{r}
  ## 1/1 plots
@@ -482,9 +495,11 @@ Host type investigation
        
 ```
 
+And then the 3bed, 2bath option.  
+
 ```{r}
 
- ## 1/1 plots
+ ## 3/2 plots
   x <- pred_df[pred_df$bedbath == "3_2", ]
   cap11 <- paste0('Plot shows the conditional probability of short term preference for ',
                   '3 bedroom, 2 bathroom homes given differences\n',

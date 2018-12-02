@@ -1,7 +1,7 @@
 ---
 title: "To Airbnb?: Factors impacting short-term leasing preference"
-# subtitle: "Andy Krause and Gideon Aschwanden"
-# author: "Zillow and University of Melbourne"
+subtitle: "Andy Krause and Gideon Aschwanden"
+author: "Zillow and University of Melbourne"
 date: "Revised: November 25th, 2018"
 output:
   pdf_document: default
@@ -607,7 +607,7 @@ Finally, our analysis looks at a single year, beginning in September (spring) an
 
 #### Reproducibility
 
-All code used to complete this analysis, done in the R language^[Using the following packages: \texttt{sp} [@sp], \texttt{maptools} [@maptools], \texttt{ggplot2} [@ggplot2], \texttt{xtable} [@xtable], \texttt{ggmap} [@ggmap], \texttt{plyr} [@plyr], \texttt{reshape2} [@reshape2], \texttt{stringr} [@stringr], \texttt{knitr} [@knitr], \texttt{rmarkdown} [@rmarkdown], \texttt{lmtest} [@lmtest], \texttt{ROCR} [@ROCR], and \texttt{kernlab} [@kernlab]], is available for download at **[www.github.com/anonymousreauthor/to_airbnb](https://www.github.com/anonymousreauthor/to_airbnb)**.
+All code used to complete this analysis, done in the R language^[Using the following packages: \texttt{sp} [@sp], \texttt{maptools} [@maptools], \texttt{ggplot2} [@ggplot2], \texttt{xtable} [@xtable], \texttt{ggmap} [@ggmap], \texttt{plyr} [@plyr], \texttt{reshape2} [@reshape2], \texttt{stringr} [@stringr], \texttt{knitr} [@knitr], \texttt{rmarkdown} [@rmarkdown], \texttt{lmtest} [@lmtest], \texttt{ROCR} [@ROCR], and \texttt{kernlab} [@kernlab]], is available for download at **[www.github.com/andykrause/to_airbnb](https://www.github.com/andykrause/to_airbnb)**.
 
 ### Acknowledgements
 

@@ -1,12 +1,12 @@
 ---
-title: "Pre Processing of the Long Term Data"
+title: "Script 2: Pre Processing of the Long Term Data"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
 
-This script executes a number of long running data preparation process necessary to analyze the long term rental data.  If you re-knit this file (with RMarkdown) the code will not evaluate.  To actually evaluate the code you must manually re-run the code chunks in RStudio. 
+This script executes a number of long running data preparation process necessary to analyze the long term rental data.  If you re-knit this file (with RMarkdown) the code will not evaluate.  To actually evaluate the code you must manually re-run the code chunks. 
 
 ```{r setup, include=FALSE}
 
@@ -14,9 +14,9 @@ This script executes a number of long running data preparation process necessary
 
 ```
 
-## Preliminaty Commands
+## Preliminary Commands
 
-We begin by setting stringsAsFactors to FALSE to avoid unnecessary factor conversions.
+We begin by setting `stringsAsFactors` to FALSE to avoid unnecessary factor conversions.
 
 ```{r saf}
 
@@ -122,6 +122,7 @@ In order to speed up the future calculations, we then remove an observations pri
 ```
 
 Next, we create a unique identifier (by market transaction, not by observation in the data) for each rental transaction.  Note that there are still, often, multiple observations per transaction due to the listing change data. 
+
 ```{r uniq_trans}
 
   ltr_df <- ltr_df %>%
